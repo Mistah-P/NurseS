@@ -1,192 +1,153 @@
 <template>
-  <div class="app-container">
-    <!-- Top Bar -->
-    <header class="top-bar">
-      <div class="left-section">
-        <span class="logo" @click="goToHome" style="cursor: pointer;">NurseScripts</span>
-      </div>
-      <div class="right-section">
-        <!-- Username (tooltip: User page) -->
-        <a
-          @click="$router.push('/user')"
-          style="cursor: pointer; text-decoration: none; color: inherit;"
-          title="User page"
-          aria-label="User page"
-        >
-          {{ username }}
-        </a>
+  <div class="student-dashboard">
+    <!-- Main Content -->
+    <main class="main-content">
 
-        <!-- Progress Circle -->
-        <div class="progress-circle" title="Progress" aria-label="Progress">
-          <span class="progress-number">5</span>
-        </div>
-
-        <!-- Icons with hover tooltips -->
-        <img
-          src="@/assets/settings.png"
-          alt="Settings"
-          class="icon-img"
-          title="Settings"
-          aria-label="Settings"
-          @click="goToSettings"
-        />
-        <img
-          src="@/assets/highscore.png"
-          alt="Highscore"
-          class="icon-img"
-          title="Highscore"
-          aria-label="Highscore"
-          @click="goToHighscore"
-        />
-        <img
-          src="@/assets/about.png"
-          alt="About"
-          class="icon-img"
-          title="About"
-          aria-label="About"
-          @click="goToAbout"
-        />
-      </div>
-    </header>
-
-    <!-- Profile Section -->
-    <div class="profile-container">
-      <!-- User Info -->
-      <div class="user-info-card">
-        <img class="user-icon" src="@/assets/user.png" alt="User Icon" />
-        <div class="user-details">
-          <h2 class="user-name">{{ username }}</h2>
-          <p class="user-email">{{ email }}</p>
-        </div>
-        <div class="user-meta">
-          <!-- Joined + Streak on same line -->
-          <div class="meta-row">
-            <p><strong>Joined:</strong> April 15 2025</p>
-            <p><strong>Current Typing Streak:</strong> 9 days</p>
-          </div>
-
-          <!-- Progress circle + bar on same line -->
-          <div class="progress-row">
-            <div class="progress-circle-large">
-              <span class="progress-number">5</span>
-            </div>
-            <div class="progress-bar-container">
-              <div class="progress-bar">
-                <div class="progress-fill" :style="{ width: progress + '%' }"></div>
+      <!-- Dashboard Content -->
+      <div class="dashboard-content">
+        <!-- Top Row - User Profile Card -->
+        <div class="profile-section" style="display: none;">
+          <div class="profile-card">
+            <div class="profile-header">
+              <div class="profile-avatar">
+                <i class="fas fa-user"></i>
+              </div>
+              <div class="profile-info">
+                <h2 class="profile-name">{{ username }}</h2>
+                <p class="profile-email">{{ email }}</p>
+                <div class="profile-meta">
+                  <span class="meta-item"><strong>Joined:</strong> April 15 2025</span>
+                  <span class="meta-item"><strong>Streak:</strong> 9 days</span>
+                </div>
+              </div>
+              <div class="progress-section">
+                <div class="progress-circle-large">
+                  <span class="progress-number">5</span>
+                </div>
+                <div class="progress-bar-container">
+                  <div class="progress-bar">
+                    <div class="progress-fill" :style="{ width: progress + '%' }"></div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- All Time Stats -->
-      <div class="stats-card">
-        <h3>All Time Statistics</h3>
+        <!-- Stats Grid -->
         <div class="stats-grid">
-          <div class="stat-box">
-            <div class="value">22:56:43</div>
-            <span>Time</span>
+          <!-- Enhanced Teacher Code Input Card -->
+          <div class="stat-card teacher-code-card enhanced-join-card">
+            <div class="join-card-glow"></div>
+            <div class="stat-header enhanced-header">
+              <div class="header-icon">
+                <i class="fas fa-users"></i>
+              </div>
+              <div class="header-content">
+                <h3>Join Teacher's Room</h3>
+                <p class="header-subtitle">Connect with your class instantly</p>
+              </div>
+            </div>
+            <div class="teacher-code-content enhanced-content">
+              <p class="code-description">Enter the 6-digit code provided by your teacher:</p>
+              <div class="code-input-group enhanced-input-group">
+                <div class="input-wrapper">
+                  <i class="fas fa-key input-icon"></i>
+                  <input 
+                    type="text" 
+                    v-model="teacherCode" 
+                    placeholder="Enter code..."
+                    class="code-input enhanced-input"
+                    @keyup.enter="joinTeacherRoom"
+                    maxlength="8"
+                  />
+                </div>
+                <button 
+                  @click="joinTeacherRoom" 
+                  class="join-btn enhanced-join-btn"
+                  :disabled="!teacherCode.trim() || isJoiningRoom"
+                >
+                  <i v-if="isJoiningRoom" class="fas fa-spinner fa-spin"></i>
+                  <i v-else class="fas fa-rocket"></i>
+                  {{ isJoiningRoom ? 'Joining...' : 'Join Now' }}
+                </button>
+              </div>
+              <div v-if="codeMessage" class="code-message enhanced-message" :class="codeMessageType">
+                <i :class="codeMessageType === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle'"></i>
+                {{ codeMessage }}
+              </div>
+            </div>
           </div>
-          <div class="stat-box">
-            <div class="value">3,326</div>
-            <span>Tests</span>
+
+
+
+          <div class="stat-card secondary">
+            <div class="stat-header">
+              <h3>Today's Statistics</h3>
+            </div>
+            <div class="stats-content">
+              <div class="stat-item">
+                <div class="stat-value">{{ todayStats.avgWpm }}</div>
+                <div class="stat-label">WPM</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value">{{ todayStats.avgAccuracy }}%</div>
+                <div class="stat-label">Accuracy</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value">{{ todayStats.topModule }}</div>
+                <div class="stat-label">Module</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value">{{ todayStats.topDifficulty }}</div>
+                <div class="stat-label">Difficulty</div>
+              </div>
+            </div>
           </div>
-          <div class="stat-box">
-            <div class="value">94 wpm</div>
-            <span>Top Speed</span>
-          </div>
-          <div class="stat-box">
-            <div class="value">71 wpm</div>
-            <span>Avg Speed</span>
-          </div>
-          <div class="stat-box">
-            <div class="value">71%</div>
-            <span>Top Accuracy</span>
-          </div>
-          <div class="stat-box">
-            <div class="value">93%</div>
-            <span>Avg Accuracy</span>
+
+          <!-- Typing History Chart -->
+          <div class="stat-card chart-card">
+            <div class="stat-header">
+              <h3>Typing History</h3>
+            </div>
+            <div class="chart-content">
+              <Line :data="chartData" :options="chartOptions" />
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Today Stats -->
-      <div class="stats-card">
-        <h3>Statistics for Today</h3>
-        <div class="stats-grid">
-          <div class="stat-box">
-            <div class="value">00:05:43</div>
-            <span>Time</span>
+        <!-- Recent Test History Table -->
+        <div class="card table-card">
+          <div class="card-header">
+            <h3>Recent Test History</h3>
           </div>
-          <div class="stat-box">
-            <div class="value">6</div>
-            <span>Tests</span>
-          </div>
-          <div class="stat-box">
-            <div class="value">80 wpm</div>
-            <span>Top Speed</span>
-          </div>
-          <div class="stat-box">
-            <div class="value">78 wpm</div>
-            <span>Avg Speed</span>
-          </div>
-          <div class="stat-box">
-            <div class="value">98%</div>
-            <span>Top Accuracy</span>
-          </div>
-          <div class="stat-box">
-            <div class="value">96%</div>
-            <span>Avg Accuracy</span>
+          <div class="table-content">
+            <table>
+              <thead>
+                <tr>
+                  <th>WPM</th>
+                  <th>Accuracy</th>
+                  <th>Module</th>
+                  <th>Difficulty</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(test, index) in testHistory" :key="index">
+                  <td>{{ test.wpm }}</td>
+                  <td>{{ test.accuracy }}</td>
+                  <td>{{ test.module }}</td>
+                  <td>{{ test.difficulty }}</td>
+                  <td>{{ test.date }}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
-      </div>
 
-      <!-- Achievements -->
-      <div class="achievements-card">
-        <h3>Achievements</h3>
-        <div class="achievements-grid">
-          <span class="achievement">First 10 Tests</span>
-          <span class="achievement">100% Accuracy Streak</span>
-          <span class="achievement">Typed 500 Medical Terms</span>
-          <span class="achievement">Consistent Typist</span>
-          <span class="achievement">Daily Goal Achiever</span>
-          <span class="achievement">First 50 Tests</span>
-        </div>
-      </div>
 
-      <!-- Typing History Graph -->
-      <div class="chart-card">
-        <h3>Typing History</h3>
-        <Line :data="chartData" :options="chartOptions" />
       </div>
-
-      <!-- Test History Table -->
-      <div class="table-card">
-        <h3>Test History</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>WPM</th>
-              <th>Accuracy</th>
-              <th>Consistency</th>
-              <th>Chars</th>
-              <th>Mode</th>
-              <th>Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(test, index) in testHistory" :key="index">
-              <td>{{ test.wpm }}</td>
-              <td>{{ test.accuracy }}</td>
-              <td>{{ test.consistency }}</td>
-              <td>{{ test.chars }}</td>
-              <td>{{ test.mode }}</td>
-              <td>{{ test.date }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+    </main>
   </div>
 </template>
 
@@ -202,8 +163,11 @@ import {
   LinearScale,
   CategoryScale,
 } from "chart.js";
-import { getAuth } from "firebase/auth";
-import { getFirestore, doc, getDoc } from "firebase/firestore";
+import { auth } from '../firebase/init';
+import { onAuthStateChanged } from "firebase/auth";
+import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
+import sessionService from '../services/sessionService';
+import typingResultsService from '../services/typingResultsService';
 
 ChartJS.register(Title, Tooltip, Legend, LineElement, PointElement, LinearScale, CategoryScale);
 
@@ -212,297 +176,1137 @@ export default {
   components: { Line },
   data() {
     return {
-      username: "", // Dynamically fetched username
-      email: "", // Dynamically fetched email
-      progress: 75, // progress bar %
+      username: '',
+      email: '',
+      progress: 0,
+      teacherCode: '',
+      codeMessage: '',
+      codeMessageType: 'success', // 'success' or 'error'
+      isJoiningRoom: false, // Add loading state for room joining
+      authUnsubscribe: null, // Store the auth listener unsubscribe function
       chartData: {
-        labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-        datasets: [
-          {
-            label: "WPM",
-            data: [70, 75, 80, 78, 82, 85, 88],
-            borderColor: "#004aad",
-            backgroundColor: "rgba(0, 74, 173, 0.2)",
-            fill: true,
-            tension: 0.3,
-          },
-        ],
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        datasets: [{
+          label: 'WPM',
+          data: [45, 52, 48, 61, 55, 67, 58],
+          borderColor: 'rgb(72, 187, 120)',
+          backgroundColor: 'rgba(72, 187, 120, 0.1)',
+          tension: 0.4,
+          borderWidth: 3,
+          pointBackgroundColor: 'rgb(56, 161, 105)',
+          pointBorderColor: 'rgb(72, 187, 120)',
+          pointBorderWidth: 2,
+          pointRadius: 5
+        }]
       },
       chartOptions: {
         responsive: true,
         maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: 'var(--border-primary)'
+            },
+            ticks: {
+              color: 'rgb(72, 187, 120)',
+              font: {
+                weight: 'bold'
+              }
+            }
+          },
+          x: {
+            grid: {
+              color: 'var(--border-primary)'
+            },
+            ticks: {
+              color: 'rgb(72, 187, 120)',
+              font: {
+                weight: 'bold'
+              }
+            }
+          }
+        }
       },
-      testHistory: [
-        { wpm: 88, accuracy: "88.00%", consistency: "96.23%", chars: "118/0/0/0", mode: "time 15", date: "29 Jun 2025" },
-        { wpm: 96, accuracy: "96.57%", consistency: "100.00%", chars: "47/0/0/0", mode: "words 10", date: "28 Jun 2025" },
-        { wpm: 93, accuracy: "63.97%", consistency: "90.75%", chars: "105/0/0/0", mode: "time 15", date: "28 Jun 2025" },
-        { wpm: 91, accuracy: "97.57%", consistency: "96.60%", chars: "115/1/0/1", mode: "time 15", date: "28 Jun 2025" },
-      ],
-    };
+      testHistory: [],
+      // Today's Statistics - calculated from real data
+      todayStats: {
+        avgWpm: 0,
+        avgAccuracy: 0,
+        topModule: 'N/A',
+        topDifficulty: 'N/A'
+      }
+    }
   },
   methods: {
-    async fetchUserDetails() {
-      const auth = getAuth();
-      const user = auth.currentUser;
-
-      if (user) {
-        const db = getFirestore();
-        const userDoc = doc(db, "users", user.uid); // Replace "users" with your Firestore collection name
-        try {
-          const docSnap = await getDoc(userDoc);
-          if (docSnap.exists()) {
-            this.username = docSnap.data().name; // Fetch the name field from Firestore
-            this.email = docSnap.data().email; // Fetch the email field from Firestore
-          } else {
-            console.error("No such document!");
-          }
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-        }
-      } else {
-        console.error("No user is logged in.");
+    async fetchUserDetails(user) {
+      if (!user) {
+        this.username = "Unknown User";
+        this.email = "";
+        return;
       }
+
+      const db = getFirestore();
+      const userDoc = doc(db, "users", user.uid);
+
+      try {
+        console.log("Fetching user details for UID:", user.uid);
+        const docSnap = await getDoc(userDoc);
+        
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
+          console.log("User data found:", userData);
+          
+          // Ensure we have a valid name
+          const userName = userData.name?.trim();
+          if (userName && userName.length > 0) {
+            this.username = userName;
+          } else {
+            console.warn("User document exists but name is empty or invalid:", userData.name);
+            this.username = "Unknown User";
+          }
+          
+          this.email = userData.email || user.email;
+        } else {
+          console.warn("No user document found for UID:", user.uid);
+          
+          // Try to create a user document with the current user's email
+          // This handles cases where the user was created but the document wasn't saved
+          if (user.email) {
+            try {
+              const newUserData = {
+                name: user.displayName || "User", // Use displayName if available
+                email: user.email,
+                createdAt: new Date()
+              };
+              
+              await setDoc(userDoc, newUserData);
+              console.log("Created missing user document:", newUserData);
+              
+              this.username = newUserData.name;
+              this.email = newUserData.email;
+            } catch (createError) {
+              console.error("Error creating user document:", createError);
+              this.username = "Unknown User";
+              this.email = user.email;
+            }
+          } else {
+            this.username = "Unknown User";
+            this.email = user.email || "";
+          }
+        }
+
+        // Fetch test history after user details are loaded
+        await this.fetchTestHistory(user);
+      } catch (error) {
+        console.error("Error fetching user details:", error);
+        this.username = "Unknown User";
+        this.email = user.email || "";
+        
+        // Retry once after a short delay
+        setTimeout(() => {
+          this.retryFetchUserDetails(user);
+        }, 1000);
+      }
+    },
+
+    async retryFetchUserDetails(user) {
+      if (!user) return;
+      
+      const db = getFirestore();
+      const userDoc = doc(db, "users", user.uid);
+
+      try {
+        console.log("Retrying user details fetch for UID:", user.uid);
+        const docSnap = await getDoc(userDoc);
+        
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
+          const userName = userData.name?.trim();
+          
+          if (userName && userName.length > 0) {
+            this.username = userName;
+            this.email = userData.email || user.email;
+            console.log("Retry successful, user data loaded:", userData);
+          }
+        }
+      } catch (retryError) {
+        console.error("Retry failed:", retryError);
+      }
+    },
+
+    async fetchTestHistory(user) {
+      try {
+        // Fetch the user's recent typing test results using both user ID and email
+        const results = await typingResultsService.getUserTypingResultsComplete(user.uid, user.email, { limit: 5 });
+        
+        if (results && results.success && results.data && results.data.length > 0) {
+          // Transform the data to match our table format
+          this.testHistory = results.data.map(result => ({
+            wpm: Math.round(result.wpm || 0),
+            accuracy: `${Math.round(result.accuracy || 0)}%`,
+            module: result.content?.topic || 'General',
+            difficulty: result.content?.difficulty || 'Medium',
+            date: result.timestamp ? new Date(result.timestamp).toLocaleDateString() : 
+                  result.createdAt ? new Date(result.createdAt).toLocaleDateString() : 'N/A'
+          }));
+          console.log("✅ Test history loaded successfully:", this.testHistory.length, "results");
+          
+          // Calculate today's statistics from the raw data
+          this.calculateTodayStats(results.data);
+        } else {
+          // No data found - testHistory remains empty array
+          console.log("No test history found");
+          this.resetTodayStats();
+        }
+      } catch (error) {
+        console.error("Error fetching test history:", error);
+        // On error, testHistory remains empty array
+        this.resetTodayStats();
+      }
+    },
+
+    calculateTodayStats(rawData) {
+      // Get today's date in YYYY-MM-DD format
+      const today = new Date().toDateString();
+      
+      // Filter data for today only
+      const todayData = rawData.filter(result => {
+        const resultDate = result.timestamp ? new Date(result.timestamp).toDateString() : 
+                          result.createdAt ? new Date(result.createdAt).toDateString() : null;
+        return resultDate === today;
+      });
+
+      if (todayData.length === 0) {
+        this.resetTodayStats();
+        return;
+      }
+
+      // Calculate average WPM
+      const avgWpm = Math.round(todayData.reduce((sum, result) => sum + (result.wpm || 0), 0) / todayData.length);
+      
+      // Calculate average accuracy
+      const avgAccuracy = Math.round(todayData.reduce((sum, result) => sum + (result.accuracy || 0), 0) / todayData.length);
+      
+      // Find most common module
+      const modules = todayData.map(result => result.content?.topic || 'General');
+      const topModule = this.getMostCommon(modules);
+      
+      // Find most common difficulty
+      const difficulties = todayData.map(result => result.content?.difficulty || 'Medium');
+      const topDifficulty = this.getMostCommon(difficulties);
+
+      this.todayStats = {
+        avgWpm: avgWpm,
+        avgAccuracy: avgAccuracy,
+        topModule: topModule,
+        topDifficulty: topDifficulty
+      };
+    },
+
+    getMostCommon(array) {
+      const counts = {};
+      array.forEach(item => counts[item] = (counts[item] || 0) + 1);
+      return Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b, 'N/A');
+    },
+
+    resetTodayStats() {
+      this.todayStats = {
+        avgWpm: 0,
+        avgAccuracy: 0,
+        topModule: 'N/A',
+        topDifficulty: 'N/A'
+      };
+    },
+    async joinTeacherRoom() {
+      if (!this.teacherCode.trim()) {
+        this.showCodeMessage('Please enter a teacher code', 'error');
+        return;
+      }
+
+      // Set loading state
+      this.isJoiningRoom = true;
+
+      try {
+        // Validate teacher code format (6 character alphanumeric)
+        const codePattern = /^[A-Za-z0-9]{6}$/;
+        if (!codePattern.test(this.teacherCode.trim())) {
+          this.showCodeMessage('Invalid code format. Room codes are 6 characters long.', 'error');
+          return;
+        }
+
+        const roomCode = this.teacherCode.trim().toUpperCase();
+        
+        // Generate a consistent student ID based on username and room code to prevent duplicates
+        // This ensures the same user gets the same ID when rejoining the same room
+        const baseId = `${this.username || 'Student'}_${roomCode}`.toLowerCase().replace(/[^a-z0-9]/g, '_');
+        const studentId = 'student_' + btoa(baseId).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
+        
+        // Join the room using the backend API
+        const response = await this.$studentAPI.joinRoom({
+          roomCode: roomCode,
+          studentId: studentId,
+          studentName: this.username || 'Student',
+          email: this.email || null,
+          yearLevel: null,
+          section: null
+        });
+
+        if (response.success) {
+          this.showCodeMessage('Successfully joined the room!', 'success');
+          
+          // Store student info in Firestore for the room session
+          await sessionService.createStudentSession({
+            studentId: studentId,
+            studentName: this.username || 'Student',
+            roomCode: roomCode
+          });
+          
+          // Navigate to the student room interface immediately
+          this.$router.push(`/student-room/${roomCode}`);
+        }
+      } catch (error) {
+        console.error('Error joining teacher room:', error);
+        
+        if (error.response && error.response.data) {
+          const errorData = error.response.data;
+          if (errorData.error === 'Room not found') {
+            this.showCodeMessage('Room not found. Please check the code with your teacher.', 'error');
+          } else if (errorData.error === 'Room closed') {
+            this.showCodeMessage('This room is no longer accepting students.', 'error');
+          } else if (errorData.error === 'Already joined') {
+            this.showCodeMessage('You have already joined this room.', 'error');
+          } else {
+            this.showCodeMessage(errorData.message || 'Failed to join room. Please try again.', 'error');
+          }
+        } else {
+          this.showCodeMessage('Failed to join room. Please check your connection and try again.', 'error');
+        }
+      } finally {
+        // Clear loading state
+        this.isJoiningRoom = false;
+      }
+    },
+    showCodeMessage(message, type) {
+      this.codeMessage = message;
+      this.codeMessageType = type;
+      
+      // Clear message after 5 seconds
+      setTimeout(() => {
+        this.codeMessage = '';
+      }, 5000);
+    },
+    goToHome() {
+      this.$router.push("/user");
     },
     goToSettings() {
       this.$router.push("/settings");
-    },
-    goToHome() {
-      this.$router.push("/loggedin");
     },
     goToHighscore() {
       this.$router.push("/highscore");
     },
     goToAbout() {
-      this.$router.push("/aboutns");
+        this.$router.push("/about");
+      },
+      logout() {
+        // Add logout functionality here
+        console.log("Logout clicked");
+        this.$router.push("/");
+      }
     },
+  mounted() {
+    // Set up authentication state listener
+    this.authUnsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        this.fetchUserDetails(user);
+      } else {
+        // User not authenticated, redirect to login
+        this.$router.push('/login');
+      }
+    });
   },
-  async mounted() {
-    await this.fetchUserDetails(); // Fetch the user details when the component is mounted
+  beforeUnmount() {
+    // Clean up the auth listener when component is destroyed
+    if (this.authUnsubscribe) {
+      this.authUnsubscribe();
+    }
   },
 };
 </script>
 
 <style scoped>
-.app-container {
-  font-family: "Inter", sans-serif;
-  background: #f9fbfd;
-  color: #333;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+/* Import Font Awesome for icons */
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css');
+
+/* Global Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-/* Top bar */
-.top-bar {
-  width: 100%;
-  height: 80px;
-  background: #f9fbfd;
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Dashboard Layout */
+.student-dashboard {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--bg-primary);
+}
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Top Header */
+.page-header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  padding: 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0px 215px;
 }
-.logo {
-  font-weight: bold;
-  font-size: 25px;
-  color: #2D539E;
-  cursor: pointer;
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
-.right-section {
+
+.logo-section {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 1rem;
 }
-.progress-circle {
-  width: 30px;
-  height: 30px;
-  background-color: #2D539E;
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.student-badge {
+  display: inline-block;
+  background: var(--bg-button);
+  color: var(--text-on-accent);
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.page-title {
+  color: var(--text-primary);
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.page-title i {
+  color: var(--accent-success);
+  font-size: 1.8rem;
+}
+
+.page-subtitle {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.header-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.header-nav {
+  display: flex;
+  gap: 1rem;
+  background: rgba(74, 85, 104, 0.3);
+  padding: 0.5rem;
+  border-radius: 12px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.nav-item:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.nav-item.active {
+  background: var(--bg-button);
+  color: var(--text-inverse);
+}
+
+.nav-item i {
+  width: 16px;
+  text-align: center;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.user-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.user-email {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  background: var(--bg-button);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--text-inverse);
 }
-.progress-number {
-  color: white;
-  font-weight: bold;
-  font-size: 15px;
-}
-.icon-img {
-  height: 30px;
-  width: auto;
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(245, 101, 101, 0.1);
+  border: 1px solid var(--accent-error);
+  color: var(--accent-error);
+  border-radius: 8px;
   cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.logout-btn:hover {
+  background: rgba(245, 101, 101, 0.2);
+  border-color: var(--accent-error);
+}
+
+/* Dashboard Content */
+.dashboard-content {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
 }
 
 /* Profile Section */
-.profile-container {
-  padding: 30px 200px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-.user-info-card {
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 20px;
-  display: flex;
-  gap: 20px;
-  align-items: center;
-  width: 100%;
-}
-.user-icon {
-  width: 80px;
-  height: 80px;
-  object-fit: contain;
-}
-.user-details {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-.user-details .user-name {
-  margin: 0;
-  font-size: 28px;
-  font-weight: bold;
-}
-.user-details .user-email {
-  margin: 5px 0 0;
-  color: #555;
-  font-size: 16px;
+.profile-section {
+  margin-bottom: 1rem;
 }
 
-/* User Meta */
-.user-meta {
-  margin-left: 40px;
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  flex: 1;
+.profile-card {
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
 }
-.meta-row {
-  display: flex;
-  justify-content:first baseline;
-  gap: 50px;
-  width: 100%;
-}
-.progress-row {
+
+.profile-header {
+  padding: 2rem;
   display: flex;
   align-items: center;
-  gap: 15px;
-  width: 100%;
+  gap: 2rem;
 }
-.progress-circle-large {
-  width: 30px;
-  height: 30px;
-  background-color: #2D539E;
+
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  background: var(--bg-button);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-weight: bold;
-  font-size: 14px;
-}
-.progress-bar-container {
-  flex: 1;
-  display: flex;
-}
-.progress-bar {
-  flex: 1;
-  height: 12px;
-  background: #eee;
-  border-radius: 10px;
-  overflow: hidden;
-}
-.progress-fill {
-  height: 100%;
-  background: #2D539E;
-  border-radius: 10px;
+  color: var(--text-inverse);
+  font-size: 2rem;
 }
 
-/* Stats */
-.stats-card {
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 20px;
+.profile-info {
+  flex: 1;
 }
+
+.profile-name {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem 0;
+}
+
+.profile-email {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin: 0 0 1rem 0;
+}
+
+.profile-meta {
+  display: flex;
+  gap: 2rem;
+}
+
+.meta-item {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.progress-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.progress-circle-large {
+  width: 50px;
+  height: 50px;
+  background: var(--bg-button);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-inverse);
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.progress-bar-container {
+  width: 200px;
+}
+
+.progress-bar {
+  height: 8px;
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--bg-button);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* Stats Grid */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 15px;
-  margin-top: 10px;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
 }
-.stat-box {
-  background: #f0f4ff;
-  border: 1px solid #2D539E;
+
+/* Teacher Code Card */
+.teacher-code-card {
+  grid-column: 1 / -1; /* Span full width */
+  background: var(--accent-gradient);
+  border: 1px solid var(--accent-color-alpha-strong);
+}
+
+/* Enhanced Join Teacher's Room Card */
+.enhanced-join-card {
+  position: relative;
+  background: var(--accent-gradient);
+  border: 2px solid var(--accent-color-alpha-strong);
+  box-shadow: 0 10px 30px var(--shadow-accent);
+  transform: translateY(0);
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.enhanced-join-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px var(--shadow-accent-strong);
+  border-color: var(--accent-color);
+}
+
+.join-card-glow {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, var(--accent-color-alpha) 0%, transparent 70%);
+  animation: pulse 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+.enhanced-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem 1.5rem 1rem 1.5rem;
+}
+
+.header-icon {
+  width: 50px;
+  height: 50px;
+  background: var(--bg-tertiary);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: var(--text-inverse);
+  backdrop-filter: blur(10px);
+}
+
+.header-content h3 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.header-subtitle {
+  margin: 0.25rem 0 0 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.enhanced-content {
+  padding: 0 1.5rem 1.5rem 1.5rem;
+}
+
+.enhanced-input-group {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  align-items: stretch;
+}
+
+.input-wrapper {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  right: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+  z-index: 1;
+}
+
+.enhanced-input {
+  width: 100%;
+  padding: 1rem 1rem 1rem 2.5rem;
+  background: var(--bg-input);
+  border: 2px solid var(--border-primary);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.enhanced-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.enhanced-input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  background: var(--bg-tertiary);
+  box-shadow: var(--shadow-lg);
+}
+
+.enhanced-join-btn {
+  padding: 1rem 2rem;
+  background: var(--bg-button);
+  border: 2px solid var(--accent-success);
+  border-radius: 12px;
+  color: var(--text-inverse);
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  white-space: nowrap;
+  box-shadow: var(--shadow-md);
+}
+
+.enhanced-join-btn:hover:not(:disabled) {
+  background: var(--bg-button-hover);
+  border-color: var(--accent-success);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.enhanced-join-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.enhanced-message {
+  padding: 1rem;
+  border-radius: 10px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  backdrop-filter: blur(10px);
+}
+
+.enhanced-message.success {
+  background: rgba(72, 187, 120, 0.1);
+  border: 1px solid var(--accent-success);
+  color: var(--accent-success);
+}
+
+.enhanced-message.error {
+  background: rgba(245, 101, 101, 0.1);
+  border: 1px solid var(--accent-error);
+  color: var(--accent-error);
+}
+
+.teacher-code-content {
+  padding: 1.5rem;
+}
+
+.code-description {
+  color: var(--text-primary);
+  margin: 0 0 1rem 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.code-input-group {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.code-input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+
+.code-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.code-input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  background: var(--bg-tertiary);
+}
+
+.join-btn {
+  padding: 0.75rem 1.5rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.join-btn:hover:not(:disabled) {
+  background: var(--bg-secondary);
+  border-color: var(--border-focus);
+  transform: translateY(-1px);
+}
+
+.join-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.code-message {
+  padding: 0.75rem 1rem;
   border-radius: 6px;
-  padding: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.code-message.success {
+  background: rgba(72, 187, 120, 0.1);
+  border: 1px solid var(--accent-success);
+  color: var(--accent-success);
+}
+
+.code-message.error {
+  background: rgba(245, 101, 101, 0.1);
+  border: 1px solid var(--accent-error);
+  color: var(--accent-error);
+}
+
+/* Existing Stats Grid */
+.stats-grid .stat-card:not(.teacher-code-card) {
+  /* Apply to all stat cards except teacher code card */
+}
+
+.stat-card {
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.stat-card.primary {
+  background: var(--bg-secondary);
+  border: none;
+}
+
+.stat-card.secondary {
+  background: var(--bg-secondary);
+}
+
+.stat-header {
+  margin-bottom: 1.5rem;
+}
+
+.stat-header h3 {
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.stats-content {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  padding: 1rem;
+}
+
+.stat-item {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  padding: 1.5rem 1rem;
   text-align: center;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
 }
-.stat-box .value {
-  font-size: 18px;
-  font-weight: bold;
+
+.stat-item:hover {
+  background: var(--bg-secondary);
+  border-color: var(--accent-success);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
 }
-.stat-box span {
-  display: block;
-  font-size: 12px;
-  color: #666;
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--accent-success);
+  margin-bottom: 0.5rem;
+  text-shadow: var(--shadow-sm);
+}
+
+.stat-label {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Content Grid */
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.card {
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 1.5rem 1.5rem 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-header h3 {
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
 }
 
 /* Achievements */
-.achievements-card {
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 20px;
-}
-.achievements-grid {
+.achievements-content {
+  padding: 0 1.5rem 1.5rem 1.5rem;
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 0.75rem;
 }
-.achievement {
-  background: #f0f4ff;
-  border: 1px solid #2D539E;
-  padding: 5px 12px;
-  border-radius: 6px;
-  font-size: 13px;
+
+.achievement-badge {
+  background: rgba(72, 187, 120, 0.1);
+  color: var(--accent-success);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid var(--accent-success);
 }
 
 /* Chart */
-.chart-card {
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 20px;
-  height: 300px;
-}
-.chart-card canvas {
-  height: 100% !important;
+.chart-content {
+  padding: 0 1.5rem 1.5rem 1.5rem;
+  height: 250px;
 }
 
 /* Table */
 .table-card {
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 20px;
+  grid-column: 1 / -1;
 }
-.table-card table {
+
+.table-content {
+  padding: 0 1.5rem 1.5rem 1.5rem;
+  overflow-x: auto;
+}
+
+.table-content table {
   width: 100%;
   border-collapse: collapse;
 }
-.table-card th,
-.table-card td {
-  border-bottom: 1px solid #eee;
-  padding: 10px;
-  text-align: center;
-  font-size: 14px;
+
+.table-content th,
+.table-content td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
 }
-.table-card th {
-  background: #f9fbfd;
-  font-weight: bold;
+
+.table-content th {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.table-content td {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.table-content tr:hover {
+  background: var(--bg-tertiary);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    position: relative;
+    height: auto;
+  }
+  
+  .main-content {
+    margin-left: 0;
+  }
+  
+  .dashboard-content {
+    padding: 1rem;
+  }
+  
+  .profile-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+  
+  .progress-section {
+    justify-content: center;
+  }
+  
+  .stats-content {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 </style>

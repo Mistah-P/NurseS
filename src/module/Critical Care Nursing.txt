@@ -1,0 +1,41 @@
+🔧 Initializing ModuleService...
+moduleService.js:36 ✅ Loaded 5 modules from database
+4CreateRoomModal.vue:197 Modules loaded: 5 modules
+CreateRoomModal.vue:269 Field activityName:  Valid: false
+CreateRoomModal.vue:273 Has all required fields: false
+CreateRoomModal.vue:281 No-time mode - Final valid: false
+CreateRoomModal.vue:269 Field activityName: G Valid: true
+CreateRoomModal.vue:269 Field studentYear:  Valid: false
+CreateRoomModal.vue:273 Has all required fields: false
+CreateRoomModal.vue:281 No-time mode - Final valid: false
+CreateRoomModal.vue:269 Field activityName: Gr Valid: true
+CreateRoomModal.vue:269 Field studentYear:  Valid: false
+CreateRoomModal.vue:273 Has all required fields: false
+CreateRoomModal.vue:281 No-time mode - Final valid: false
+CreateRoomModal.vue:269 Field activityName: Gre Valid: true
+CreateRoomModal.vue:269 Field studentYear:  Valid: false
+CreateRoomModal.vue:273 Has all required fields: false
+CreateRoomModal.vue:281 No-time mode - Final valid: false
+CreateRoomModal.vue:269 Field activityName: Gree Valid: true
+CreateRoomModal.vue:269 Field studentYear:  Valid: false
+CreateRoomModal.vue:273 Has all required fields: false
+CreateRoomModal.vue:281 No-time mode - Final valid: false
+CreateRoomModal.vue:269 Field activityName: Green Valid: true
+CreateRoomModal.vue:269 Field studentYear:  Valid: false
+CreateRoomModal.vue:273 Has all required fields: false
+CreateRoomModal.vue:281 No-time mode - Final valid: false
+CreateRoomModal.vue:269 Field activityName: Green Valid: true
+CreateRoomModal.vue:269 Field studentYear: 1st Valid: true
+CreateRoomModal.vue:269 Field section:  Valid: false
+CreateRoomModal.vue:273 Has all required fields: false
+CreateRoomModal.vue:281 No-time mode - Final valid: false
+CreateRoomModal.vue:269 Field activityName: Green Valid: true
+CreateRoomModal.vue:269 Field studentYear: 1st Valid: true
+CreateRoomModal.vue:269 Field section:  Valid: false
+CreateRoomModal.vue:273 Has all required fields: false
+CreateRoomModal.vue:277 Timed mode - Duration:  Final valid: false
+CreateRoomModal.vue:269 Field activityName: Green Valid: true
+CreateRoomModal.vue:269 Field studentYear: 1st Valid: true
+CreateRoomModal.vue:269 Field section:  Valid: false
+CreateRoomModal.vue:273 Has all required fields: false
+CreateRoomModal.vue:277 Timed mode - Duration: 3 Final valid: false

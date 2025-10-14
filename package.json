@@ -8,10 +8,12 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "axios": "^1.12.2",
     "bootstrap": "^5.3.8",
     "chart.js": "^4.5.0",
     "core-js": "^3.8.3",
     "firebase": "^12.2.1",
+    "uuid": "^13.0.0",
     "vue": "^3.5.20",
     "vue-chartjs": "^5.3.2",
     "vue-router": "^4.5.1"
