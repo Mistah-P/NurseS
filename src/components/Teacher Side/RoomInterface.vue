@@ -1931,23 +1931,43 @@ export default {
 
 /* Dark mode specific gradient for room interface buttons */
 [data-theme="dark"] .copy-code-btn,
-[data-theme="dark"] .leaderboard-btn,
-[data-theme="dark"] .start-btn,
-[data-theme="dark"] .end-btn,
-[data-theme="dark"] .complete-btn {
+[data-theme="dark"] .leaderboard-btn {
   background: linear-gradient(135deg, rgb(102, 126, 234) 0%, rgb(118, 75, 162) 100%);
   color: white;
   border: none;
 }
 
+[data-theme="dark"] .start-btn,
+[data-theme="dark"] .complete-btn {
+  background: linear-gradient(135deg, rgb(34, 197, 94) 0%, rgb(21, 128, 61) 100%);
+  color: white;
+  border: none;
+}
+
+[data-theme="dark"] .end-btn {
+  background: linear-gradient(135deg, rgb(239, 68, 68) 0%, rgb(185, 28, 28) 100%);
+  color: white;
+  border: none;
+}
+
 [data-theme="dark"] .copy-code-btn:hover,
-[data-theme="dark"] .leaderboard-btn:hover,
-[data-theme="dark"] .start-btn:hover:not(:disabled),
-[data-theme="dark"] .end-btn:hover,
-[data-theme="dark"] .complete-btn:hover:not(:disabled) {
+[data-theme="dark"] .leaderboard-btn:hover {
   background: linear-gradient(135deg, rgb(102, 126, 234) 0%, rgb(118, 75, 162) 100%);
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+[data-theme="dark"] .start-btn:hover:not(:disabled),
+[data-theme="dark"] .complete-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgb(34, 197, 94) 0%, rgb(21, 128, 61) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(34, 197, 94, 0.3);
+}
+
+[data-theme="dark"] .end-btn:hover {
+  background: linear-gradient(135deg, rgb(239, 68, 68) 0%, rgb(185, 28, 28) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
 }
 
 /* Light mode specific styling for empty-slot and buttons */
@@ -1956,23 +1976,43 @@ export default {
 }
 
 [data-theme="light"] .copy-code-btn,
-[data-theme="light"] .leaderboard-btn,
-[data-theme="light"] .start-btn,
-[data-theme="light"] .end-btn,
-[data-theme="light"] .complete-btn {
+[data-theme="light"] .leaderboard-btn {
   background: linear-gradient(135deg, rgb(59, 130, 246) 0%, rgb(30, 64, 175) 100%);
   color: white;
   border: none;
 }
 
+[data-theme="light"] .start-btn,
+[data-theme="light"] .complete-btn {
+  background: linear-gradient(135deg, rgb(34, 197, 94) 0%, rgb(21, 128, 61) 100%);
+  color: white;
+  border: none;
+}
+
+[data-theme="light"] .end-btn {
+  background: linear-gradient(135deg, rgb(239, 68, 68) 0%, rgb(185, 28, 28) 100%);
+  color: white;
+  border: none;
+}
+
 [data-theme="light"] .copy-code-btn:hover,
-[data-theme="light"] .leaderboard-btn:hover,
-[data-theme="light"] .start-btn:hover:not(:disabled),
-[data-theme="light"] .end-btn:hover,
-[data-theme="light"] .complete-btn:hover:not(:disabled) {
+[data-theme="light"] .leaderboard-btn:hover {
   background: linear-gradient(135deg, rgb(59, 130, 246) 0%, rgb(30, 64, 175) 100%);
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+}
+
+[data-theme="light"] .start-btn:hover:not(:disabled),
+[data-theme="light"] .complete-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgb(34, 197, 94) 0%, rgb(21, 128, 61) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(34, 197, 94, 0.3);
+}
+
+[data-theme="light"] .end-btn:hover {
+  background: linear-gradient(135deg, rgb(239, 68, 68) 0%, rgb(185, 28, 28) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
 }
 
 /* Hide QR code */

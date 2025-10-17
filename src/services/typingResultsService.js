@@ -30,16 +30,19 @@ const typingResultsService = {
   /**
    * Get typing results for a specific user
    * @param {string} userId - User ID
-   * @param {Object} options - Query options (limit, sessionType)
+   * @param {Object} options - Query options (limit, sessionType, dateFilter)
    * @returns {Promise} API response with typing results
    */
   async getUserTypingResults(userId, options = {}) {
     try {
-      const { limit = 10, sessionType } = options
+      const { limit = 10, sessionType, dateFilter } = options
       
       let url = `/typing-results/user/${userId}?limit=${limit}`
       if (sessionType) {
         url += `&sessionType=${sessionType}`
+      }
+      if (dateFilter) {
+        url += `&dateFilter=${dateFilter}`
       }
       
       const response = await api.get(url)
@@ -53,16 +56,19 @@ const typingResultsService = {
   /**
    * Get typing results for a user by email (for room sessions)
    * @param {string} email - User email
-   * @param {Object} options - Query options (limit, sessionType)
+   * @param {Object} options - Query options (limit, sessionType, dateFilter)
    * @returns {Promise} API response with typing results
    */
   async getUserTypingResultsByEmail(email, options = {}) {
     try {
-      const { limit = 10, sessionType } = options
+      const { limit = 10, sessionType, dateFilter } = options
       
       let url = `/typing-results/email/${encodeURIComponent(email)}?limit=${limit}`
       if (sessionType) {
         url += `&sessionType=${sessionType}`
+      }
+      if (dateFilter) {
+        url += `&dateFilter=${dateFilter}`
       }
       
       const response = await api.get(url)
@@ -74,10 +80,58 @@ const typingResultsService = {
   },
 
   /**
-   * Get typing results for a user, trying both user ID and email approaches
+   * Get today's typing results for a user, trying both user ID and email approaches
    * @param {string} userId - User ID
    * @param {string} email - User email
    * @param {Object} options - Query options (limit, sessionType)
+   * @returns {Promise} API response with today's typing results only
+   */
+  async getTodayTypingResults(userId, email, options = {}) {
+    try {
+      // Add today filter to options
+      const todayOptions = { ...options, dateFilter: 'today', limit: 100 }; // Increase limit to get all today's results
+      
+      // First try by user ID
+      try {
+        const userIdResults = await this.getUserTypingResults(userId, todayOptions);
+        if (userIdResults.success && userIdResults.data.length > 0) {
+          console.log('✅ Found today\'s typing results by user ID:', userIdResults.data.length);
+          return userIdResults;
+        }
+      } catch (error) {
+        console.log('⚠️ No today\'s results found by user ID, trying email...');
+      }
+
+      // If no results by user ID, try by email
+      if (email) {
+        try {
+          const emailResults = await this.getUserTypingResultsByEmail(email, todayOptions);
+          if (emailResults.success && emailResults.data.length > 0) {
+            console.log('✅ Found today\'s typing results by email:', emailResults.data.length);
+            return emailResults;
+          }
+        } catch (error) {
+          console.log('⚠️ No today\'s results found by email either');
+        }
+      }
+
+      // Return empty result if nothing found
+      return {
+        success: true,
+        data: [],
+        count: 0
+      };
+    } catch (error) {
+      console.error('❌ Error fetching today\'s typing results:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get typing results for a user, trying both user ID and email approaches
+   * @param {string} userId - User ID
+   * @param {string} email - User email
+   * @param {Object} options - Query options (limit, sessionType, dateFilter)
    * @returns {Promise} API response with typing results
    */
   async getUserTypingResultsComplete(userId, email, options = {}) {
@@ -231,10 +285,52 @@ const typingResultsService = {
         throw new Error('Student session not found')
       }
 
+      // Fetch room information to get module and difficulty
+      let roomModule = 'General Practice'
+      let roomDifficulty = 'Medium'
+      
+      if (roomData.roomCode) {
+        try {
+          // Import Firebase here to avoid circular dependencies
+          const { collection, query, where, getDocs } = await import('firebase/firestore')
+          const { db } = await import('../firebase/init')
+          
+          // Query room by roomCode to get module and difficulty
+          const roomQuery = query(
+            collection(db, 'rooms'),
+            where('roomCode', '==', roomData.roomCode.toUpperCase())
+          )
+          
+          const roomSnapshot = await getDocs(roomQuery)
+          
+          if (!roomSnapshot.empty) {
+            const roomDoc = roomSnapshot.docs[0]
+            const roomInfo = roomDoc.data()
+            
+            // Extract module and difficulty from room data
+            roomModule = roomInfo.module || 'General Practice'
+            roomDifficulty = roomInfo.difficultyLevel || 'Medium'
+            
+            console.log('✅ Room info fetched:', { 
+              roomCode: roomData.roomCode, 
+              module: roomModule, 
+              difficulty: roomDifficulty 
+            })
+          } else {
+            console.warn('⚠️ Room not found for code:', roomData.roomCode)
+          }
+        } catch (fetchError) {
+          console.error('❌ Error fetching room info:', fetchError)
+          // Continue with default values if room fetch fails
+        }
+      }
+
       const resultData = this.createTypingResultData({
         userId: studentSession.studentData.studentId,
         sessionType: 'room',
         roomId: roomData.roomCode,
+        topic: roomModule,
+        difficulty: roomDifficulty,
         ...roomData
       })
 

@@ -69,17 +69,17 @@
                     <span class="message-time">{{ message.time }}</span>
                   </div>
                   <!-- Voice message bubble for AI responses -->
-                  <div v-if="message.sender === 'patient'" class="voice-message-bubble">
+                  <div v-if="message.sender === 'patient'" class="voice-message-bubble" :class="{ playing: currentPlayingMessageId === message.id && isVoicePlaying }">
                     <div class="voice-controls">
-                      <button class="play-button" @click="playVoiceMessage(message.text)">
-                        <i class="fas fa-play"></i>
+                      <button class="play-button" @click="toggleVoiceMessage(message.id, message.text)">
+                        <i :class="currentPlayingMessageId === message.id && isVoicePlaying ? 'fas fa-pause' : 'fas fa-play'"></i>
                       </button>
                       <div class="voice-waveform">
                         <div class="waveform-bars">
                           <div class="bar" v-for="n in 20" :key="n"></div>
                         </div>
                       </div>
-                      <span class="voice-duration">0:15</span>
+                      <span class="voice-duration">{{ message.duration || '0:15' }}</span>
                     </div>
                   </div>
                   <!-- Regular text message for student messages -->
@@ -183,6 +183,12 @@
                   <div class="form-field">
                     <label>Occupation:</label>
                     <input type="text" class="form-input" placeholder="Occupation" v-model="consultationData.occupation">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-field full-width">
+                    <label>Address:</label>
+                    <input type="text" class="form-input" placeholder="Patient address" v-model="consultationData.address">
                   </div>
                 </div>
               </div>
@@ -348,6 +354,10 @@
                      <label>Occupation:</label>
                      <span>{{ selectedConsultation.patientData?.occupation || 'Not specified' }}</span>
                    </div>
+                   <div class="detail-item full-width">
+                     <label>Address:</label>
+                     <span>{{ selectedConsultation.patientData?.address || 'Not specified' }}</span>
+                   </div>
                  </div>
                </div>
                
@@ -430,6 +440,7 @@ export default {
         dateOfBirth: '',
         gender: '',
         occupation: '',
+        address: '',
         chiefComplaint: '',
         presentIllness: '',
         pastIllness: '',
@@ -467,6 +478,10 @@ export default {
       isGeneratingResponse: false,
       aiError: null,
       speechEnabled: true,
+      // Voice message playback state
+      currentPlayingMessageId: null,
+      isVoicePlaying: false,
+      currentUtterance: null,
       // Random patient details
       randomPatientProfile: null
     }
@@ -583,11 +598,13 @@ export default {
     startSession() {
        // Start the session and add initial patient message
        this.sessionStarted = true;
+       const initialText = "Hello, I'm not feeling well right now. I've been experiencing some discomfort and I'm hoping you can help me understand what might be going on.";
        this.messages = [{
          id: this.messageIdCounter++,
          sender: 'patient',
-         text: "Hello, I'm not feeling well right now. I've been experiencing some discomfort and I'm hoping you can help me understand what might be going on.",
-         time: this.getCurrentTime()
+         text: initialText,
+         time: this.getCurrentTime(),
+         duration: this.calculateSpeechDuration(initialText)
        }];
        this.responseIndex = 0;
        
@@ -634,7 +651,8 @@ export default {
           id: this.messageIdCounter++,
           sender: 'patient',
           text: response,
-          time: this.getCurrentTime()
+          time: this.getCurrentTime(),
+          duration: this.calculateSpeechDuration(response)
         });
         this.responseIndex++;
       } else {
@@ -651,7 +669,8 @@ export default {
           id: this.messageIdCounter++,
           sender: 'patient',
           text: randomResponse,
-          time: this.getCurrentTime()
+          time: this.getCurrentTime(),
+          duration: this.calculateSpeechDuration(randomResponse)
         });
       }
       
@@ -732,7 +751,8 @@ export default {
           id: messageId,
           sender: 'patient',
           text: data.response,
-          time: this.getCurrentTime()
+          time: this.getCurrentTime(),
+          duration: this.calculateSpeechDuration(data.response)
         });
 
         // Handle audio playback with browser speech synthesis
@@ -816,7 +836,8 @@ export default {
             name: this.consultationData.patientName || '',
             dateOfBirth: this.consultationData.dateOfBirth || '',
             gender: this.consultationData.gender || '',
-            occupation: this.consultationData.occupation || ''
+            occupation: this.consultationData.occupation || '',
+            address: this.consultationData.address || ''
           },
           findings: {
             chiefComplaint: this.consultationData.chiefComplaint,
@@ -861,6 +882,7 @@ export default {
            dateOfBirth: '',
            gender: '',
            occupation: '',
+           address: '',
            chiefComplaint: '',
            presentIllness: '',
            pastIllness: '',
@@ -1141,6 +1163,178 @@ export default {
      playVoiceMessage(text) {
        // Use the existing speech synthesis functionality
        this.speakTextWithBrowser(text);
+     },
+
+     // Method to toggle voice message play/pause
+     toggleVoiceMessage(messageId, text) {
+       // If this message is currently playing, pause it
+       if (this.currentPlayingMessageId === messageId && this.isVoicePlaying) {
+         this.pauseVoiceMessage();
+       } 
+       // If this message is paused, resume it
+       else if (this.currentPlayingMessageId === messageId && !this.isVoicePlaying) {
+         this.resumeVoiceMessage();
+       }
+       // If no message is playing or a different message is playing, start this one
+       else {
+         this.playNewVoiceMessage(messageId, text);
+       }
+     },
+
+     // Method to play a new voice message
+     playNewVoiceMessage(messageId, text) {
+       // Stop any currently playing message
+       this.stopVoiceMessage();
+       
+       // Set the current playing message
+       this.currentPlayingMessageId = messageId;
+       this.isVoicePlaying = true;
+       
+       // Start playing the new message
+       this.speakTextWithBrowserControlled(text);
+     },
+
+     // Method to pause the current voice message
+     pauseVoiceMessage() {
+       if (window.speechSynthesis && this.isVoicePlaying) {
+         window.speechSynthesis.pause();
+         this.isVoicePlaying = false;
+       }
+     },
+
+     // Method to resume the current voice message
+     resumeVoiceMessage() {
+       if (window.speechSynthesis && !this.isVoicePlaying) {
+         window.speechSynthesis.resume();
+         this.isVoicePlaying = true;
+       }
+     },
+
+     // Method to stop the current voice message
+     stopVoiceMessage() {
+       if (window.speechSynthesis) {
+         window.speechSynthesis.cancel();
+       }
+       this.currentPlayingMessageId = null;
+       this.isVoicePlaying = false;
+       this.currentUtterance = null;
+     },
+
+     // Enhanced speech synthesis with proper state management
+     speakTextWithBrowserControlled(text, options = {}) {
+       if (!('speechSynthesis' in window)) {
+         console.warn('Speech synthesis not supported in this browser');
+         return;
+       }
+
+       // Stop any ongoing speech
+       window.speechSynthesis.cancel();
+
+       const utterance = new SpeechSynthesisUtterance(text);
+       this.currentUtterance = utterance;
+       
+       // Configure voice settings
+       utterance.rate = options.rate || 0.9;
+       utterance.pitch = options.pitch || 1.0;
+       utterance.volume = options.volume || 0.8;
+       
+       // Handle utterance events
+       utterance.onstart = () => {
+         this.isVoicePlaying = true;
+       };
+
+       utterance.onend = () => {
+         this.currentPlayingMessageId = null;
+         this.isVoicePlaying = false;
+         this.currentUtterance = null;
+       };
+
+       utterance.onerror = (event) => {
+         console.error('Speech synthesis error:', event.error);
+         this.currentPlayingMessageId = null;
+         this.isVoicePlaying = false;
+         this.currentUtterance = null;
+       };
+
+       utterance.onpause = () => {
+         this.isVoicePlaying = false;
+       };
+
+       utterance.onresume = () => {
+         this.isVoicePlaying = true;
+       };
+
+       // Set voice based on patient gender (reuse existing logic)
+       this.setVoiceForUtterance(utterance);
+
+       // Speak the text
+       window.speechSynthesis.speak(utterance);
+     },
+
+     // Helper method to set voice for utterance
+     setVoiceForUtterance(utterance) {
+       const voices = window.speechSynthesis.getVoices();
+       if (voices.length === 0) {
+         // If voices aren't loaded yet, try again after a short delay
+         setTimeout(() => {
+           const voicesRetry = window.speechSynthesis.getVoices();
+           if (voicesRetry.length > 0) {
+             this.selectVoiceByGender(utterance, voicesRetry);
+           }
+         }, 100);
+         return;
+       }
+       this.selectVoiceByGender(utterance, voices);
+     },
+
+     // Helper method to select voice by gender
+     selectVoiceByGender(utterance, voices) {
+       let selectedVoice = null;
+       const patientGender = this.randomPatientProfile?.gender;
+       
+       if (patientGender === 'Female') {
+         const femaleKeywords = [
+           'female', 'woman', 'zira', 'hazel', 'susan', 'samantha', 'cortana', 'siri'
+         ];
+         selectedVoice = voices.find(voice => 
+           femaleKeywords.some(keyword => 
+             voice.name.toLowerCase().includes(keyword)
+           )
+         );
+       } else if (patientGender === 'Male') {
+         const maleKeywords = [
+           'male', 'man', 'david', 'mark', 'alex', 'daniel', 'james', 'john', 'michael'
+         ];
+         selectedVoice = voices.find(voice => 
+           maleKeywords.some(keyword => 
+             voice.name.toLowerCase().includes(keyword)
+           )
+         );
+       }
+
+       // Fallback to default voice if no gender-specific voice found
+       if (!selectedVoice && voices.length > 0) {
+         selectedVoice = voices[0];
+       }
+
+       if (selectedVoice) {
+         utterance.voice = selectedVoice;
+       }
+     },
+
+     // Method to calculate estimated duration of speech
+     calculateSpeechDuration(text, rate = 0.9) {
+       // Average speaking rate is about 150-160 words per minute for normal speech
+       // With rate 0.9, it's slightly slower, so we use about 135 words per minute
+       const wordsPerMinute = 135 * rate;
+       const words = text.trim().split(/\s+/).length;
+       const durationInMinutes = words / wordsPerMinute;
+       const durationInSeconds = Math.ceil(durationInMinutes * 60);
+       
+       // Format as MM:SS
+       const minutes = Math.floor(durationInSeconds / 60);
+       const seconds = durationInSeconds % 60;
+       return `${minutes}:${seconds.toString().padStart(2, '0')}`;
      }
   }
 }
@@ -1496,6 +1690,30 @@ export default {
 .play-button:hover {
   background: #1976d2;
   transform: scale(1.05);
+}
+
+/* Playing state styles */
+.voice-message-bubble.playing {
+  background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
+  border-color: #81c784;
+  animation: pulse-playing 2s infinite;
+}
+
+.voice-message-bubble.playing .play-button {
+  background: #4caf50;
+}
+
+.voice-message-bubble.playing .play-button:hover {
+  background: #388e3c;
+}
+
+@keyframes pulse-playing {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(76, 175, 80, 0.1);
+  }
 }
 
 .play-button i {
@@ -2306,6 +2524,33 @@ input:checked + .toggle-slider:before {
   color: #4a5568;
   line-height: 1.5;
   margin: 0;
+}
+
+/* Dark mode styles for consultation details */
+[data-theme="dark"] .consultation-details {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .detail-section {
+  border-bottom-color: var(--border-primary);
+}
+
+[data-theme="dark"] .detail-section h4 {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .detail-item {
+  background: var(--bg-secondary);
+  border-left-color: #48bb78;
+}
+
+[data-theme="dark"] .detail-item label {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .detail-item span,
+[data-theme="dark"] .detail-item p {
+  color: var(--text-secondary);
 }
 
 /* Mobile Responsive for Modals */

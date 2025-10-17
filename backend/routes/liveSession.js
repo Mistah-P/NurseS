@@ -26,6 +26,7 @@ const studentProgressSchema = Joi.object({
   accuracy: Joi.number().min(0).max(100),
   progress: Joi.number().min(0).max(100),
   currentPosition: Joi.number().min(0),
+  errorsCount: Joi.number().min(0),
   status: Joi.string().valid('ready', 'typing', 'completed')
 });
 
@@ -241,6 +242,7 @@ router.put('/:roomCode/student-progress', async (req, res) => {
       [`studentProgress.${value.studentId}.accuracy`]: value.accuracy || 100,
       [`studentProgress.${value.studentId}.progress`]: value.progress || 0,
       [`studentProgress.${value.studentId}.currentPosition`]: value.currentPosition || 0,
+      [`studentProgress.${value.studentId}.errorsCount`]: value.errorsCount || 0,
       [`studentProgress.${value.studentId}.lastUpdate`]: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     };
@@ -392,6 +394,7 @@ async function updateLeaderboard(roomCode) {
         wpm: student.wpm || 0,
         accuracy: student.accuracy || 100,
         progress: student.progress || 0,
+        errorsCount: student.errorsCount || 0,
         status: student.status || 'ready'
       }));
     

@@ -5,9 +5,15 @@
         <!-- Header -->
         <div class="login-header">
           <div class="logo-section">
-            <i class="fas fa-user-shield fa-3x text-primary mb-3"></i>
+            <div class="logo-icon">
+              <i class="fas fa-heartbeat"></i>
+            </div>
+            <span class="logo-text">NurseScript</span>
+          </div>
+          <div class="admin-section">
+            <i class="fas fa-user-shield fa-2x admin-icon"></i>
             <h2 class="login-title">Admin Portal</h2>
-            <p class="login-subtitle">NurseScript Administration</p>
+            <p class="login-subtitle">Administration Dashboard</p>
           </div>
         </div>
 
@@ -213,8 +219,48 @@ export default {
   background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
 }
 
-.logo-section i {
+.logo-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.logo-icon {
+  width: 40px;
+  height: 40px;
+  background: var(--accent-gradient);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.2rem;
+}
+
+.logo-text {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.logo-badge {
+  background: var(--accent-color);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.admin-section {
+  text-align: center;
+}
+
+.admin-icon {
   color: #667eea;
+  margin-bottom: 0.5rem;
 }
 
 .login-title {

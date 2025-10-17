@@ -94,6 +94,14 @@ router.post('/save', async (req, res) => {
       userName = student.studentName;
       userEmail = student.email || '';
       userType = 'student';
+      
+      // For room sessions, automatically fetch and use room module and difficulty
+      if (value.sessionType === 'room') {
+        console.log('🔧 Automatically fetching room module and difficulty...');
+        value.content.topic = roomData.module || 'General Practice';
+        value.content.difficulty = roomData.difficultyLevel || 'Medium';
+        console.log(`✅ Updated content: ${value.content.topic} (${value.content.difficulty})`);
+      }
     } else {
       // For regular users, get data from users collection
       const userDoc = await db.collection('users').doc(value.userId).get();
@@ -151,7 +159,7 @@ router.post('/save', async (req, res) => {
 router.get('/user/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    const { limit = 10, sessionType } = req.query;
+    const { limit = 10, sessionType, dateFilter } = req.query;
 
     // Verify user exists
     const userDoc = await db.collection('users').doc(userId).get();
@@ -163,12 +171,24 @@ router.get('/user/:userId', async (req, res) => {
 
     let query = db.collection('typingResults')
       .where('userId', '==', userId)
-      .orderBy('timestamp', 'desc')
-      .limit(parseInt(limit));
+      .orderBy('timestamp', 'desc');
+
+    // Add date filtering if requested
+    if (dateFilter === 'today') {
+      const today = new Date();
+      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+      
+      query = query.where('timestamp', '>=', startOfDay)
+                   .where('timestamp', '<', endOfDay);
+    }
 
     if (sessionType) {
       query = query.where('sessionType', '==', sessionType);
     }
+
+    // Apply limit after all filters
+    query = query.limit(parseInt(limit));
 
     const snapshot = await query.get();
     
@@ -300,16 +320,28 @@ router.get('/user/:userId/stats', async (req, res) => {
 router.get('/email/:email', async (req, res) => {
   try {
     const { email } = req.params;
-    const { limit = 10, sessionType } = req.query;
+    const { limit = 10, sessionType, dateFilter } = req.query;
 
     let query = db.collection('typingResults')
       .where('userEmail', '==', email)
-      .orderBy('timestamp', 'desc')
-      .limit(parseInt(limit));
+      .orderBy('timestamp', 'desc');
+
+    // Add date filtering if requested
+    if (dateFilter === 'today') {
+      const today = new Date();
+      const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+      
+      query = query.where('timestamp', '>=', startOfDay)
+                   .where('timestamp', '<', endOfDay);
+    }
 
     if (sessionType) {
       query = query.where('sessionType', '==', sessionType);
     }
+
+    // Apply limit after all filters
+    query = query.limit(parseInt(limit));
 
     const snapshot = await query.get();
     
@@ -335,6 +367,155 @@ router.get('/email/:email', async (req, res) => {
     res.status(500).json({
       error: 'Failed to fetch typing results',
       message: error.message
+    });
+  }
+});
+
+// GET /api/typing-results/top-wpm-monthly - Get top 5 highest WPM performers for current month
+router.get('/top-wpm-monthly', async (req, res) => {
+  try {
+    console.log('📊 Fetching top 5 WPM performers for current month...');
+    
+    // Get current month date range
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    
+    console.log(`📅 Date range: ${startOfMonth.toISOString()} to ${endOfMonth.toISOString()}`);
+    
+    // Query typing results for current month
+    const snapshot = await db.collection('typingResults')
+      .where('timestamp', '>=', startOfMonth)
+      .where('timestamp', '<=', endOfMonth)
+      .orderBy('timestamp', 'desc')
+      .get();
+    
+    if (snapshot.empty) {
+      console.log('❌ No typing results found for current month');
+      return res.json({
+        success: true,
+        data: [],
+        message: 'No typing results found for current month'
+      });
+    }
+    
+    console.log(`📊 Found ${snapshot.size} typing results for current month`);
+    
+    // Group results by user and find their best WPM
+    const userBestWPM = {};
+    
+    snapshot.docs.forEach(doc => {
+      const data = doc.data();
+      const userId = data.userId || data.userEmail; // Handle both userId and userEmail
+      
+      if (!userId || !data.wpm) return;
+      
+      if (!userBestWPM[userId] || data.wpm > userBestWPM[userId].wpm) {
+        userBestWPM[userId] = {
+          userId: userId,
+          userEmail: data.userEmail || userId,
+          userName: data.userName || data.userEmail || userId,
+          wpm: data.wpm,
+          accuracy: data.accuracy || 0,
+          errorsCount: data.errorsCount || 0,
+          timestamp: data.timestamp?.toDate?.()?.toISOString() || new Date().toISOString(),
+          sessionType: data.sessionType || 'practice',
+          topic: data.content?.topic || 'General Practice'
+        };
+      }
+    });
+    
+    // Convert to array and sort by WPM (highest first)
+    const topPerformers = Object.values(userBestWPM)
+      .sort((a, b) => b.wpm - a.wpm)
+      .slice(0, 5); // Get top 5
+    
+    console.log(`🏆 Top ${topPerformers.length} performers:`, topPerformers.map(p => `${p.userName}: ${p.wpm} WPM`));
+    
+    res.json({
+      success: true,
+      data: topPerformers,
+      count: topPerformers.length,
+      month: {
+        year: now.getFullYear(),
+        month: now.getMonth() + 1,
+        monthName: now.toLocaleString('default', { month: 'long' })
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching top WPM performers:', error);
+    res.status(500).json({
+      error: 'Failed to fetch top WPM performers',
+      message: error.message
+    });
+  }
+});
+
+// GET /api/typing-results/recent-activities - Get recent activities for teacher dashboard
+router.get('/recent-activities', async (req, res) => {
+  try {
+    console.log('📋 Fetching recent activities for teacher dashboard');
+    
+    // Get recent rooms (activities) from the last 30 days
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const roomsRef = db.collection('rooms');
+    const roomsSnapshot = await roomsRef
+      .where('createdAt', '>=', thirtyDaysAgo)
+      .orderBy('createdAt', 'desc')
+      .limit(10)
+      .get();
+    
+    const activities = [];
+    
+    for (const doc of roomsSnapshot.docs) {
+      const roomData = doc.data();
+      
+      // Get student count
+      const studentCount = roomData.studentsJoined ? roomData.studentsJoined.length : 0;
+      
+      // Determine status based on room state
+      let status = 'completed';
+      if (roomData.isActive) {
+        status = 'active';
+      } else if (roomData.status === 'waiting') {
+        status = 'waiting';
+      }
+      
+      // Format the activity
+      const activity = {
+        id: doc.id,
+        name: roomData.activityName || 'Unnamed Activity',
+        section: roomData.section || 'Unknown Section',
+        mode: roomData.mode || 'Unknown Mode',
+        difficulty: roomData.difficultyLevel || 'Medium',
+        status: status,
+        studentCount: studentCount,
+        roomCode: roomData.roomCode,
+        createdAt: roomData.createdAt,
+        teacherId: roomData.teacherId,
+        teacherName: roomData.teacherName
+      };
+      
+      activities.push(activity);
+    }
+    
+    console.log(`📋 Found ${activities.length} recent activities`);
+    
+    res.json({
+      success: true,
+      data: activities,
+      count: activities.length
+    });
+    
+  } catch (error) {
+    console.error('❌ Error fetching recent activities:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch recent activities',
+      error: error.message
     });
   }
 });

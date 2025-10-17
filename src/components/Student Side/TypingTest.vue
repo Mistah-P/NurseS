@@ -11,6 +11,10 @@
           <div class="stat-value">{{ currentAccuracy }}%</div>
           <div class="stat-label">Accuracy</div>
         </div>
+        <div class="stat-item">
+          <div class="stat-value">{{ currentVisibleErrors }}</div>
+          <div class="stat-label">Errors</div>
+        </div>
       </div>
       <div class="timer-container">
         <i class="fas fa-clock" v-if="gameMode === 'timed'"></i>
@@ -45,7 +49,11 @@
           :key="index"
           :class="getCharClass(index)"
           class="char"
-        >{{ char === '\n' ? ' ' : char }}<span v-if="index === userInput.length" class="cursor" :class="{ 'blink': isFocused }"></span></span>
+        ><template v-if="char === '\n'">
+<br><span v-if="index === userInput.length - 1" class="cursor" :class="{ 'blink': isFocused }"></span></template><template v-else>{{ char }}<span v-if="index === userInput.length - 1" class="cursor" :class="{ 'blink': isFocused }"></span></template></span>
+        
+        <!-- Cursor at the beginning if no characters typed yet -->
+        <span v-if="userInput.length === 0" class="cursor" :class="{ 'blink': isFocused }"></span>
         
         <!-- Fallback cursor at the end if we're at the end of text -->
         <span v-if="userInput.length >= displayedText.length" class="cursor" :class="{ 'blink': isFocused }"></span>
@@ -96,6 +104,10 @@
             <div class="final-stat">
               <div class="final-stat-value">{{ finalAccuracy }}%</div>
               <div class="final-stat-label">Accuracy</div>
+            </div>
+            <div class="final-stat">
+              <div class="final-stat-value">{{ finalErrors }}</div>
+              <div class="final-stat-label">Errors</div>
             </div>
             <div class="final-stat">
               <div class="final-stat-value">{{ formatTime(timeTaken) }}</div>
@@ -168,6 +180,9 @@ export default {
       progress: 0,
       totalCorrectChars: 0, // Track total correct characters across all chunks
       totalTypedChars: 0,   // Track total typed characters across all chunks
+      totalErrors: 0,       // Track total errors across all chunks
+      currentVisibleErrors: 0, // Track only currently visible red characters
+      finalErrorsForDatabase: 0, // Track correct final error count for database saving
       
       // Timing
       startTime: null,
@@ -190,6 +205,7 @@ export default {
       // Final results
       finalWPM: 0,
       finalAccuracy: 100,
+      finalErrors: 0,
       
       // Intervals
       statsInterval: null,
@@ -517,18 +533,32 @@ export default {
       // Enhanced continuous calculation - accumulate stats across all sentences
       let totalCorrectChars = this.totalCorrectChars
       let totalTypedChars = this.totalTypedChars
+      let totalErrors = this.totalErrors
       
       // Add current sentence stats
       let currentCorrectChars = 0
+      let currentErrorChars = 0
       for (let i = 0; i < this.userInput.length; i++) {
-        if (i < this.displayedText.length && this.userInput[i] === this.displayedText[i]) {
-          currentCorrectChars++
+        if (i < this.displayedText.length) {
+          if (this.userInput[i] === this.displayedText[i]) {
+            currentCorrectChars++
+          } else {
+            // Only count as error if character is actually typed incorrectly (red character)
+            currentErrorChars++
+          }
         }
+        // Don't count characters typed beyond the displayed text length as errors
       }
       
       // Total stats = previous sentences + current sentence
       const allCorrectChars = totalCorrectChars + currentCorrectChars
       const allTypedChars = totalTypedChars + this.userInput.length
+      const allErrors = totalErrors + currentErrorChars
+      
+      // For display purposes, show only current visible errors (red characters)
+      // But keep totalErrors for final statistics
+      this.currentVisibleErrors = currentErrorChars
+      this.totalErrors = allErrors
       
       // Calculate Net WPM using total correct characters across all sentences
       const netWPM = Math.round((allCorrectChars / 5) / timeElapsed)
@@ -661,6 +691,7 @@ export default {
       // Accumulate total stats
       this.totalCorrectChars += correctChars
       this.totalTypedChars += this.userInput.length
+      // Note: totalErrors is now tracked in real-time in calculateStats()
       
       this.currentChunkIndex++
       
@@ -685,7 +716,8 @@ export default {
           accuracy: this.currentAccuracy,
           progress: this.progress, // Use 'progress' instead of 'completionRate'
           currentPosition: this.currentPosition,
-          status: 'typing' // Add required status field
+          status: 'typing', // Add required status field
+          errorsCount: this.currentVisibleErrors
         }
         
         console.log('📊 Updating server progress:', progressData)
@@ -709,7 +741,8 @@ export default {
           wpm: this.currentWPM,
           accuracy: this.currentAccuracy,
           progress: Math.round(this.progress),
-          currentPosition: this.currentPosition
+          currentPosition: this.currentPosition,
+          errorsCount: this.currentVisibleErrors
         })
       } catch (error) {
         console.error('Error updating student status:', error)
@@ -728,6 +761,10 @@ export default {
       // Calculate final stats
       this.finalWPM = this.currentWPM
       this.finalAccuracy = this.currentAccuracy
+      this.finalErrors = this.currentVisibleErrors
+      
+      // Calculate correct final error count for database (count only actual incorrect characters)
+      this.finalErrorsForDatabase = this.currentVisibleErrors
       
       // Clear all intervals
       if (this.statsInterval) {
@@ -752,7 +789,8 @@ export default {
           accuracy: this.currentAccuracy,
           progress: this.progress, // Use 'progress' instead of 'completionRate'
           currentPosition: this.currentPosition,
-          status: 'completed' // Add required status field
+          status: 'completed', // Add required status field
+          errorsCount: this.totalErrors
         }
         
         console.log('📊 Sending final progress data:', finalProgressData)
@@ -778,7 +816,7 @@ export default {
           accuracy: this.currentAccuracy,
           duration: this.timeTaken,
           wordsTyped: this.wordsTyped,
-          errorsCount: this.totalErrors,
+          errorsCount: this.finalErrorsForDatabase,
           topic: 'Medical Typing Practice',
           difficulty: 'Medium',
           textLength: this.textToType ? this.textToType.length : this.displayedText ? this.displayedText.length : 1,
@@ -1031,6 +1069,7 @@ export default {
   font-size: 1.6rem;
   line-height: 2.4;
   min-height: 300px;
+  margin: 0 auto;
   outline: none;
   cursor: text;
   transition: all 0.3s ease;
@@ -1116,7 +1155,7 @@ export default {
   color: var(--text-primary);
   background: rgba(102, 126, 234, 0.2);
   border-radius: 3px;
-  padding: 0 2px;
+ 
 }
 
 .char.pending {
@@ -1171,7 +1210,7 @@ export default {
 }
 
 .char.current {
-  color: #e2e8f0; /* Default text color for current character */
+  color: #2a394d; /* Default text color for current character */
 }
 
 .char.pending {
@@ -1270,22 +1309,26 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.85);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 9999;
+  backdrop-filter: blur(4px);
 }
 
 .completion-modal {
   background: var(--bg-secondary);
+  border: 2px solid var(--border-color);
   border-radius: 16px;
   padding: 0;
   max-width: 500px;
   width: 90%;
   max-height: 90vh;
   overflow: hidden;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+  transform: scale(1);
+  animation: modalAppear 0.3s ease-out;
 }
 
 .modal-header {
@@ -1324,8 +1367,8 @@ export default {
 
 .final-stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: .5rem;
   margin-bottom: 2rem;
 }
 
@@ -1440,6 +1483,17 @@ export default {
   to {
     opacity: 1;
     transform: translateX(0);
+  }
+}
+
+@keyframes modalAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
   }
 }
 </style>

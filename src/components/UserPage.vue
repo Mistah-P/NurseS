@@ -83,7 +83,7 @@
 
           <div class="stat-card secondary">
             <div class="stat-header">
-              <h3>Today's Statistics</h3>
+              <h3>Today's Latest Test</h3>
             </div>
             <div class="stats-content">
               <div class="stat-item">
@@ -93,6 +93,10 @@
               <div class="stat-item">
                 <div class="stat-value">{{ todayStats.avgAccuracy }}%</div>
                 <div class="stat-label">Accuracy</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value">{{ todayStats.errorsCount }}</div>
+                <div class="stat-label">Errors</div>
               </div>
               <div class="stat-item">
                 <div class="stat-value">{{ todayStats.topModule }}</div>
@@ -127,6 +131,7 @@
                 <tr>
                   <th>WPM</th>
                   <th>Accuracy</th>
+                  <th>Errors</th>
                   <th>Module</th>
                   <th>Difficulty</th>
                   <th>Date</th>
@@ -136,6 +141,7 @@
                 <tr v-for="(test, index) in testHistory" :key="index">
                   <td>{{ test.wpm }}</td>
                   <td>{{ test.accuracy }}</td>
+                  <td>{{ test.errors }}</td>
                   <td>{{ test.module }}</td>
                   <td>{{ test.difficulty }}</td>
                   <td>{{ test.date }}</td>
@@ -350,20 +356,20 @@ export default {
           this.testHistory = results.data.map(result => ({
             wpm: Math.round(result.wpm || 0),
             accuracy: `${Math.round(result.accuracy || 0)}%`,
+            errors: result.errorsCount || 0,
             module: result.content?.topic || 'General',
             difficulty: result.content?.difficulty || 'Medium',
             date: result.timestamp ? new Date(result.timestamp).toLocaleDateString() : 
                   result.createdAt ? new Date(result.createdAt).toLocaleDateString() : 'N/A'
           }));
           console.log("✅ Test history loaded successfully:", this.testHistory.length, "results");
-          
-          // Calculate today's statistics from the raw data
-          this.calculateTodayStats(results.data);
         } else {
           // No data found - testHistory remains empty array
           console.log("No test history found");
-          this.resetTodayStats();
         }
+
+        // Fetch today's statistics separately
+        await this.fetchTodayStats(user);
       } catch (error) {
         console.error("Error fetching test history:", error);
         // On error, testHistory remains empty array
@@ -371,42 +377,53 @@ export default {
       }
     },
 
-    calculateTodayStats(rawData) {
-      // Get today's date in YYYY-MM-DD format
-      const today = new Date().toDateString();
-      
-      // Filter data for today only
-      const todayData = rawData.filter(result => {
-        const resultDate = result.timestamp ? new Date(result.timestamp).toDateString() : 
-                          result.createdAt ? new Date(result.createdAt).toDateString() : null;
-        return resultDate === today;
-      });
+    async fetchTodayStats(user) {
+      try {
+        console.log("Fetching today's statistics for user:", user.uid);
+        
+        // Fetch only today's typing results
+        const todayResults = await typingResultsService.getTodayTypingResults(user.uid, user.email);
+        
+        if (todayResults && todayResults.success && todayResults.data && todayResults.data.length > 0) {
+          console.log("✅ Today's statistics loaded successfully:", todayResults.data.length, "results");
+          this.calculateTodayStats(todayResults.data);
+        } else {
+          console.log("No today's results found");
+          this.resetTodayStats();
+        }
+      } catch (error) {
+        console.error("Error fetching today's statistics:", error);
+        this.resetTodayStats();
+      }
+    },
 
-      if (todayData.length === 0) {
+    calculateTodayStats(todayData) {
+      // Since we're getting only today's data from the backend, no need to filter by date
+      if (!todayData || todayData.length === 0) {
         this.resetTodayStats();
         return;
       }
 
-      // Calculate average WPM
-      const avgWpm = Math.round(todayData.reduce((sum, result) => sum + (result.wpm || 0), 0) / todayData.length);
-      
-      // Calculate average accuracy
-      const avgAccuracy = Math.round(todayData.reduce((sum, result) => sum + (result.accuracy || 0), 0) / todayData.length);
-      
-      // Find most common module
-      const modules = todayData.map(result => result.content?.topic || 'General');
-      const topModule = this.getMostCommon(modules);
-      
-      // Find most common difficulty
-      const difficulties = todayData.map(result => result.content?.difficulty || 'Medium');
-      const topDifficulty = this.getMostCommon(difficulties);
+      // Sort by timestamp to get the latest test (most recent first)
+      const sortedData = [...todayData].sort((a, b) => {
+        const timeA = new Date(a.timestamp?.seconds * 1000 || a.createdAt || a.timestamp);
+        const timeB = new Date(b.timestamp?.seconds * 1000 || b.createdAt || b.timestamp);
+        return timeB - timeA; // Most recent first
+      });
+
+      // Get the latest test results
+      const latestTest = sortedData[0];
 
       this.todayStats = {
-        avgWpm: avgWpm,
-        avgAccuracy: avgAccuracy,
-        topModule: topModule,
-        topDifficulty: topDifficulty
+        avgWpm: latestTest.wpm || 0,
+        avgAccuracy: latestTest.accuracy || 0,
+        errorsCount: latestTest.errorsCount || 0,
+        topModule: latestTest.content?.topic || 'General',
+        topDifficulty: latestTest.content?.difficulty || 'Medium'
       };
+
+      console.log("📊 Today's latest test statistics:", this.todayStats);
+      console.log("📋 Latest test data:", latestTest);
     },
 
     getMostCommon(array) {
@@ -419,6 +436,7 @@ export default {
       this.todayStats = {
         avgWpm: 0,
         avgAccuracy: 0,
+        errorsCount: 0,
         topModule: 'N/A',
         topDifficulty: 'N/A'
       };
@@ -594,11 +612,32 @@ body {
   gap: 1rem;
 }
 
-.logo {
+.logo-icon {
+  width: 2rem;
+  height: 2rem;
+  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1rem;
+}
+
+.logo-text {
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--text-primary);
   margin: 0;
+}
+
+.logo-badge {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .student-badge {
@@ -1100,10 +1139,7 @@ body {
   color: var(--accent-error);
 }
 
-/* Existing Stats Grid */
-.stats-grid .stat-card:not(.teacher-code-card) {
-  /* Apply to all stat cards except teacher code card */
-}
+
 
 .stat-card {
   background: var(--bg-secondary);
@@ -1143,6 +1179,17 @@ body {
   grid-template-columns: repeat(2, 1fr);
   gap: 1.5rem;
   padding: 1rem;
+}
+
+/* Adjust grid for 5 items in Today's Latest Test */
+.stat-card.secondary .stats-content {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+@media (max-width: 768px) {
+  .stat-card.secondary .stats-content {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .stat-item {

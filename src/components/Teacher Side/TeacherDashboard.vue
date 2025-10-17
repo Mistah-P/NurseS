@@ -3,7 +3,12 @@
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-header">
-        <h2 class="logo">NurseScript</h2>
+        <div class="logo-section">
+          <div class="logo-icon">
+            <i class="fas fa-heartbeat"></i>
+          </div>
+          <span class="logo-text">NurseScript</span>
+        </div>
         <span class="teacher-badge">{{ teacherName || 'Teacher' }}</span>
       </div>
       
@@ -60,94 +65,43 @@
       <div class="dashboard-content">
         <!-- Top Row - Main Stats -->
         <div class="stats-grid">
-          <div class="stat-card primary">
-            <div class="stat-header">
-              <h3>Active Rooms</h3>
-              <div class="stat-trend up">
-                <i class="fas fa-arrow-up"></i>
-                <span>{{ activeRooms }}</span>
-              </div>
-            </div>
-            <div class="stat-number">{{ activeRooms }}</div>
-            <div class="stat-subtitle">rooms running</div>
-          </div>
-
-          <div class="stat-card secondary">
-            <div class="stat-header">
-              <h3>Weekly Progress</h3>
-              <div class="stat-trend">
-                <span>{{ completedActivities }}</span>
-                <small>activities</small>
-              </div>
-            </div>
-            <div class="stat-number">{{ completedActivities }}</div>
-            <div class="stat-subtitle">Completed</div>
-          </div>
-
-          <div class="stat-card tertiary">
-            <div class="stat-header">
-              <h3>Students</h3>
-              <div class="difficulty-badges">
-                <span class="badge junior">Junior</span>
-                <span class="badge middle">Middle</span>
-                <span class="badge senior">Senior</span>
-              </div>
-            </div>
-            <div class="stat-number">{{ totalStudents }}</div>
-            <div class="stat-subtitle">total students</div>
-          </div>
+          <!-- Cards removed as requested -->
         </div>
 
         <!-- Second Row -->
         <div class="content-grid">
-          <!-- Performance Analysis -->
-          <div class="card performance-card">
+          <!-- Top 5 Highest WPM This Month -->
+          <div class="card top-wpm-card">
             <div class="card-header">
-              <h3>Performance Analysis</h3>
+              <h3>Top 5 Highest WPM - {{ currentMonth }}</h3>
+              <button class="btn-link" @click="refreshTopWPM">
+                <i class="fas fa-sync-alt" :class="{ 'fa-spin': loadingTopWPM }"></i>
+              </button>
             </div>
-            <div class="performance-content">
-              <div class="performance-circle">
-                <div class="circle-progress" :style="{ '--progress': averageWPM + '%' }">
-                  <span class="percentage">{{ averageWPM }}%</span>
+            <div class="top-wpm-list" v-if="!loadingTopWPM && topWPMData.length > 0">
+              <div class="wpm-item" v-for="(item, index) in topWPMData" :key="item.userId">
+                <div class="rank-badge" :class="getRankClass(index)">
+                  {{ index + 1 }}
                 </div>
-              </div>
-              <div class="performance-stats">
-                <div class="stat-item">
-                  <span class="label">Average WPM</span>
-                  <span class="value">{{ averageWPM }}</span>
+                <div class="student-info">
+                  <h5>{{ item.userName }}</h5>
+                  <p>{{ item.topic }}</p>
+                  <span class="session-time">{{ formatDate(item.timestamp) }}</span>
                 </div>
-                <div class="stat-item">
-                  <span class="label">Accuracy</span>
-                  <span class="value">94%</span>
+                <div class="wpm-stats">
+                  <div class="wpm-value">{{ item.wpm }} WPM</div>
+                  <div class="accuracy-value">{{ item.accuracy }}% accuracy</div>
+                  <div class="errors-value">{{ item.errorsCount || 0 }} errors</div>
                 </div>
               </div>
             </div>
-          </div>
-
-          <!-- Quick Actions -->
-          <div class="card quick-actions-card">
-            <div class="card-header">
-              <h3>Quick Actions</h3>
+            <div class="loading-state" v-else-if="loadingTopWPM">
+              <i class="fas fa-spinner fa-spin"></i>
+              <p>Loading top performers...</p>
             </div>
-            <div class="quick-actions">
-              <div class="action-item" @click="showCreateRoomModal = true">
-                <div class="action-icon">
-                  <i class="fas fa-plus-circle"></i>
-                </div>
-                <div class="action-content">
-                  <h4>Create New Room</h4>
-                  <p>Start a new typing session</p>
-                </div>
-              </div>
-              <div class="action-item">
-                <div class="action-icon">
-                  <i class="fas fa-chart-line"></i>
-                </div>
-                <div class="action-content">
-                  <h4>View Analytics</h4>
-                  <p>Check student progress</p>
-                </div>
-              </div>
+            <div class="empty-state" v-else>
+              <i class="fas fa-chart-line"></i>
+              <p>No typing results found for this month</p>
             </div>
           </div>
 
@@ -155,20 +109,41 @@
           <div class="card activities-card">
             <div class="card-header">
               <h3>Recent Activities</h3>
-              <button class="btn-link">View all</button>
+              <button class="btn-link" @click="refreshActivities" :disabled="loadingActivities">
+                <i class="fas fa-sync-alt" :class="{ 'fa-spin': loadingActivities }"></i>
+              </button>
             </div>
-            <div class="activities-list">
+            
+            <!-- Loading State -->
+            <div v-if="loadingActivities" class="loading-state">
+              <i class="fas fa-spinner fa-spin"></i>
+              <p>Loading recent activities...</p>
+            </div>
+            
+            <!-- Empty State -->
+            <div v-else-if="recentActivities.length === 0" class="empty-state">
+              <i class="fas fa-clipboard-list"></i>
+              <p>No recent activities found</p>
+              <small>Activities will appear here when you create typing rooms</small>
+            </div>
+            
+            <!-- Activities List -->
+            <div v-else class="activities-list">
               <div class="activity-item" v-for="activity in recentActivities" :key="activity.id">
                 <div class="activity-icon">
                   <i class="fas fa-keyboard"></i>
                 </div>
                 <div class="activity-content">
                   <h5>{{ activity.name }}</h5>
-                  <p>{{ activity.section }} • {{ activity.difficulty }}</p>
-                  <span class="activity-time">{{ activity.createdAt }}</span>
+                  <p>{{ activity.section }} • {{ activity.mode }} • {{ activity.difficulty }}</p>
+                  <div class="activity-stats">
+                    <span class="activity-time">{{ formatActivityDate(activity.createdAt) }}</span>
+                    <span class="student-count"><i class="fas fa-users"></i> {{ activity.studentCount }} students</span>
+                    <span class="room-code">Room: {{ activity.roomCode }}</span>
+                  </div>
                 </div>
                 <div class="activity-status">
-                  <span class="status-badge" :class="activity.status">{{ activity.status }}</span>
+                  <span class="status-badge" :class="activity.status">{{ formatStatus(activity.status) }}</span>
                 </div>
               </div>
             </div>
@@ -215,35 +190,13 @@ export default {
       totalStudents: 45,
       completedActivities: 12,
       averageWPM: 68,
-      recentActivities: [
-        {
-          id: 1,
-          name: 'Medical Terminology Quiz',
-          section: 'BSN-2A',
-          mode: 'Timed (5 mins)',
-          difficulty: 'Normal',
-          status: 'active',
-          createdAt: '2 hours ago'
-        },
-        {
-          id: 2,
-          name: 'Nursing Procedures',
-          section: 'BSN-1B',
-          mode: 'No Time',
-          difficulty: 'Easy',
-          status: 'completed',
-          createdAt: '1 day ago'
-        },
-        {
-          id: 3,
-          name: 'Patient Care Documentation',
-          section: 'BSN-3A',
-          mode: 'Timed (3 mins)',
-          difficulty: 'Hard',
-          status: 'completed',
-          createdAt: '2 days ago'
-        }
-      ]
+      // Top WPM data
+      topWPMData: [],
+      loadingTopWPM: false,
+      currentMonth: '',
+      // Recent Activities data
+      loadingActivities: false,
+      recentActivities: []
     }
   },
   mounted() {
@@ -273,6 +226,12 @@ export default {
         // Data will be updated via subscription
       });
     }
+
+    // Initialize Top WPM data
+    this.initializeTopWPM();
+    
+    // Initialize Recent Activities data
+    this.fetchRecentActivities();
   },
   beforeUnmount() {
     // Clean up subscription
@@ -313,6 +272,121 @@ export default {
       // Handle room creation logic here
       this.showCreateRoomModal = false
       // You can add the new room to recent activities or refresh data
+    },
+
+    // Top WPM Methods
+    initializeTopWPM() {
+      const now = new Date();
+      this.currentMonth = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      this.fetchTopWPM();
+    },
+
+    async fetchTopWPM() {
+      this.loadingTopWPM = true;
+      try {
+        const response = await fetch('http://localhost:3000/api/typing-results/top-wpm-monthly');
+        const result = await response.json();
+        
+        if (result.success) {
+          this.topWPMData = result.data;
+        } else {
+          console.error('Failed to fetch top WPM data:', result.message);
+          this.topWPMData = [];
+        }
+      } catch (error) {
+        console.error('Error fetching top WPM data:', error);
+        this.topWPMData = [];
+      } finally {
+        this.loadingTopWPM = false;
+      }
+    },
+
+    refreshTopWPM() {
+      this.fetchTopWPM();
+    },
+
+    getRankClass(index) {
+      switch (index) {
+        case 0: return 'rank-gold';
+        case 1: return 'rank-silver';
+        case 2: return 'rank-bronze';
+        default: return 'rank-default';
+      }
+    },
+
+    formatDate(timestamp) {
+      const date = new Date(timestamp);
+      return date.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    },
+
+    // Recent Activities Methods
+    async fetchRecentActivities() {
+      this.loadingActivities = true;
+      try {
+        const response = await fetch('http://localhost:3000/api/typing-results/recent-activities');
+        const result = await response.json();
+        
+        if (result.success) {
+          this.recentActivities = result.data;
+        } else {
+          console.error('Failed to fetch recent activities:', result.message);
+          this.recentActivities = [];
+        }
+      } catch (error) {
+        console.error('Error fetching recent activities:', error);
+        this.recentActivities = [];
+      } finally {
+        this.loadingActivities = false;
+      }
+    },
+
+    refreshActivities() {
+      this.fetchRecentActivities();
+    },
+
+    formatActivityDate(timestamp) {
+      if (!timestamp) return 'Unknown time';
+      
+      // Handle Firestore timestamp format
+      let date;
+      if (timestamp._seconds) {
+        date = new Date(timestamp._seconds * 1000);
+      } else {
+        date = new Date(timestamp);
+      }
+      
+      const now = new Date();
+      const diffMs = now - date;
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      const diffDays = Math.floor(diffHours / 24);
+      
+      if (diffHours < 1) {
+        const diffMins = Math.floor(diffMs / (1000 * 60));
+        return `${diffMins} minutes ago`;
+      } else if (diffHours < 24) {
+        return `${diffHours} hours ago`;
+      } else if (diffDays < 7) {
+        return `${diffDays} days ago`;
+      } else {
+        return date.toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric'
+        });
+      }
+    },
+
+    formatStatus(status) {
+      switch (status) {
+        case 'active': return 'Active';
+        case 'waiting': return 'Waiting';
+        case 'completed': return 'Completed';
+        default: return status;
+      }
     }
   }
 }
@@ -346,11 +420,38 @@ export default {
   border-bottom: 1px solid var(--border-color);
 }
 
-.logo {
-  color: var(--text-primary);
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.logo-icon {
+  width: 36px;
+  height: 36px;
+  background: var(--accent-gradient);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.1rem;
+}
+
+.logo-text {
+  font-size: 1.4rem;
   font-weight: 700;
-  font-size: 1.5rem;
-  margin: 0 0 0.5rem 0;
+  color: var(--text-primary);
+}
+
+.logo-badge {
+  background: var(--accent-color);
+  color: white;
+  padding: 0.2rem 0.4rem;
+  border-radius: 5px;
+  font-size: 0.7rem;
+  font-weight: 600;
 }
 
 .teacher-badge {
@@ -596,8 +697,10 @@ export default {
 /* Content Grid */
 .content-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 2fr;
   gap: 1.5rem;
+  height: calc(100vh - 200px);
+  min-height: 600px;
 }
 
 .card {
@@ -624,7 +727,7 @@ export default {
 .btn-link {
   background: none;
   border: none;
-  color: var(--accent-color);
+  color: var(--text-primary);
   font-size: 0.8rem;
   cursor: pointer;
   text-decoration: none;
@@ -738,10 +841,30 @@ export default {
 }
 
 /* Activities Card */
+.activities-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.activities-card .card-header {
+  flex-shrink: 0;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.activities-card .card-header h3 {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
 .activities-list {
   padding: 0 1.5rem 1.5rem 1.5rem;
-  max-height: 300px;
+  flex: 1;
   overflow-y: auto;
+  min-height: 0;
 }
 
 .activity-item {
@@ -752,10 +875,15 @@ export default {
   border-radius: 12px;
   margin-bottom: 0.75rem;
   transition: all 0.3s ease;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
 }
 
 .activity-item:hover {
   background: var(--bg-tertiary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-color: var(--accent-color);
 }
 
 .activity-icon {
@@ -776,37 +904,71 @@ export default {
 
 .activity-content h5 {
   color: var(--text-primary);
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 600;
   margin: 0 0 0.25rem 0;
 }
 
 .activity-content p {
   color: var(--text-secondary);
-  font-size: 0.8rem;
-  margin: 0 0 0.25rem 0;
+  font-size: 0.85rem;
+  margin: 0 0 0.5rem 0;
+  font-weight: 500;
 }
 
-.activity-time {
-  color: var(--text-secondary);
-  font-size: 0.7rem;
+.activity-stats {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.activity-time,
+.student-count,
+.room-code {
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 500;
+}
+
+.student-count i {
+  color: var(--accent-color);
+}
+
+.room-code {
+  background: var(--bg-tertiary);
+  padding: 0.3rem 0.6rem;
+  border-radius: 8px;
+  font-weight: 600;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.activity-status {
+  flex-shrink: 0;
 }
 
 .status-badge {
-  padding: 0.25rem 0.75rem;
+  padding: 0.4rem 0.8rem;
   border-radius: 12px;
-  font-size: 0.7rem;
-  font-weight: 500;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid transparent;
 }
 
 .status-badge.active {
   background: var(--success-color-alpha);
   color: var(--success-color);
+  border-color: var(--success-color);
 }
 
 .status-badge.completed {
-  background: var(--text-secondary-alpha);
-  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
 }
 
 /* Responsive Design */
@@ -833,8 +995,12 @@ export default {
     padding: 1rem 0.75rem;
   }
   
-  .logo {
+  .logo-text {
     font-size: 1rem;
+  }
+  
+  .logo-badge {
+    display: none;
   }
   
   .teacher-badge {
@@ -886,5 +1052,219 @@ export default {
 
 .stat-card:nth-child(3) {
   animation-delay: 0.2s;
+}
+
+/* Top WPM Component Styles */
+.top-wpm-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+}
+
+.top-wpm-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.wpm-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--bg-primary);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+}
+
+.wpm-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.rank-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: white;
+  flex-shrink: 0;
+}
+
+.rank-gold {
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+}
+
+.rank-silver {
+  background: linear-gradient(135deg, #C0C0C0, #A8A8A8);
+  box-shadow: 0 2px 8px rgba(192, 192, 192, 0.3);
+}
+
+.rank-bronze {
+  background: linear-gradient(135deg, #CD7F32, #B8860B);
+  box-shadow: 0 2px 8px rgba(205, 127, 50, 0.3);
+}
+
+.rank-default {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.student-info {
+  flex: 1;
+}
+
+.student-info h5 {
+  margin: 0 0 0.25rem 0;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.student-info p {
+  margin: 0 0 0.25rem 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.session-time {
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  opacity: 0.8;
+  font-weight: 500;
+}
+
+.wpm-stats {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.wpm-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+  margin-bottom: 0.25rem;
+}
+
+.accuracy-value {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+.errors-value {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+.loading-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.loading-state i,
+.empty-state i {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: var(--accent-color);
+  opacity: 0.7;
+}
+
+.loading-state p,
+.empty-state p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.empty-state small {
+  color: var(--text-tertiary);
+  font-size: 0.8rem;
+  margin-top: 0.5rem;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.btn-link:hover {
+  background: var(--primary-color-light);
+  color: var(--primary-color-dark);
+}
+
+.btn-link i {
+  font-size: 0.9rem;
+}
+
+/* Activity Stats Styles */
+.activity-stats {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.activity-stats span {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.room-code {
+  background: var(--background-light);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-family: monospace;
+  font-weight: 500;
+}
+
+.student-count i {
+  font-size: 0.7rem;
+}
+
+/* Status Badge Improvements */
+.status-badge {
+  padding: 0.3rem 0.8rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.status-badge.active {
+  background: #e8f5e8;
+  color: #2d5a2d;
+}
+
+.status-badge.waiting {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status-badge.completed {
+  background: #d1ecf1;
+  color: #0c5460;
 }
 </style>

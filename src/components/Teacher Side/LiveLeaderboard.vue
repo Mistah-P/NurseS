@@ -58,6 +58,7 @@
         <div class="student-col">Student</div>
         <div class="wpm-col">WPM</div>
         <div class="accuracy-col">Accuracy</div>
+        <div class="errors-col">Errors</div>
         <div class="status-col">Status</div>
       </div>
 
@@ -91,6 +92,10 @@
           <div class="accuracy-col">
             <div class="metric-value">{{ student.accuracy }}%</div>
             <div class="metric-label">Accuracy</div>
+          </div>
+          <div class="errors-col">
+            <div class="metric-value">{{ student.errorsCount || 0 }}</div>
+            <div class="metric-label">Errors</div>
           </div>
           <div class="status-col">
             <span class="status-badge" :class="student.status">
@@ -502,7 +507,7 @@ export default {
 
 .leaderboard-header-row {
   display: grid;
-  grid-template-columns: 80px 1fr 100px 100px 120px;
+  grid-template-columns: 80px 1fr 100px 100px 100px 120px;
   gap: 1rem;
   padding: 1rem 1.5rem;
   background: var(--bg-tertiary-alpha);
@@ -518,7 +523,7 @@ export default {
 
 .leaderboard-row {
   display: grid;
-  grid-template-columns: 80px 1fr 100px 100px 120px;
+  grid-template-columns: 80px 1fr 100px 100px 100px 120px;
   gap: 1rem;
   padding: 1rem 1.5rem;
   border-bottom: 1px solid var(--border-color-alpha);

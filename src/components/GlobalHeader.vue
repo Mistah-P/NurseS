@@ -3,8 +3,10 @@
     <div class="header-content">
       <!-- Logo/Brand - Far Left -->
       <div class="brand">
-        <i class="fas fa-stethoscope"></i>
-        <span>NurseScript</span>
+        <div class="logo-icon">
+          <i class="fas fa-heartbeat"></i>
+        </div>
+        <span class="logo-text">NurseScript</span>
       </div>
       
       <!-- Navigation Links - Center -->
@@ -125,16 +127,36 @@ export default {
 .brand {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 1.5rem;
-  font-weight: bold;
+  gap: 0.75rem;
   flex: 0 0 auto; /* Don't grow or shrink, stay at natural size */
   margin-right: auto; /* Push everything else to the right */
-  color:  #ffffff;;
 }
 
-.brand i {
-  color: #4ade80;
+.logo-icon {
+  width: 40px;
+  height: 40px;
+  background: var(--accent-gradient);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.2rem;
+}
+
+.logo-text {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.logo-badge {
+  background: var(--accent-color);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .nav-links {

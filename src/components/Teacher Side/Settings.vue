@@ -3,7 +3,12 @@
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-header">
-        <h2 class="logo">NurseScript</h2>
+        <div class="logo-section">
+          <div class="logo-icon">
+            <i class="fas fa-heartbeat"></i>
+          </div>
+          <span class="logo-text">NurseScript</span>
+        </div>
         <span class="teacher-badge">{{ teacherName || 'Teacher' }}</span>
       </div>
       
@@ -511,11 +516,38 @@ export default {
   border-bottom: 1px solid var(--border-primary);
 }
 
-.logo {
-  color: var(--text-primary);
-  font-size: 1.5rem;
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.logo-icon {
+  width: 36px;
+  height: 36px;
+  background: var(--accent-gradient);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.1rem;
+}
+
+.logo-text {
+  font-size: 1.4rem;
   font-weight: 700;
-  margin: 0 0 0.5rem 0;
+  color: var(--text-primary);
+}
+
+.logo-badge {
+  background: var(--accent-color);
+  color: white;
+  padding: 0.2rem 0.4rem;
+  border-radius: 5px;
+  font-size: 0.7rem;
+  font-weight: 600;
 }
 
 .teacher-badge {

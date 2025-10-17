@@ -76,6 +76,7 @@
             <div class="name-col">Student Name</div>
             <div class="wpm-col">WPM</div>
             <div class="accuracy-col">Accuracy</div>
+            <div class="errors-col">Errors</div>
             <div class="status-col">Status</div>
           </div>
           
@@ -125,6 +126,9 @@
                   <div class="accuracy-fill" :style="{ width: `${student.accuracy}%` }"></div>
                   <span class="accuracy-text">{{ student.accuracy }}%</span>
                 </div>
+              </div>
+              <div class="errors-col">
+                <span class="errors-value">{{ student.errorsCount || 0 }}</span>
               </div>
               <div class="status-col">
                 <span class="status-badge" :class="student.status">
@@ -448,7 +452,7 @@ export default {
 
 .table-header {
   display: grid;
-  grid-template-columns: 80px 1fr 80px 120px 120px;
+  grid-template-columns: 80px 1fr 80px 120px 80px 120px;
   gap: 16px;
   padding: 16px 20px;
   background: var(--bg-tertiary);
@@ -467,7 +471,7 @@ export default {
 
 .table-row {
   display: grid;
-  grid-template-columns: 80px 1fr 80px 120px 120px;
+  grid-template-columns: 80px 1fr 80px 120px 80px 120px;
   gap: 16px;
   padding: 16px 20px;
   border-bottom: 1px solid var(--border-color);
@@ -627,6 +631,18 @@ export default {
 .close-action-btn:hover {
   background: var(--bg-tertiary);
   color: var(--text-primary);
+}
+
+.errors-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.errors-value {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
 }
 
 .status-col {

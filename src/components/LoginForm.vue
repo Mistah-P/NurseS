@@ -1,93 +1,133 @@
 <template>
-  <div class="d-flex justify-content-center align-items-center vh-100" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-    <div class="card shadow-lg border-0" style="width: 420px; border-radius: 16px;">
-      <div class="card-body p-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <div>
-            <h4 class="card-title mb-1 fw-bold text-dark">Welcome back!</h4>
-            <p class="text-muted small mb-0">Please sign in to your account</p>
+  <div class="login-container">
+    <!-- Animated Background -->
+    <div class="animated-background">
+      <div class="floating-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+        <div class="shape shape-4"></div>
+        <div class="shape shape-5"></div>
+      </div>
+      <div class="gradient-overlay"></div>
+    </div>
+
+    <!-- Login Card -->
+    <div class="login-card-container">
+      <div class="login-card">
+        <!-- Header -->
+        <div class="card-header">
+          <router-link to="/" class="back-button">
+            <i class="fas fa-arrow-left"></i>
+          </router-link>
+          <div class="logo-section">
+            <div class="logo-icon">
+              <i class="fas fa-heartbeat"></i>
+            </div>
+            <span class="logo-text">NurseScript</span>
           </div>
-          <router-link to="/" class="btn-close" aria-label="Close"></router-link>
+        </div>
+
+        <!-- Welcome Section -->
+        <div class="welcome-section">
+          <h1 class="welcome-title">Welcome Back!</h1>
+          <p class="welcome-subtitle">Sign in to continue your medical typing journey</p>
         </div>
 
         <!-- Error Alert -->
-        <div v-if="errorMessage" class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
-          <i class="fas fa-exclamation-triangle me-2"></i>
-          {{ errorMessage }}
-          <button type="button" class="btn-close" @click="clearError" aria-label="Close"></button>
-        </div>
+        <transition name="slide-down">
+          <div v-if="errorMessage" class="error-alert">
+            <div class="error-icon">
+              <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="error-content">
+              <span class="error-text">{{ errorMessage }}</span>
+            </div>
+            <button class="error-close" @click="clearError">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </transition>
 
-        <form @submit.prevent="handleLogin">
-          <div class="mb-3">
-            <label for="email" class="form-label text-uppercase small fw-semibold text-secondary">Email Address</label>
-            <input
-              type="email"
-              id="email"
-              class="form-control custom-input"
-              v-model="email"
-              placeholder="name@email.com"
-              required
-              :disabled="isLoading"
-            />
+        <!-- Login Form -->
+        <form @submit.prevent="handleLogin" class="login-form">
+          <!-- Email Field -->
+          <div class="form-group">
+            <label for="email" class="form-label">
+              <i class="fas fa-envelope"></i>
+              Email Address
+            </label>
+            <div class="input-container">
+              <input
+                type="email"
+                id="email"
+                class="form-input"
+                v-model="email"
+                placeholder="Enter your email"
+                required
+                :disabled="isLoading"
+                @focus="onInputFocus"
+                @blur="onInputBlur"
+              />
+              <div class="input-border"></div>
+            </div>
           </div>
 
-          <div class="mb-4">
-            <label for="password" class="form-label text-uppercase small fw-semibold text-secondary">Password</label>
-
-            <!-- Password with show/hide toggle -->
-            <div class="position-relative has-toggle">
+          <!-- Password Field -->
+          <div class="form-group">
+            <label for="password" class="form-label">
+              <i class="fas fa-lock"></i>
+              Password
+            </label>
+            <div class="input-container password-container">
               <input
                 :type="passwordVisible ? 'text' : 'password'"
                 id="password"
-                class="form-control custom-input"
+                class="form-input"
                 v-model="password"
-                placeholder="Password"
+                placeholder="Enter your password"
                 required
                 autocomplete="current-password"
                 :disabled="isLoading"
                 @keyup.enter="handleLogin"
+                @focus="onInputFocus"
+                @blur="onInputBlur"
               />
-
               <button
                 type="button"
-                class="toggle-password"
+                class="password-toggle"
                 :aria-label="passwordVisible ? 'Hide password' : 'Show password'"
-                :title="passwordVisible ? 'Hide password' : 'Show password'"
                 :disabled="isLoading"
                 @click="passwordVisible = !passwordVisible"
               >
-                <!-- Eye (show) -->
-                <svg v-if="!passwordVisible" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                </svg>
-
-                <!-- Eye off (hide) -->
-                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M3 3l18 18M10.585 10.585A3 3 0 0012 15a3 3 0 002.121-.879M9.88 9.88A3 3 0 0115 12m-3-7c4.477 0 8.268 2.943 9.542 7a10.056 10.056 0 01-4.478 5.21M6.223 6.223A9.963 9.963 0 0012 5c.686 0 1.354.07 2 .204M4.458 7A10.05 10.05 0 002 12c1.274 4.057 5.065 7 9.542 7 1.18 0 2.316-.18 3.375-.51"/>
-                </svg>
+                <i :class="passwordVisible ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
               </button>
+              <div class="input-border"></div>
             </div>
           </div>
 
-          <button type="submit" class="btn w-100 custom-btn position-relative" :disabled="isLoading">
-            <!-- Loading Spinner -->
-            <span v-if="isLoading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-            <span v-if="isLoading">Logging in...</span>
-            <span v-else>
-              <i class="fas fa-sign-in-alt me-2"></i>
-              Login
-            </span>
+          <!-- Login Button -->
+          <button type="submit" class="login-button" :disabled="isLoading">
+            <div class="button-content">
+              <div v-if="isLoading" class="loading-spinner">
+                <div class="spinner"></div>
+              </div>
+              <i v-else class="fas fa-sign-in-alt"></i>
+              <span>{{ isLoading ? 'Signing In...' : 'Sign In' }}</span>
+            </div>
+            <div class="button-glow"></div>
           </button>
         </form>
 
-        <p class="text-center mt-4 mb-0 text-muted small">
-          Don't have an account?
-          <router-link to="/register" class="text-decoration-none fw-semibold">Register</router-link>
-        </p>
+        <!-- Footer -->
+        <div class="card-footer">
+          <p class="register-prompt">
+            Don't have an account?
+            <router-link to="/register" class="register-link">Create Account</router-link>
+          </p>
+          
+
+        </div>
       </div>
     </div>
   </div>
@@ -114,6 +154,16 @@ export default {
     clearError() {
       this.errorMessage = '';
     },
+    
+    onInputFocus(event) {
+      event.target.parentElement.classList.add('focused');
+    },
+    
+    onInputBlur(event) {
+      event.target.parentElement.classList.remove('focused');
+    },
+    
+
     
     getErrorMessage(error) {
       // Map Firebase error codes to user-friendly messages
@@ -237,224 +287,544 @@ export default {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* Import fonts and icons */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css');
 
+/* Global styles */
 * {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-}
-
-.card {
-  font-family: 'Inter', sans-serif;
-  backdrop-filter: blur(10px);
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.3s ease;
-}
-
-.card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1) !important;
-}
-
-.custom-input {
-  background-color: #f8f9fa;
-  border: 2px solid #e9ecef;
-  border-radius: 12px;
-  padding: 12px 16px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #2c3e50;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-}
-
-.custom-input:focus {
-  background-color: #ffffff;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  outline: none;
-}
-
-.custom-input:disabled {
-  background-color: #f1f3f4;
-  color: #6c757d;
-  cursor: not-allowed;
-}
-
-.custom-input::placeholder {
-  color: #6c757d;
-  font-weight: 400;
-}
-
-/* Make room for the eye button */
-.has-toggle .custom-input {
-  padding-right: 3rem;
-}
-
-.toggle-password {
-  position: absolute;
-  top: 50%;
-  right: 12px;
-  transform: translateY(-50%);
-  width: 36px;
-  height: 36px;
-  border: none;
-  background: transparent;
+  margin: 0;
   padding: 0;
+  box-sizing: border-box;
+}
+
+.login-container {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  color: #6c757d;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-}
-
-.toggle-password:hover:not(:disabled) {
-  background: rgba(102, 126, 234, 0.1);
-  color: #667eea;
-}
-
-.toggle-password:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
-}
-
-.toggle-password:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-.toggle-password svg {
-  width: 18px;
-  height: 18px;
-}
-
-.custom-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  border-radius: 12px;
-  padding: 14px 24px;
-  font-size: 16px;
-  font-weight: 600;
-  color: white;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  padding: 2rem;
   position: relative;
   overflow: hidden;
 }
 
-.custom-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+/* Animated Background */
+.animated-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -2;
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
 }
 
-.custom-btn:active:not(:disabled) {
-  transform: translateY(0);
+.floating-shapes {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
-.custom-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+.shape {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--accent-color);
+  opacity: 0.1;
+  animation: float 15s infinite linear;
 }
 
-.custom-btn:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+.shape-1 {
+  width: 100px;
+  height: 100px;
+  top: 20%;
+  left: 10%;
+  animation-delay: 0s;
+}
+
+.shape-2 {
+  width: 150px;
+  height: 150px;
+  top: 60%;
+  right: 15%;
+  animation-delay: -3s;
+}
+
+.shape-3 {
+  width: 80px;
+  height: 80px;
+  top: 80%;
+  left: 30%;
+  animation-delay: -6s;
+}
+
+.shape-4 {
+  width: 120px;
+  height: 120px;
+  top: 10%;
+  right: 25%;
+  animation-delay: -9s;
+}
+
+.shape-5 {
+  width: 90px;
+  height: 90px;
+  top: 40%;
+  left: 70%;
+  animation-delay: -12s;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+    opacity: 0.1;
+  }
+  50% {
+    opacity: 0.2;
+  }
+  100% {
+    transform: translateY(-100vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.gradient-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 20% 30%, var(--accent-color-alpha) 0%, transparent 50%),
+              radial-gradient(circle at 80% 70%, var(--accent-color-alpha) 0%, transparent 50%);
+  z-index: -1;
+}
+
+/* Login Card */
+.login-card-container {
+  width: 100%;
+  max-width: 450px;
+  animation: slideInUp 0.8s ease-out;
+}
+
+.login-card {
+  background: var(--bg-secondary);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-color);
+  border-radius: 24px;
+  padding: 2.5rem;
+  box-shadow: 0 25px 50px var(--shadow-dark);
+  position: relative;
+  overflow: hidden;
+}
+
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
+  opacity: 0.5;
+}
+
+/* Header */
+.card-header {
+  
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.back-button {
+  width: 44px;
+  height: 44px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.back-button:hover {
+  background: var(--accent-color);
+  color: white;
+  transform: translateX(-2px);
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.logo-icon {
+  width: 36px;
+  height: 36px;
+  background: var(--accent-gradient);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.1rem;
+}
+
+.logo-text {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.logo-badge {
+  background: var(--accent-color);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Welcome Section */
+.welcome-section {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.welcome-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+  animation: slideInUp 0.8s ease-out 0.2s both;
+}
+
+.welcome-subtitle {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  animation: slideInUp 0.8s ease-out 0.4s both;
+}
+
+/* Error Alert */
+.error-alert {
+  background: var(--error-color);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: white;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.error-icon {
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.error-content {
+  flex: 1;
+}
+
+.error-text {
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.error-close {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: background 0.2s ease;
+}
+
+.error-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Form */
+.login-form {
+  animation: slideInUp 0.8s ease-out 0.6s both;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
 }
 
 .form-label {
-  color: #495057;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   font-weight: 600;
-  margin-bottom: 8px;
-  letter-spacing: 0.5px;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
 }
 
-.alert {
+.form-label i {
+  color: var(--accent-color);
+  width: 16px;
+}
+
+.input-container {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.form-input {
+  width: 100%;
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  font-size: 1rem;
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.form-input:focus {
+  border-color: var(--accent-color);
+  background: var(--bg-primary);
+  box-shadow: 0 0 0 3px var(--accent-color-alpha);
+}
+
+.form-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.form-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.password-container .form-input {
+  padding-right: 3.5rem;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.password-toggle:hover:not(:disabled) {
+  color: var(--accent-color);
+  background: var(--accent-color-alpha);
+}
+
+.password-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.input-border {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--accent-gradient);
+  transition: width 0.3s ease;
+  border-radius: 1px;
+}
+
+.input-container.focused .input-border {
+  width: 100%;
+}
+
+/* Login Button */
+.login-button {
+  width: 100%;
+  background: var(--accent-gradient);
   border: none;
   border-radius: 12px;
-  padding: 12px 16px;
-  font-size: 14px;
-  font-weight: 500;
-  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.15);
-}
-
-.alert-danger {
-  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+  padding: 1.25rem;
   color: white;
+  font-weight: 600;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 2rem;
 }
 
-.alert .btn-close {
-  filter: brightness(0) invert(1);
-  opacity: 0.8;
+.login-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px var(--accent-color-alpha);
 }
 
-.alert .btn-close:hover {
-  opacity: 1;
+.login-button:active:not(:disabled) {
+  transform: translateY(0);
 }
 
-.btn-close {
-  opacity: 0.6;
-  transition: opacity 0.2s ease;
+.login-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
 }
 
-.btn-close:hover {
-  opacity: 1;
+.button-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  position: relative;
+  z-index: 2;
 }
 
-.spinner-border-sm {
-  width: 1rem;
-  height: 1rem;
-  border-width: 2px;
+.button-glow {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
 }
 
-/* Smooth animations */
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 0.3s ease;
+.login-button:hover:not(:disabled) .button-glow {
+  left: 100%;
 }
 
-.fade-enter-from, .fade-leave-to {
-  opacity: 0;
+.loading-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Link styling */
-a {
-  color: #667eea;
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Footer */
+.card-footer {
+  text-align: center;
+  animation: slideInUp 0.8s ease-out 0.8s both;
+}
+
+.register-prompt {
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.register-link {
+  color: var(--accent-color);
+  text-decoration: none;
+  font-weight: 600;
   transition: color 0.2s ease;
 }
 
-a:hover {
-  color: #5a6fd8;
-  text-decoration: none !important;
+.register-link:hover {
+  color: var(--text-primary);
 }
 
-/* Responsive design */
-@media (max-width: 480px) {
-  .card {
-    width: 90% !important;
-    margin: 0 20px;
+
+
+/* Animations */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-down-enter-active {
+  transition: all 0.3s ease-out;
+}
+
+.slide-down-leave-active {
+  transition: all 0.3s ease-in;
+}
+
+.slide-down-enter-from {
+  opacity: 0;
+  transform: translateY(-20px);
+}
+
+.slide-down-leave-to {
+  opacity: 0;
+  transform: translateY(-20px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .login-container {
+    padding: 1rem;
   }
   
-  .card-body {
-    padding: 1.5rem !important;
+  .login-card {
+    padding: 2rem;
   }
+  
+  .welcome-title {
+    font-size: 1.75rem;
+  }
+  
+
 }
 
-/* Loading state animations */
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
+@media (max-width: 480px) {
+  .login-card {
+    padding: 1.5rem;
   }
-  50% {
-    opacity: 0.5;
+  
+  .welcome-title {
+    font-size: 1.5rem;
   }
-}
-
-.custom-btn:disabled .spinner-border {
-  animation: pulse 1.5s ease-in-out infinite;
+  
+  .card-header {
+    margin-bottom: 1.5rem;
+  }
+  
+  .form-input {
+    padding: 0.875rem 1rem;
+  }
+  
+  .login-button {
+    padding: 1rem;
+  }
 }
 </style>

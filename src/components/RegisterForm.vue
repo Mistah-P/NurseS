@@ -1,108 +1,181 @@
 <template>
-  <div class="d-flex justify-content-center align-items-center vh-100" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-    <div class="card shadow-lg border-0" style="width: 420px; border-radius: 16px;">
-      <div class="card-body p-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <div>
-            <h4 class="card-title mb-1 fw-bold text-dark">Join NurseScript!</h4>
-            <p class="text-muted small mb-0">Create your account to get started</p>
+  <div class="register-container">
+    <!-- Animated Background -->
+    <div class="animated-background">
+      <div class="floating-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+        <div class="shape shape-4"></div>
+        <div class="shape shape-5"></div>
+        <div class="shape shape-6"></div>
+      </div>
+      <div class="gradient-overlay"></div>
+    </div>
+
+    <!-- Register Card -->
+    <div class="register-card-container">
+      <div class="register-card">
+        <!-- Header -->
+        <div class="card-header">
+          <router-link to="/" class="back-button">
+            <i class="fas fa-arrow-left"></i>
+          </router-link>
+          <div class="logo-section">
+            <div class="logo-icon">
+              <i class="fas fa-heartbeat"></i>
+            </div>
+            <span class="logo-text">NurseScript</span>
           </div>
-          <router-link to="/" class="btn-close" aria-label="Close"></router-link>
+        </div>
+
+        <!-- Welcome Section -->
+        <div class="welcome-section">
+          <h1 class="welcome-title">Join NurseScript!</h1>
+          <p class="welcome-subtitle">Create your account and start your medical typing journey</p>
         </div>
 
         <!-- Error Alert -->
-        <div v-if="errorMessage" class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
-          <i class="fas fa-exclamation-triangle me-2"></i>
-          {{ errorMessage }}
-          <button type="button" class="btn-close" @click="clearError" aria-label="Close"></button>
-        </div>
+        <transition name="slide-down">
+          <div v-if="errorMessage" class="error-alert">
+            <div class="error-icon">
+              <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="error-content">
+              <span class="error-text">{{ errorMessage }}</span>
+            </div>
+            <button class="error-close" @click="clearError">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </transition>
 
-        <form @submit.prevent="handleRegister">
-          <div class="mb-3">
-            <label for="name" class="form-label text-uppercase small fw-semibold text-secondary">Full Name</label>
-            <input
-              type="text"
-              id="name"
-              class="form-control custom-input"
-              v-model="name"
-              placeholder="Name"
-              required
-              autocomplete="name"
-              :disabled="isLoading"
-            />
+        <!-- Register Form -->
+        <form @submit.prevent="handleRegister" class="register-form">
+          <!-- Name Field -->
+          <div class="form-group">
+            <label for="name" class="form-label">
+              <i class="fas fa-user"></i>
+              Full Name
+            </label>
+            <div class="input-container">
+              <input
+                type="text"
+                id="name"
+                class="form-input"
+                v-model="name"
+                placeholder="Enter your full name"
+                required
+                autocomplete="name"
+                :disabled="isLoading"
+                @focus="onInputFocus"
+                @blur="onInputBlur"
+              />
+              <div class="input-border"></div>
+            </div>
           </div>
 
-          <div class="mb-3">
-            <label for="email" class="form-label text-uppercase small fw-semibold text-secondary">Email Address</label>
-            <input
-              type="email"
-              id="email"
-              class="form-control custom-input"
-              v-model="email"
-              placeholder="Email"
-              required
-              autocomplete="email"
-              :disabled="isLoading"
-            />
+          <!-- Email Field -->
+          <div class="form-group">
+            <label for="email" class="form-label">
+              <i class="fas fa-envelope"></i>
+              Email Address
+            </label>
+            <div class="input-container">
+              <input
+                type="email"
+                id="email"
+                class="form-input"
+                v-model="email"
+                placeholder="Enter your email"
+                required
+                autocomplete="email"
+                :disabled="isLoading"
+                @focus="onInputFocus"
+                @blur="onInputBlur"
+              />
+              <div class="input-border"></div>
+            </div>
           </div>
 
-          <div class="mb-4">
-            <label for="password" class="form-label text-uppercase small fw-semibold text-secondary">Password</label>
-
-            <!-- Password with show/hide toggle -->
-            <div class="position-relative has-toggle">
+          <!-- Password Field -->
+          <div class="form-group">
+            <label for="password" class="form-label">
+              <i class="fas fa-lock"></i>
+              Password
+            </label>
+            <div class="input-container password-container">
               <input
                 :type="passwordVisible ? 'text' : 'password'"
                 id="password"
-                class="form-control custom-input"
+                class="form-input"
                 v-model="password"
-                placeholder="Password"
+                placeholder="Create a strong password"
                 required
                 autocomplete="new-password"
                 :disabled="isLoading"
                 @keyup.enter="handleRegister"
+                @focus="onInputFocus"
+                @blur="onInputBlur"
               />
-
               <button
                 type="button"
-                class="toggle-password"
+                class="password-toggle"
                 :aria-label="passwordVisible ? 'Hide password' : 'Show password'"
-                :title="passwordVisible ? 'Hide password' : 'Show password'"
                 :disabled="isLoading"
                 @click="passwordVisible = !passwordVisible"
               >
-                <!-- Eye (show) -->
-                <svg v-if="!passwordVisible" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                </svg>
-
-                <!-- Eye off (hide) -->
-                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M3 3l18 18M10.585 10.585A3 3 0 0012 15a3 3 0 002.121-.879M9.88 9.88A3 3 0 0115 12m-3-7c4.477 0 8.268 2.943 9.542 7a10.056 10.056 0 01-4.478 5.21M6.223 6.223A9.963 9.963 0 0012 5c.686 0 1.354.07 2 .204M4.458 7A10.05 10.05 0 002 12c1.274 4.057 5.065 7 9.542 7 1.18 0 2.316-.18 3.375-.51"/>
-                </svg>
+                <i :class="passwordVisible ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
               </button>
+              <div class="input-border"></div>
+            </div>
+            <div class="password-strength">
+              <div class="strength-indicator" :class="passwordStrengthClass">
+                <div class="strength-bar"></div>
+              </div>
+              <span class="strength-text">{{ passwordStrengthText }}</span>
             </div>
           </div>
 
-          <button type="submit" class="btn w-100 custom-btn position-relative" :disabled="isLoading">
-            <!-- Loading Spinner -->
-            <span v-if="isLoading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-            <span v-if="isLoading">Creating account...</span>
-            <span v-else>
-              <i class="fas fa-user-plus me-2"></i>
-              Register
-            </span>
+          <!-- Register Button -->
+          <button type="submit" class="register-button" :disabled="isLoading || !isFormValid">
+            <div class="button-content">
+              <div v-if="isLoading" class="loading-spinner">
+                <div class="spinner"></div>
+              </div>
+              <i v-else class="fas fa-user-plus"></i>
+              <span>{{ isLoading ? 'Creating Account...' : 'Create Account' }}</span>
+            </div>
+            <div class="button-glow"></div>
           </button>
         </form>
 
-        <p class="text-center mt-4 mb-0 text-muted small">
-          Already have an account?
-          <router-link :to="{ name: 'LoginForm' }" class="text-decoration-none fw-semibold">Log In</router-link>
-        </p>
+        <!-- Footer -->
+        <div class="card-footer">
+          <p class="login-prompt">
+            Already have an account?
+            <router-link to="/login" class="login-link">Sign In</router-link>
+          </p>
+          
+          <!-- Features Preview -->
+          <div class="features-preview">
+            <p class="features-title">What you'll get:</p>
+            <div class="features-list">
+              <div class="feature-item">
+                <i class="fas fa-chart-line"></i>
+                <span>Track your progress</span>
+              </div>
+              <div class="feature-item">
+                <i class="fas fa-trophy"></i>
+                <span>Earn achievements</span>
+              </div>
+              <div class="feature-item">
+                <i class="fas fa-users"></i>
+                <span>Join competitions</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -126,9 +199,49 @@ export default {
       errorMessage: ''
     }
   },
+  computed: {
+    passwordStrength() {
+      if (!this.password) return 0;
+      
+      let strength = 0;
+      if (this.password.length >= 6) strength++;
+      if (this.password.length >= 8) strength++;
+      if (/[A-Z]/.test(this.password)) strength++;
+      if (/[a-z]/.test(this.password)) strength++;
+      if (/[0-9]/.test(this.password)) strength++;
+      if (/[^A-Za-z0-9]/.test(this.password)) strength++;
+      
+      return Math.min(strength, 4);
+    },
+    
+    passwordStrengthClass() {
+      const classes = ['weak', 'fair', 'good', 'strong'];
+      return classes[this.passwordStrength - 1] || 'weak';
+    },
+    
+    passwordStrengthText() {
+      if (!this.password) return '';
+      const texts = ['Weak', 'Fair', 'Good', 'Strong'];
+      return texts[this.passwordStrength - 1] || 'Weak';
+    },
+    
+    isFormValid() {
+      return this.name.trim() && 
+             this.email.trim() && 
+             this.password.length >= 6;
+    }
+  },
   methods: {
     clearError() {
       this.errorMessage = '';
+    },
+    
+    onInputFocus(event) {
+      event.target.parentElement.classList.add('focused');
+    },
+    
+    onInputBlur(event) {
+      event.target.parentElement.classList.remove('focused');
     },
 
     getErrorMessage(error) {
@@ -195,233 +308,637 @@ export default {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+/* Import fonts and icons */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css');
 
 /* Global styles */
 * {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-/* Card styling with glass-morphism effect */
-.card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-}
-
-.card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
-}
-
-.card-title {
-  color: #1a202c;
-  font-weight: 700;
-  font-size: 1.5rem;
-  letter-spacing: -0.025em;
-}
-
-/* Form inputs */
-.custom-input {
-  background: rgba(248, 250, 252, 0.8);
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 12px 16px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #2d3748;
-  transition: all 0.3s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.custom-input:focus {
-  background: rgba(255, 255, 255, 0.95);
-  border-color: #667eea;
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  transform: translateY(-1px);
-}
-
-.custom-input:disabled {
-  background: rgba(226, 232, 240, 0.5);
-  color: #a0aec0;
-  cursor: not-allowed;
-}
-
-/* Make room for the eye button */
-.has-toggle .custom-input {
-  padding-right: 3rem;
-}
-
-/* Password toggle button */
-.toggle-password {
-  position: absolute;
-  top: 50%;
-  right: 12px;
-  transform: translateY(-50%);
-  width: 36px;
-  height: 36px;
-  border: none;
-  background: rgba(102, 126, 234, 0.1);
-  border-radius: 8px;
+.register-container {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  color: #667eea;
-  transition: all 0.2s ease;
-}
-
-.toggle-password:hover {
-  background: rgba(102, 126, 234, 0.2);
-  transform: translateY(-50%) scale(1.05);
-}
-
-.toggle-password:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
-}
-
-.toggle-password:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background: rgba(160, 174, 192, 0.1);
-  color: #a0aec0;
-}
-
-.toggle-password svg {
-  width: 18px;
-  height: 18px;
-}
-
-/* Custom button with gradient */
-.custom-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  border-radius: 12px;
-  padding: 14px 24px;
-  font-size: 16px;
-  font-weight: 600;
-  color: white;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  padding: 2rem;
   position: relative;
   overflow: hidden;
 }
 
-.custom-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #5a6fd8 0%, #6a4c93 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+/* Animated Background */
+.animated-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -2;
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
 }
 
-.custom-btn:active:not(:disabled) {
-  transform: translateY(0);
+.floating-shapes {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
-.custom-btn:disabled {
-  background: linear-gradient(135deg, #a0aec0 0%, #cbd5e0 100%);
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: 0 2px 8px rgba(160, 174, 192, 0.3);
+.shape {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--accent-color);
+  opacity: 0.08;
+  animation: float 20s infinite linear;
 }
 
-.custom-btn:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+.shape-1 {
+  width: 120px;
+  height: 120px;
+  top: 10%;
+  left: 5%;
+  animation-delay: 0s;
+}
+
+.shape-2 {
+  width: 80px;
+  height: 80px;
+  top: 70%;
+  right: 10%;
+  animation-delay: -4s;
+}
+
+.shape-3 {
+  width: 100px;
+  height: 100px;
+  top: 30%;
+  left: 80%;
+  animation-delay: -8s;
+}
+
+.shape-4 {
+  width: 60px;
+  height: 60px;
+  top: 90%;
+  left: 20%;
+  animation-delay: -12s;
+}
+
+.shape-5 {
+  width: 140px;
+  height: 140px;
+  top: 50%;
+  right: 30%;
+  animation-delay: -16s;
+}
+
+.shape-6 {
+  width: 90px;
+  height: 90px;
+  top: 20%;
+  left: 50%;
+  animation-delay: -20s;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px) rotate(0deg);
+    opacity: 0.08;
+  }
+  50% {
+    opacity: 0.15;
+  }
+  100% {
+    transform: translateY(-100vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.gradient-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 30% 20%, var(--accent-color-alpha) 0%, transparent 50%),
+              radial-gradient(circle at 70% 80%, var(--accent-color-alpha) 0%, transparent 50%);
+  z-index: -1;
+}
+
+/* Register Card */
+.register-card-container {
+  width: 100%;
+  max-width: 480px;
+  animation: slideInUp 0.8s ease-out;
+}
+
+.register-card {
+  background: var(--bg-secondary);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-color);
+  border-radius: 24px;
+  padding: 2.5rem;
+  box-shadow: 0 25px 50px var(--shadow-dark);
+  position: relative;
+  overflow: hidden;
+}
+
+.register-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
+  opacity: 0.5;
+}
+
+/* Header */
+.card-header {
+ 
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.back-button {
+  width: 44px;
+  height: 44px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.back-button:hover {
+  background: var(--accent-color);
+  color: white;
+  transform: translateX(-2px);
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.logo-icon {
+  width: 36px;
+  height: 36px;
+  background: var(--accent-gradient);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.1rem;
+}
+
+.logo-text {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.logo-badge {
+  background: var(--accent-color);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Welcome Section */
+.welcome-section {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.welcome-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+  animation: slideInUp 0.8s ease-out 0.2s both;
+}
+
+.welcome-subtitle {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  animation: slideInUp 0.8s ease-out 0.4s both;
+}
+
+/* Error Alert */
+.error-alert {
+  background: var(--error-color);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: white;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.error-icon {
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.error-content {
+  flex: 1;
+}
+
+.error-text {
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.error-close {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: background 0.2s ease;
+}
+
+.error-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Form */
+.register-form {
+  animation: slideInUp 0.8s ease-out 0.6s both;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
 }
 
 .form-label {
-  color: #495057;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   font-weight: 600;
-  margin-bottom: 8px;
-  letter-spacing: 0.5px;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
 }
 
-.alert {
+.form-label i {
+  color: var(--accent-color);
+  width: 16px;
+}
+
+.input-container {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.form-input {
+  width: 100%;
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  font-size: 1rem;
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.form-input:focus {
+  border-color: var(--accent-color);
+  background: var(--bg-primary);
+  box-shadow: 0 0 0 3px var(--accent-color-alpha);
+}
+
+.form-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.form-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.password-container .form-input {
+  padding-right: 3.5rem;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.password-toggle:hover:not(:disabled) {
+  color: var(--accent-color);
+  background: var(--accent-color-alpha);
+}
+
+.password-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.input-border {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--accent-gradient);
+  transition: width 0.3s ease;
+  border-radius: 1px;
+}
+
+.input-container.focused .input-border {
+  width: 100%;
+}
+
+/* Password Strength */
+.password-strength {
+  margin-top: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.strength-indicator {
+  flex: 1;
+  height: 4px;
+  background: var(--bg-tertiary);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.strength-bar {
+  height: 100%;
+  width: 0;
+  transition: all 0.3s ease;
+  border-radius: 2px;
+}
+
+.strength-indicator.weak .strength-bar {
+
+  background: #ef4444;
+} 
+
+.strength-indicator.fair .strength-bar {
+  width: 50%;
+  background: #f59e0b;
+}
+
+.strength-indicator.good .strength-bar {
+  width: 75%;
+  background: #10b981;
+}
+
+.strength-indicator.strong .strength-bar {
+  width: 100%;
+  background: #059669;
+}
+
+.strength-text {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  min-width: 60px;
+}
+
+/* Register Button */
+.register-button {
+  width: 100%;
+  background: var(--accent-gradient);
   border: none;
   border-radius: 12px;
-  padding: 12px 16px;
-  font-size: 14px;
-  font-weight: 500;
-  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.15);
-}
-
-.alert-danger {
-  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+  padding: 1.25rem;
   color: white;
+  font-weight: 600;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 2rem;
 }
 
-.alert .btn-close {
-  filter: brightness(0) invert(1);
-  opacity: 0.8;
+.register-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px var(--accent-color-alpha);
 }
 
-.alert .btn-close:hover {
-  opacity: 1;
+.register-button:active:not(:disabled) {
+  transform: translateY(0);
 }
 
-.btn-close {
-  opacity: 0.6;
-  transition: opacity 0.2s ease;
+.register-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
 }
 
-.btn-close:hover {
-  opacity: 1;
+.button-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  position: relative;
+  z-index: 2;
 }
 
-.spinner-border-sm {
-  width: 1rem;
-  height: 1rem;
-  border-width: 2px;
+.button-glow {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
 }
 
-/* Smooth animations */
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 0.3s ease;
+.register-button:hover:not(:disabled) .button-glow {
+  left: 100%;
 }
 
-.fade-enter-from, .fade-leave-to {
-  opacity: 0;
+.loading-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Link styling */
-a {
-  color: #667eea;
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Footer */
+.card-footer {
+  text-align: center;
+  animation: slideInUp 0.8s ease-out 0.8s both;
+}
+
+.login-prompt {
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.login-link {
+  color: var(--accent-color);
+  text-decoration: none;
+  font-weight: 600;
   transition: color 0.2s ease;
 }
 
-a:hover {
-  color: #5a6fd8;
-  text-decoration: none !important;
+.login-link:hover {
+  color: var(--text-primary);
 }
 
-/* Responsive design */
-@media (max-width: 480px) {
-  .card {
-    width: 90% !important;
-    margin: 0 20px;
+/* Features Preview */
+.features-preview {
+  border-top: 1px solid var(--border-color);
+  padding-top: 1.5rem;
+}
+
+.features-title {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
+.features-list {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.feature-item i {
+  color: var(--accent-color);
+  font-size: 0.75rem;
+}
+
+/* Animations */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-down-enter-active {
+  transition: all 0.3s ease-out;
+}
+
+.slide-down-leave-active {
+  transition: all 0.3s ease-in;
+}
+
+.slide-down-enter-from {
+  opacity: 0;
+  transform: translateY(-20px);
+}
+
+.slide-down-leave-to {
+  opacity: 0;
+  transform: translateY(-20px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .register-container {
+    padding: 1rem;
   }
   
-  .card-body {
-    padding: 1.5rem !important;
+  .register-card {
+    padding: 2rem;
+  }
+  
+  .welcome-title {
+    font-size: 1.75rem;
+  }
+  
+  .features-list {
+    flex-direction: column;
+    align-items: center;
   }
 }
 
-/* Loading state animations */
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
+@media (max-width: 480px) {
+  .register-card {
+    padding: 1.5rem;
   }
-  50% {
-    opacity: 0.5;
+  
+  .welcome-title {
+    font-size: 1.5rem;
   }
-}
-
-.custom-btn:disabled .spinner-border {
-  animation: pulse 1.5s ease-in-out infinite;
+  
+  .card-header {
+    margin-bottom: 1.5rem;
+  }
+  
+  .form-input {
+    padding: 0.875rem 1rem;
+  }
+  
+  .register-button {
+    padding: 1rem;
+  }
 }
 </style>

@@ -52,6 +52,7 @@
             <div class="student-col">Student</div>
             <div class="wpm-col">WPM</div>
             <div class="accuracy-col">Accuracy</div>
+            <div class="errors-col">Errors</div>
             <div class="status-col">Status</div>
           </div>
 
@@ -83,6 +84,9 @@
               </div>
               <div class="accuracy-col">
                 <span class="accuracy-value">{{ student.accuracy }}%</span>
+              </div>
+              <div class="errors-col">
+                <span class="errors-value">{{ student.errorsCount || 0 }}</span>
               </div>
               <div class="status-col">
                 <span class="status-badge" :class="student.status">
@@ -479,7 +483,7 @@ export default {
   padding: 1.5rem;
   max-height: calc(90vh - 100px);
   overflow-y: auto;
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .activity-status {
@@ -524,13 +528,13 @@ export default {
 
 .leaderboard-header-row {
   display: grid;
-  grid-template-columns: 60px 1fr 80px 80px 120px 100px;
+  grid-template-columns: 60px 1fr 80px 80px 80px 120px 100px;
   gap: 1rem;
   padding: 1rem 1.5rem;
   background: rgba(255, 255, 255, 0.1);
   font-weight: 600;
   font-size: 0.875rem;
-  color: #a0aec0;
+  color: var(--text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -542,7 +546,7 @@ export default {
 
 .leaderboard-row {
   display: grid;
-  grid-template-columns: 60px 1fr 80px 80px 120px 100px;
+  grid-template-columns: 60px 1fr 80px 80px 80px 120px 100px;
   gap: 1rem;
   padding: 1rem 1.5rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -599,17 +603,23 @@ export default {
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-inverse);
   font-size: 0.875rem;
 }
 
 .student-name {
   font-weight: 500;
+  color: var(--text-primary);
 }
 
 .wpm-value, .accuracy-value {
   font-weight: 600;
   color: #68d391;
+}
+
+.errors-value {
+  font-weight: 600;
+  color: #f56565;
 }
 
 .progress-bar {
@@ -629,7 +639,7 @@ export default {
 
 .progress-text {
   font-size: 0.75rem;
-  color: #a0aec0;
+  color: var(--text-tertiary);
 }
 
 .status-badge {
@@ -678,7 +688,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff;
+  color: var(--text-inverse);
   font-size: 1.25rem;
 }
 
@@ -689,13 +699,13 @@ export default {
 .stat-value {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-primary);
   margin-bottom: 0.25rem;
 }
 
 .stat-label {
   font-size: 0.875rem;
-  color: #a0aec0;
+  color: var(--text-tertiary);
 }
 
 /* Scrollbar styling */

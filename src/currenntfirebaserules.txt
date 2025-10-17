@@ -1,0 +1,60 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow authenticated users to read and write their own user documents
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Allow authenticated users to access sessions
+    match /sessions/{sessionId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow authenticated users to access teacher preferences
+    match /teacherPreferences/{teacherId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow authenticated users to access student sessions
+    match /studentSessions/{sessionId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow authenticated users to access rooms
+    match /rooms/{roomId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow authenticated users to access live sessions
+    match /liveSessions/{sessionId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow authenticated users to access consultations
+    match /consultations/{consultationId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow authenticated users to access auth tokens
+    match /authTokens/{tokenId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow authenticated users to read teacher profiles
+    match /teachers/{teacherId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == teacherId;
+    }
+    
+    // Allow authenticated users to access typing results
+    match /typingResults/{resultId} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow authenticated users to access modules (NEW - this was missing!)
+    match /modules/{moduleId} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

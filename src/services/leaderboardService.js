@@ -52,6 +52,7 @@ class LeaderboardService {
         resultsByUser.get(userId).push({
           wpm: result.wpm || 0,
           accuracy: result.accuracy || 0,
+          errorsCount: result.errorsCount || 0,
           section: result.content?.topic || result.section || 'Unknown',
           timestamp: result.timestamp || result.createdAt || null
         });
@@ -60,7 +61,7 @@ class LeaderboardService {
       // Find best result for each user
       const bestResultsByUser = new Map();
       resultsByUser.forEach((results, userId) => {
-        let bestResult = { wpm: 0, accuracy: 0, section: 'Unknown', timestamp: null };
+        let bestResult = { wpm: 0, accuracy: 0, errorsCount: 0, section: 'Unknown', timestamp: null };
         
         results.forEach(result => {
           if (result.wpm > bestResult.wpm) {
@@ -111,10 +112,10 @@ class LeaderboardService {
   async getBestTypingResults(studentId) {
     try {
       const allResults = await this.loadAllTypingResults();
-      return allResults.get(studentId) || { wpm: 0, accuracy: 0, section: 'Unknown', timestamp: null };
+      return allResults.get(studentId) || { wpm: 0, accuracy: 0, errorsCount: 0, section: 'Unknown', timestamp: null };
     } catch (error) {
       console.error('❌ Error fetching typing results for student:', studentId, error);
-      return { wpm: 0, accuracy: 0, section: 'Unknown', timestamp: null };
+      return { wpm: 0, accuracy: 0, errorsCount: 0, section: 'Unknown', timestamp: null };
     }
   }
 
@@ -126,10 +127,10 @@ class LeaderboardService {
   async getBestTypingResultsAcrossIds(studentIds) {
     try {
       const allResults = await this.loadAllTypingResults();
-      let absoluteBest = { wpm: 0, accuracy: 0, section: 'Unknown', timestamp: null };
+      let absoluteBest = { wpm: 0, accuracy: 0, errorsCount: 0, section: 'Unknown', timestamp: null };
       
       for (const studentId of studentIds) {
-        const results = allResults.get(studentId) || { wpm: 0, accuracy: 0, section: 'Unknown', timestamp: null };
+        const results = allResults.get(studentId) || { wpm: 0, accuracy: 0, errorsCount: 0, section: 'Unknown', timestamp: null };
         if (results.wpm > absoluteBest.wpm) {
           absoluteBest = results;
         }
@@ -138,7 +139,7 @@ class LeaderboardService {
       return absoluteBest;
     } catch (error) {
       console.error('❌ Error fetching best results across IDs:', error);
-      return { wpm: 0, accuracy: 0, section: 'Unknown', timestamp: null };
+      return { wpm: 0, accuracy: 0, errorsCount: 0, section: 'Unknown', timestamp: null };
     }
   }
 
@@ -184,7 +185,7 @@ class LeaderboardService {
             
             // Get best typing results for this student from cache (no database call!)
             const typingResults = allTypingResults.get(student.studentId) || 
-                                { wpm: 0, accuracy: 0, section: 'Unknown', timestamp: null };
+                                { wpm: 0, accuracy: 0, errorsCount: 0, section: 'Unknown', timestamp: null };
             
             if (!studentPerformanceMap.has(studentKey)) {
               // First time seeing this student in this module - add them with their best results
@@ -195,6 +196,7 @@ class LeaderboardService {
                 bestModule: roomModule,
                 wpm: typingResults.wpm,
                 accuracy: typingResults.accuracy,
+                errorsCount: typingResults.errorsCount,
                 testsCompleted: 1,
                 lastActive: typingResults.timestamp ? 
                   (typingResults.timestamp.toDate ? typingResults.timestamp.toDate() : new Date(typingResults.timestamp)) : 
@@ -214,6 +216,7 @@ class LeaderboardService {
                 if (typingResults.wpm > existingStudent.wpm) {
                   existingStudent.wpm = typingResults.wpm;
                   existingStudent.accuracy = typingResults.accuracy;
+                  existingStudent.errorsCount = typingResults.errorsCount;
                   // Keep the room section, don't overwrite with typing results section
                   existingStudent.lastActive = typingResults.timestamp ? 
                     (typingResults.timestamp.toDate ? typingResults.timestamp.toDate() : new Date(typingResults.timestamp)) : 

@@ -1,136 +1,101 @@
-✅ Progress updated successfully
-TypingTest.vue:724 📊 Updating server progress: Object
-runtime-core.esm-bundler.js:238 [Vue warn]: Unhandled error during execution of native event handler 
-  at <TypingTest roomCode="96P4FA" onVnodeUnmounted=fn<onVnodeUnmounted> ref=Ref< Proxy(Object) > > 
-  at <RouterView> 
-  at <App>
-warn$1 @ runtime-core.esm-bundler.js:238
-runtime-core.esm-bundler.js:451 Uncaught TypeError: Cannot read properties of undefined (reading 'length')
-    at Proxy.getCurrentSentenceText (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:438:54)
-    at Proxy.countCompletedWords (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:401:42)
-    at Proxy.calculateStats (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:382:32)
-    at Proxy.handleInput (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:283:12)
-    at Proxy.handleKeydown (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:333:14)
-    at onKeydown._cache.<computed>._cache.<computed> (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/templateLoader.js??ruleSet[1].rules[3]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=template&id=263ab27c&scoped=true (app.js:382:1), <anonymous>:130:90)
-    at callWithErrorHandling (runtime-core.esm-bundler.js:385:19)
-    at callWithAsyncErrorHandling (runtime-core.esm-bundler.js:392:17)
-    at HTMLDivElement.invoker (runtime-dom.esm-bundler.js:941:83)
-TypingTest.vue:271 📊 TypingTest received live session update: Object
-TypingTest.vue:313 ⏰ No time limit set - unlimited typing mode
-TypingTest.vue:607 Uncaught TypeError: Cannot read properties of undefined (reading 'length')
-    at Proxy.getCurrentSentenceText (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:438:54)
-    at Proxy.countCompletedWords (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:401:42)
-    at Proxy.calculateStats (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:382:32)
-    at eval (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:267:14)
-TypingTest.vue:271 📊 TypingTest received live session update: Object
-TypingTest.vue:313 ⏰ No time limit set - unlimited typing mode
-TypingTest.vue:732 ✅ Progress updated successfully
-TypingTest.vue:607 Uncaught TypeError: Cannot read properties of undefined (reading 'length')
-    at Proxy.getCurrentSentenceText (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:438:54)
-    at Proxy.countCompletedWords (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:401:42)
-    at Proxy.calculateStats (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:382:32)
-    at eval (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:267:14)
-TypingTest.vue:724 📊 Updating server progress: Object
-TypingTest.vue:271 📊 TypingTest received live session update: Object
-TypingTest.vue:313 ⏰ No time limit set - unlimited typing mode
-TypingTest.vue:271 📊 TypingTest received live session update: Object
-TypingTest.vue:313 ⏰ No time limit set - unlimited typing mode
-TypingTest.vue:732 ✅ Progress updated successfully
-2TypingTest.vue:607 Uncaught TypeError: Cannot read properties of undefined (reading 'length')
-    at Proxy.getCurrentSentenceText (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:438:54)
-    at Proxy.countCompletedWords (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:401:42)
-    at Proxy.calculateStats (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:382:32)
-    at eval (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:267:14)
-TypingTest.vue:724 📊 Updating server progress: Object
-TypingTest.vue:271 📊 TypingTest received live session update: Object
-TypingTest.vue:313 ⏰ No time limit set - unlimited typing mode
-TypingTest.vue:607 Uncaught TypeError: Cannot read properties of undefined (reading 'length')
-    at Proxy.getCurrentSentenceText (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:438:54)
-    at Proxy.countCompletedWords (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:401:42)
-    at Proxy.calculateStats (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:382:32)
-    at eval (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:267:14)
-TypingTest.vue:271 📊 TypingTest received live session update: Object
-TypingTest.vue:313 ⏰ No time limit set - unlimited typing mode
-TypingTest.vue:732 ✅ Progress updated successfully
-TypingTest.vue:607 Uncaught TypeError: Cannot read properties of undefined (reading 'length')
-    at Proxy.getCurrentSentenceText (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:438:54)
-    at Proxy.countCompletedWords (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:401:42)
-    at Proxy.calculateStats (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:382:32)
-    at eval (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:267:14)
-getCurrentSentenceText @ TypingTest.vue:607
-countCompletedWords @ TypingTest.vue:560
-calculateStats @ TypingTest.vue:540
-eval @ TypingTest.vue:416
-TypingTest.vue:724 📊 Updating server progress: {wpm: 1, accuracy: 100, progress: 0.011879306248515086, currentPosition: 1, status: 'typing'}
-TypingTest.vue:607 Uncaught TypeError: Cannot read properties of undefined (reading 'length')
-    at Proxy.getCurrentSentenceText (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:438:54)
-    at Proxy.countCompletedWords (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:401:42)
-    at Proxy.calculateStats (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:382:32)
-    at eval (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:267:14)
-getCurrentSentenceText @ TypingTest.vue:607
-countCompletedWords @ TypingTest.vue:560
-calculateStats @ TypingTest.vue:540
-eval @ TypingTest.vue:416
-TypingTest.vue:271 📊 TypingTest received live session update: {moduleContent: 'theoretical-foundations-in-nursing', status: 'active', studentProgress: {…}, updatedAt: Mon Oct 13 2025 19:07:57 GMT+0800 (Taipei Standard Time), timeLimit: 0, …}
-TypingTest.vue:313 ⏰ No time limit set - unlimited typing mode
-TypingTest.vue:271 📊 TypingTest received live session update: {settings: {…}, leaderboard: Array(1), status: 'active', difficulty: 'Easy', countdownStartedAt: Mon Oct 13 2025 19:07:33 GMT+0800 (Taipei Standard Time), …}
-TypingTest.vue:313 ⏰ No time limit set - unlimited typing mode
-TypingTest.vue:732 ✅ Progress updated successfully
-TypingTest.vue:607 Uncaught TypeError: Cannot read properties of undefined (reading 'length')
-    at Proxy.getCurrentSentenceText (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:438:54)
-    at Proxy.countCompletedWords (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:401:42)
-    at Proxy.calculateStats (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:382:32)
-    at eval (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:267:14)
-getCurrentSentenceText @ TypingTest.vue:607
-countCompletedWords @ TypingTest.vue:560
-calculateStats @ TypingTest.vue:540
-eval @ TypingTest.vue:416
-TypingTest.vue:724 📊 Updating server progress: {wpm: 1, accuracy: 100, progress: 0.011879306248515086, currentPosition: 1, status: 'typing'}
-TypingTest.vue:271 📊 TypingTest received live session update: {countdownDuration: 10, settings: {…}, createdAt: Mon Oct 13 2025 19:07:33 GMT+0800 (Taipei Standard Time), startedAt: Mon Oct 13 2025 19:07:44 GMT+0800 (Taipei Standard Time), timeLimit: 0, …}
-TypingTest.vue:313 ⏰ No time limit set - unlimited typing mode
-TypingTest.vue:607 Uncaught TypeError: Cannot read properties of undefined (reading 'length')
-    at Proxy.getCurrentSentenceText (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:438:54)
-    at Proxy.countCompletedWords (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:401:42)
-    at Proxy.calculateStats (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:382:32)
-    at eval (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:267:14)
-getCurrentSentenceText @ TypingTest.vue:607
-countCompletedWords @ TypingTest.vue:560
-calculateStats @ TypingTest.vue:540
-eval @ TypingTest.vue:416
-TypingTest.vue:271 📊 TypingTest received live session update: {settings: {…}, countdownStartedAt: Mon Oct 13 2025 19:07:33 GMT+0800 (Taipei Standard Time), status: 'active', roomCode: '96P4FA', countdownDuration: 10, …}
-TypingTest.vue:313 ⏰ No time limit set - unlimited typing mode
-TypingTest.vue:732 ✅ Progress updated successfully
-TypingTest.vue:607 Uncaught TypeError: Cannot read properties of undefined (reading 'length')
-    at Proxy.getCurrentSentenceText (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:438:54)
-    at Proxy.countCompletedWords (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:401:42)
-    at Proxy.calculateStats (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:382:32)
-    at eval (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:267:14)
-getCurrentSentenceText @ TypingTest.vue:607
-countCompletedWords @ TypingTest.vue:560
-calculateStats @ TypingTest.vue:540
-eval @ TypingTest.vue:416
-TypingTest.vue:724 📊 Updating server progress: {wpm: 1, accuracy: 100, progress: 0.011879306248515086, currentPosition: 1, status: 'typing'}
-TypingTest.vue:607 Uncaught TypeError: Cannot read properties of undefined (reading 'length')
-    at Proxy.getCurrentSentenceText (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:438:54)
-    at Proxy.countCompletedWords (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:401:42)
-    at Proxy.calculateStats (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:382:32)
-    at eval (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:267:14)
-getCurrentSentenceText @ TypingTest.vue:607
-countCompletedWords @ TypingTest.vue:560
-calculateStats @ TypingTest.vue:540
-eval @ TypingTest.vue:416
-TypingTest.vue:271 📊 TypingTest received live session update: {studentProgress: {…}, settings: {…}, status: 'active', roomId: '4d75509d-0eb4-4b05-b233-28a71de41c05', moduleContent: 'theoretical-foundations-in-nursing', …}
-TypingTest.vue:313 ⏰ No time limit set - unlimited typing mode
-TypingTest.vue:271 📊 TypingTest received live session update: {studentProgress: {…}, countdownStartedAt: Mon Oct 13 2025 19:07:33 GMT+0800 (Taipei Standard Time), settings: {…}, timeLimit: 0, status: 'active', …}
-TypingTest.vue:313 ⏰ No time limit set - unlimited typing mode
-TypingTest.vue:732 ✅ Progress updated successfully
-TypingTest.vue:607 Uncaught TypeError: Cannot read properties of undefined (reading 'length')
-    at Proxy.getCurrentSentenceText (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:438:54)
-    at Proxy.countCompletedWords (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:401:42)
-    at Proxy.calculateStats (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:382:32)
-    at eval (eval at ./node_modules/babel-loader/lib/index.js??clonedRuleSet-40.use[0]!./node_modules/vue-loader/dist/index.js??ruleSet[0].use[0]!./src/components/Student Side/TypingTest.vue?vue&type=script&lang=js (app.js:140:1), <anonymous>:267:14)
-getCurrentSentenceText @ TypingTest.vue:607
-countCompletedWords @ TypingTest.vue:560
-calculateStats @ TypingTest.vue:540
-eval @ TypingTest.vue:416
-TypingTest.vue:724 📊 Updating server progress: {wpm: 1, accuracy: 100, progress: 0.011879306248515086, currentPosition: 1, status: 'typing'}
+Teacher session found: {sessionId: '03359225-9603-4f2c-8d26-66cd90b0f034', expiresAt: null, lastActivity: Timestamp, teacherData: {…}, loginTime: Timestamp, …}
+teacherDataService.js:85 Final teacher data: {session: {…}, profile: {…}, name: 'Mang kanor', email: 'm@gmail.com', id: 'TXzWm9SOOCO8tiW3xi6bnWYin282'}
+moduleStorageService.js:347 ❌ Error clearing modules: FirebaseError: Missing or insufficient permissions.
+clearAllModules @ moduleStorageService.js:347
+await in clearAllModules
+forceReuploadModules @ moduleService.js:48
+mounted @ CreateRoomModal.vue:218
+eval @ runtime-core.esm-bundler.js:2773
+callWithErrorHandling @ runtime-core.esm-bundler.js:385
+callWithAsyncErrorHandling @ runtime-core.esm-bundler.js:392
+hook.__weh.hook.__weh @ runtime-core.esm-bundler.js:2755
+flushPostFlushCbs @ runtime-core.esm-bundler.js:563
+flushJobs @ runtime-core.esm-bundler.js:601
+Promise.then
+queueFlush @ runtime-core.esm-bundler.js:502
+queueJob @ runtime-core.esm-bundler.js:497
+effect.scheduler @ runtime-core.esm-bundler.js:5101
+trigger @ reactivity.esm-bundler.js:349
+endBatch @ reactivity.esm-bundler.js:407
+notify @ reactivity.esm-bundler.js:694
+trigger @ reactivity.esm-bundler.js:673
+set value @ reactivity.esm-bundler.js:1470
+finalizeNavigation @ vue-router.mjs:3319
+eval @ vue-router.mjs:3201
+Promise.then
+pushWithRedirect @ vue-router.mjs:3172
+push @ vue-router.mjs:3098
+install @ vue-router.mjs:3499
+use @ runtime-core.esm-bundler.js:3766
+eval @ main.js:24
+./src/main.js @ app.js:2142
+__webpack_require__ @ app.js:2565
+(anonymous) @ app.js:3699
+(anonymous) @ app.js:2607
+(anonymous) @ app.js:3700
+(anonymous) @ app.js:3702
+moduleService.js:61 ❌ Error force re-uploading modules: FirebaseError: Missing or insufficient permissions.
+forceReuploadModules @ moduleService.js:61
+await in forceReuploadModules
+mounted @ CreateRoomModal.vue:218
+eval @ runtime-core.esm-bundler.js:2773
+callWithErrorHandling @ runtime-core.esm-bundler.js:385
+callWithAsyncErrorHandling @ runtime-core.esm-bundler.js:392
+hook.__weh.hook.__weh @ runtime-core.esm-bundler.js:2755
+flushPostFlushCbs @ runtime-core.esm-bundler.js:563
+flushJobs @ runtime-core.esm-bundler.js:601
+Promise.then
+queueFlush @ runtime-core.esm-bundler.js:502
+queueJob @ runtime-core.esm-bundler.js:497
+effect.scheduler @ runtime-core.esm-bundler.js:5101
+trigger @ reactivity.esm-bundler.js:349
+endBatch @ reactivity.esm-bundler.js:407
+notify @ reactivity.esm-bundler.js:694
+trigger @ reactivity.esm-bundler.js:673
+set value @ reactivity.esm-bundler.js:1470
+finalizeNavigation @ vue-router.mjs:3319
+eval @ vue-router.mjs:3201
+Promise.then
+pushWithRedirect @ vue-router.mjs:3172
+push @ vue-router.mjs:3098
+install @ vue-router.mjs:3499
+use @ runtime-core.esm-bundler.js:3766
+eval @ main.js:24
+./src/main.js @ app.js:2142
+__webpack_require__ @ app.js:2565
+(anonymous) @ app.js:3699
+(anonymous) @ app.js:2607
+(anonymous) @ app.js:3700
+(anonymous) @ app.js:3702
+CreateRoomModal.vue:223 ❌ Error initializing CreateRoomModal: FirebaseError: Missing or insufficient permissions.
+mounted @ CreateRoomModal.vue:223
+await in mounted
+eval @ runtime-core.esm-bundler.js:2773
+callWithErrorHandling @ runtime-core.esm-bundler.js:385
+callWithAsyncErrorHandling @ runtime-core.esm-bundler.js:392
+hook.__weh.hook.__weh @ runtime-core.esm-bundler.js:2755
+flushPostFlushCbs @ runtime-core.esm-bundler.js:563
+flushJobs @ runtime-core.esm-bundler.js:601
+Promise.then
+queueFlush @ runtime-core.esm-bundler.js:502
+queueJob @ runtime-core.esm-bundler.js:497
+effect.scheduler @ runtime-core.esm-bundler.js:5101
+trigger @ reactivity.esm-bundler.js:349
+endBatch @ reactivity.esm-bundler.js:407
+notify @ reactivity.esm-bundler.js:694
+trigger @ reactivity.esm-bundler.js:673
+set value @ reactivity.esm-bundler.js:1470
+finalizeNavigation @ vue-router.mjs:3319
+eval @ vue-router.mjs:3201
+Promise.then
+pushWithRedirect @ vue-router.mjs:3172
+push @ vue-router.mjs:3098
+install @ vue-router.mjs:3499
+use @ runtime-core.esm-bundler.js:3766
+eval @ main.js:24
+./src/main.js @ app.js:2142
+__webpack_require__ @ app.js:2565
+(anonymous) @ app.js:3699
+(anonymous) @ app.js:2607
+(anonymous) @ app.js:3700
+(anonymous) @ app.js:3702

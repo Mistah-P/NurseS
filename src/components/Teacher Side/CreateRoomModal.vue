@@ -27,8 +27,8 @@
           />
         </div>
 
-        <!-- Student Year -->
-        <div class="form-group">
+        <!-- Student Year (Hidden) -->
+        <div class="form-group" style="display: none;">
           <label class="form-label">
             <i class="fas fa-graduation-cap me-2"></i>
             Student Year
@@ -46,8 +46,8 @@
           </select>
         </div>
 
-        <!-- Section (appears after year selection) -->
-        <div class="form-group" v-if="formData.studentYear">
+        <!-- Section (always visible) -->
+        <div class="form-group">
           <label class="form-label">
             <i class="fas fa-users me-2"></i>
             Section
@@ -229,7 +229,7 @@ export default {
       errorMessage: '',
       formData: {
         activityName: '',
-        studentYear: '',
+        studentYear: '3rd', // Default to 3rd year since it's hidden
         section: '',
         gameMode: '',
         duration: '',
@@ -238,16 +238,16 @@ export default {
         difficulty: ''
       },
       years: [
-        { value: '1st', label: '1st Year' },
-        { value: '2nd', label: '2nd Year' },
+     
+        
         { value: '3rd', label: '3rd Year' },
-        { value: '4th', label: '4th Year' }
+        
       ],
       sections: {
-        '1st': ['BSN-1A', 'BSN-1B', 'BSN-1C', 'BSN-1D'],
-        '2nd': ['BSN-2A', 'BSN-2B', 'BSN-2C', 'BSN-2D'],
+      
+        
         '3rd': ['BSN-3A', 'BSN-3B', 'BSN-3C', 'BSN-3D'],
-        '4th': ['BSN-4A', 'BSN-4B', 'BSN-4C', 'BSN-4D']
+       
       },
       durations: [
         { value: 1, label: '1 minute' },
@@ -391,7 +391,7 @@ export default {
     resetForm() {
       this.formData = {
         activityName: '',
-        studentYear: '',
+        studentYear: '3rd', // Keep default value when resetting
         section: '',
         gameMode: '',
         duration: '',

@@ -181,7 +181,8 @@ class ActivityService {
               name: student.studentName,
               wpm: student.wpm || 0,
               accuracy: student.accuracy || 0,
-              status: student.status || 'ready'
+              status: student.status || 'ready',
+              errorsCount: 0 // Default value, will be updated from typing results
             })
           })
         }
@@ -197,10 +198,46 @@ class ActivityService {
               name: student.studentName,
               wpm: 0,
               accuracy: 0,
-              status: 'completed'
+              status: 'completed',
+              errorsCount: 0 // Default value, will be updated from typing results
             })
           })
         }
+      }
+
+      // Safely fetch error counts from typing results for each student
+      try {
+        const typingResultsQuery = query(
+          collection(db, 'typingResults'),
+          where('roomId', '==', roomCode),
+          where('sessionType', '==', 'room')
+        )
+        
+        const typingResultsSnapshot = await getDocs(typingResultsQuery)
+        
+        if (!typingResultsSnapshot.empty) {
+          // Create a map of student ID to their typing result
+          const studentErrorsMap = new Map()
+          
+          typingResultsSnapshot.docs.forEach(doc => {
+            const resultData = doc.data()
+            if (resultData.userId && typeof resultData.errorsCount === 'number') {
+              studentErrorsMap.set(resultData.userId, resultData.errorsCount)
+            }
+          })
+          
+          // Update leaderboard with error counts
+          leaderboard.forEach(student => {
+            if (studentErrorsMap.has(student.id)) {
+              student.errorsCount = studentErrorsMap.get(student.id)
+            }
+          })
+          
+          console.log(`🏆 Updated ${studentErrorsMap.size} students with error counts from typing results`)
+        }
+      } catch (errorFetchError) {
+        console.warn('⚠️ Could not fetch error counts from typing results:', errorFetchError.message)
+        // Continue without error counts - this is safe fallback behavior
       }
       
       // Cache the results
