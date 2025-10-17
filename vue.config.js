@@ -21,22 +21,16 @@ module.exports = defineConfig({
     }
   },
   chainWebpack: config => {
-    // Copy module files to public directory so they can be fetched
+    // Copy module files from public directory for production builds
     config.plugin('copy').tap(args => {
       args[0].patterns.push({
-        from: path.resolve(__dirname, 'src/module'),
-        to: path.resolve(__dirname, 'dist/src/module'),
+        from: path.resolve(__dirname, 'public/module'),
+        to: path.resolve(__dirname, 'dist/module'),
         globOptions: {
           ignore: ['.*']
         }
       })
       return args
     })
-  },
-  devServer: {
-    static: {
-      directory: path.join(__dirname, 'src'),
-      publicPath: '/src'
-    }
   }
 })
