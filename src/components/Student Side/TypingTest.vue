@@ -269,6 +269,15 @@ export default {
           return
         }
         
+        // SAFE FIX: Check initial session status before subscribing
+        const initialSessionData = await liveSessionService.getLiveSession(this.roomCode)
+        if (initialSessionData && initialSessionData.status === 'countdown') {
+          console.log('⏰ Initial check: Session is in countdown phase, redirecting to student room interface')
+          this.showToast('Activity is starting soon. Please wait for the countdown to finish.', 'info')
+          this.$router.push(`/student-room/${this.roomCode}`)
+          return
+        }
+        
         // Subscribe to live session for text content and updates
         this.liveSessionListener = liveSessionService.subscribeToLiveSession(
           this.roomCode,
@@ -285,6 +294,14 @@ export default {
       if (update.exists && update.data) {
         const sessionData = update.data
         console.log('📊 TypingTest received live session update:', sessionData)
+        
+        // SAFE FIX: Check if session is still in countdown - redirect to student room interface
+        if (sessionData.status === 'countdown') {
+          console.log('⏰ Session is still in countdown phase, redirecting to student room interface')
+          this.showToast('Activity is starting soon. Please wait for the countdown to finish.', 'info')
+          this.$router.push(`/student-room/${this.roomCode}`)
+          return
+        }
         
         // Set the text to type from the module content with difficulty transformation
         if (sessionData.moduleContent && !this.textToType) {
