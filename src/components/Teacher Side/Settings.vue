@@ -172,6 +172,9 @@ import teacherDataService from '../../services/teacherDataService';
 import sessionService from '../../services/sessionService';
 import themeService from '../../services/themeService';
 
+// API configuration
+const API_BASE_URL = process.env.VUE_APP_API_URL || 'http://localhost:3000/api';
+
 export default {
   name: 'TeacherSettings',
   data() {
@@ -277,7 +280,7 @@ export default {
         }
         
         // Fetch teacher data from the teacher profile endpoint (no admin access required)
-        const response = await axios.get(`http://localhost:3000/api/admin/teachers/${teacherId}/profile`);
+        const response = await axios.get(`${API_BASE_URL}/admin/teachers/${teacherId}/profile`);
         
         if (response.data.success) {
           const teacherData = response.data.data;
@@ -334,7 +337,7 @@ export default {
         
         // Update teacher profile using the new self-update endpoint
         const response = await axios.put(
-          `http://localhost:3000/api/admin/teachers/${this.teacherId}/profile`, 
+          `${API_BASE_URL}/admin/teachers/${this.teacherId}/profile`, 
           updateData
         );
         

@@ -421,6 +421,9 @@ import axios from 'axios';
 import { auth } from '../firebase/init';
 import { onAuthStateChanged } from 'firebase/auth';
 
+// API configuration
+const API_BASE_URL = process.env.VUE_APP_API_URL || 'http://localhost:3000/api';
+
 export default {
   name: 'AIPatient',
   data() {
@@ -722,7 +725,7 @@ export default {
         }));
 
         // Call AI backend for response generation and speech
-        const response = await fetch('http://localhost:3000/api/ai/chat-with-speech', {
+        const response = await fetch(`${API_BASE_URL}/ai/chat-with-speech`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -855,7 +858,7 @@ export default {
         };
 
         // Save to database
-        const response = await axios.post('http://localhost:3000/api/consultations/save', consultationPayload);
+        const response = await axios.post(`${API_BASE_URL}/consultations/save`, consultationPayload);
         
         if (response.data.success) {
           console.log('Consultation saved successfully:', response.data);
@@ -909,7 +912,7 @@ export default {
            return;
          }
 
-         const response = await axios.get(`http://localhost:3000/api/consultations/history?userId=${this.currentUserId}`);
+         const response = await axios.get(`${API_BASE_URL}/consultations/history?userId=${this.currentUserId}`);
          if (response.data.success) {
            this.consultationHistory = response.data.consultations;
          }

@@ -167,6 +167,9 @@ import sessionService from '../../services/sessionService'
 import teacherDataService from '../../services/teacherDataService'
 import { auth } from '../../firebase/init'
 
+// API configuration
+const API_BASE_URL = process.env.VUE_APP_API_URL || 'http://localhost:3000/api';
+
 export default {
   name: 'TeacherDashboard',
   components: {
@@ -284,7 +287,7 @@ export default {
     async fetchTopWPM() {
       this.loadingTopWPM = true;
       try {
-        const response = await fetch('http://localhost:3000/api/typing-results/top-wpm-monthly');
+        const response = await fetch(`${API_BASE_URL}/typing-results/top-wpm-monthly`);
         const result = await response.json();
         
         if (result.success) {
@@ -328,7 +331,7 @@ export default {
     async fetchRecentActivities() {
       this.loadingActivities = true;
       try {
-        const response = await fetch('http://localhost:3000/api/typing-results/recent-activities');
+        const response = await fetch(`${API_BASE_URL}/typing-results/recent-activities`);
         const result = await response.json();
         
         if (result.success) {
