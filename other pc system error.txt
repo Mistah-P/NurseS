@@ -1,0 +1,328 @@
+📋 Fetching recent activities for teacher dashboard
+Error fetching top WPM performers: Error: 16 UNAUTHENTICATED: Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+    at callErrorFromStatus (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\call.js:32:19)
+    at Object.onReceiveStatus (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\client.js:359:73)
+    at Object.onReceiveStatus (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\client-interceptors.js:327:181)
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\resolving-call.js:135:78
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11)
+for call at
+    at ServiceClientImpl.makeServerStreamRequest (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\client.js:342:32)
+    at ServiceClientImpl.<anonymous> (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\make-client.js:105:19)  
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\v1\firestore_client.js:242:33
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\streamingCalls\streamingApiCaller.js:38:28
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\normalCalls\timeout.js:44:16
+    at Object.request (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\streamingCalls\streaming.js:234:40)       
+    at makeRequest (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\retry-request\index.js:159:28)
+    at retryRequest (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\retry-request\index.js:119:5)
+    at StreamProxy.setStream (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\streamingCalls\streaming.js:225:37)
+    at StreamingApiCaller.call (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\streamingCalls\streamingApiCaller.js:54:16)
+Caused by: Error
+    at QueryUtil._getResponse (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\reference\query-util.js:44:23)
+    at Query._getResponse (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\reference\query.js:784:32)
+    at Query._get (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\reference\query.js:777:35)       
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\reference\query.js:745:43
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\telemetry\enabled-trace-util.js:110:30       
+    at NoopContextManager.with (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@opentelemetry\api\build\src\context\NoopContextManager.js:25:19)
+    at ContextAPI.with (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@opentelemetry\api\build\src\api\context.js:60:46)
+    at NoopTracer.startActiveSpan (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@opentelemetry\api\build\src\trace\NoopTracer.js:65:31)
+    at ProxyTracer.startActiveSpan (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@opentelemetry\api\build\src\trace\ProxyTracer.js:36:24)
+    at EnabledTraceUtil.startActiveSpan (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\telemetry\enabled-trace-util.js:102:28) {
+  code: 16,
+  details: 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.',
+  metadata: Metadata {
+    internalRepr: Map(4) {
+      'google.rpc.errorinfo-bin' => [Array],
+      'grpc-status-details-bin' => [Array],
+      'www-authenticate' => [Array],
+      'x-debug-tracking-id' => [Array]
+    },
+    opaqueData: Map(0) {},
+    options: {}
+  },
+  statusDetails: [
+    ErrorInfo {
+      metadata: [Object],
+      reason: 'ACCESS_TOKEN_EXPIRED',
+      domain: 'googleapis.com'
+    }
+  ],
+  reason: 'ACCESS_TOKEN_EXPIRED',
+  domain: 'googleapis.com',
+  errorInfoMetadata: {
+    method: 'google.firestore.v1.Firestore.RunQuery',
+    service: 'firestore.googleapis.com'
+  }
+}
+❌ Error fetching recent activities: Error: 16 UNAUTHENTICATED: Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+    at callErrorFromStatus (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\call.js:32:19)
+    at Object.onReceiveStatus (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\client.js:359:73)
+    at Object.onReceiveStatus (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\client-interceptors.js:327:181)
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\resolving-call.js:135:78
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11)
+for call at
+    at ServiceClientImpl.makeServerStreamRequest (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\client.js:342:32)
+    at ServiceClientImpl.<anonymous> (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\make-client.js:105:19)  
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\v1\firestore_client.js:242:33
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\streamingCalls\streamingApiCaller.js:38:28
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\normalCalls\timeout.js:44:16
+    at Object.request (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\streamingCalls\streaming.js:234:40)       
+    at makeRequest (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\retry-request\index.js:159:28)
+    at retryRequest (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\retry-request\index.js:119:5)
+    at StreamProxy.setStream (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\streamingCalls\streaming.js:225:37)
+    at StreamingApiCaller.call (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\streamingCalls\streamingApiCaller.js:54:16)
+Caused by: Error
+    at QueryUtil._getResponse (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\reference\query-util.js:44:23)
+    at Query._getResponse (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\reference\query.js:784:32)
+    at Query._get (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\reference\query.js:777:35)       
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\reference\query.js:745:43
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\telemetry\enabled-trace-util.js:110:30       
+    at NoopContextManager.with (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@opentelemetry\api\build\src\context\NoopContextManager.js:25:19)
+    at ContextAPI.with (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@opentelemetry\api\build\src\api\context.js:60:46)
+    at NoopTracer.startActiveSpan (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@opentelemetry\api\build\src\trace\NoopTracer.js:65:31)
+    at ProxyTracer.startActiveSpan (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@opentelemetry\api\build\src\trace\ProxyTracer.js:36:24)
+    at EnabledTraceUtil.startActiveSpan (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\telemetry\enabled-trace-util.js:102:28) {
+  code: 16,
+  details: 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.',
+  metadata: Metadata {
+    internalRepr: Map(4) {
+      'google.rpc.errorinfo-bin' => [Array],
+      'grpc-status-details-bin' => [Array],
+      'www-authenticate' => [Array],
+      'x-debug-tracking-id' => [Array]
+    },
+    opaqueData: Map(0) {},
+    options: {}
+  },
+  statusDetails: [
+    ErrorInfo {
+      metadata: [Object],
+      reason: 'ACCESS_TOKEN_EXPIRED',
+      domain: 'googleapis.com'
+    }
+  ],
+  reason: 'ACCESS_TOKEN_EXPIRED',
+  domain: 'googleapis.com',
+  errorInfoMetadata: {
+    method: 'google.firestore.v1.Firestore.RunQuery',
+    service: 'firestore.googleapis.com'
+  }
+}
+Error checking room code uniqueness: Error: 16 UNAUTHENTICATED: Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+    at callErrorFromStatus (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\call.js:32:19)
+    at Object.onReceiveStatus (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\client.js:359:73)
+    at Object.onReceiveStatus (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\client-interceptors.js:327:181)
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\resolving-call.js:135:78
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11)
+for call at
+    at ServiceClientImpl.makeServerStreamRequest (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\client.js:342:32)
+    at ServiceClientImpl.<anonymous> (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\make-client.js:105:19)  
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\v1\firestore_client.js:242:33
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\streamingCalls\streamingApiCaller.js:38:28
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\normalCalls\timeout.js:44:16
+    at Object.request (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\streamingCalls\streaming.js:234:40)       
+    at makeRequest (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\retry-request\index.js:159:28)
+    at retryRequest (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\retry-request\index.js:119:5)
+    at StreamProxy.setStream (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\streamingCalls\streaming.js:225:37)
+    at StreamingApiCaller.call (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\streamingCalls\streamingApiCaller.js:54:16)
+Caused by: Error
+    at QueryUtil._getResponse (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\reference\query-util.js:44:23)
+    at Query._getResponse (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\reference\query.js:784:32)
+    at Query._get (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\reference\query.js:777:35)       
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\reference\query.js:745:43
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\telemetry\enabled-trace-util.js:110:30       
+    at NoopContextManager.with (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@opentelemetry\api\build\src\context\NoopContextManager.js:25:19)
+    at ContextAPI.with (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@opentelemetry\api\build\src\api\context.js:60:46)
+    at NoopTracer.startActiveSpan (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@opentelemetry\api\build\src\trace\NoopTracer.js:65:31)
+    at ProxyTracer.startActiveSpan (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@opentelemetry\api\build\src\trace\ProxyTracer.js:36:24)
+    at EnabledTraceUtil.startActiveSpan (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\telemetry\enabled-trace-util.js:102:28) {
+  code: 16,
+  details: 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.',
+  metadata: Metadata {
+    internalRepr: Map(4) {
+      'google.rpc.errorinfo-bin' => [Array],
+      'grpc-status-details-bin' => [Array],
+      'www-authenticate' => [Array],
+      'x-debug-tracking-id' => [Array]
+    },
+    opaqueData: Map(0) {},
+    options: {}
+  },
+  statusDetails: [
+    ErrorInfo {
+      metadata: [Object],
+      reason: 'ACCESS_TOKEN_EXPIRED',
+      domain: 'googleapis.com'
+    }
+  ],
+  reason: 'ACCESS_TOKEN_EXPIRED',
+  domain: 'googleapis.com',
+  errorInfoMetadata: {
+    method: 'google.firestore.v1.Firestore.RunQuery',
+    service: 'firestore.googleapis.com'
+  }
+}
+Error checking room code uniqueness: Error: 16 UNAUTHENTICATED: Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+    at callErrorFromStatus (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\call.js:32:19)
+    at Object.onReceiveStatus (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\client.js:359:73)
+    at Object.onReceiveStatus (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\client-interceptors.js:327:181)
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\resolving-call.js:135:78
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11)
+for call at
+    at ServiceClientImpl.makeServerStreamRequest (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\client.js:342:32)
+    at ServiceClientImpl.<anonymous> (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\make-client.js:105:19)  
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\v1\firestore_client.js:242:33
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\streamingCalls\streamingApiCaller.js:38:28
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\normalCalls\timeout.js:44:16
+    at Object.request (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\streamingCalls\streaming.js:234:40)       
+    at makeRequest (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\retry-request\index.js:159:28)
+    at retryRequest (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\retry-request\index.js:119:5)
+    at StreamProxy.setStream (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\streamingCalls\streaming.js:225:37)
+    at StreamingApiCaller.call (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\streamingCalls\streamingApiCaller.js:54:16)
+Caused by: Error
+    at QueryUtil._getResponse (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\reference\query-util.js:44:23)
+    at Query._getResponse (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\reference\query.js:784:32)
+    at Query._get (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\reference\query.js:777:35)       
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\reference\query.js:745:43
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\telemetry\enabled-trace-util.js:110:30       
+    at NoopContextManager.with (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@opentelemetry\api\build\src\context\NoopContextManager.js:25:19)
+    at ContextAPI.with (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@opentelemetry\api\build\src\api\context.js:60:46)
+    at NoopTracer.startActiveSpan (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@opentelemetry\api\build\src\trace\NoopTracer.js:65:31)
+    at ProxyTracer.startActiveSpan (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@opentelemetry\api\build\src\trace\ProxyTracer.js:36:24)
+    at EnabledTraceUtil.startActiveSpan (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\telemetry\enabled-trace-util.js:102:28) {
+  code: 16,
+  details: 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.',
+  metadata: Metadata {
+    internalRepr: Map(4) {
+      'google.rpc.errorinfo-bin' => [Array],
+      'grpc-status-details-bin' => [Array],
+      'www-authenticate' => [Array],
+      'x-debug-tracking-id' => [Array]
+    },
+    opaqueData: Map(0) {},
+    options: {}
+  },
+  statusDetails: [
+    ErrorInfo {
+      metadata: [Object],
+      reason: 'ACCESS_TOKEN_EXPIRED',
+      domain: 'googleapis.com'
+    }
+  ],
+  reason: 'ACCESS_TOKEN_EXPIRED',
+  domain: 'googleapis.com',
+  errorInfoMetadata: {
+    method: 'google.firestore.v1.Firestore.RunQuery',
+    service: 'firestore.googleapis.com'
+  }
+}
+Error checking room code uniqueness: Error: 16 UNAUTHENTICATED: Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+    at callErrorFromStatus (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\call.js:32:19)
+    at Object.onReceiveStatus (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\client.js:359:73)
+    at Object.onReceiveStatus (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\client-interceptors.js:327:181)
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\resolving-call.js:135:78
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11)
+for call at
+    at ServiceClientImpl.makeServerStreamRequest (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\client.js:342:32)
+    at ServiceClientImpl.<anonymous> (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\make-client.js:105:19)  
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\v1\firestore_client.js:242:33
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\streamingCalls\streamingApiCaller.js:38:28
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\normalCalls\timeout.js:44:16
+    at Object.request (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\streamingCalls\streaming.js:234:40)       
+    at makeRequest (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\retry-request\index.js:159:28)
+    at retryRequest (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\retry-request\index.js:119:5)
+    at StreamProxy.setStream (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\streamingCalls\streaming.js:225:37)
+    at StreamingApiCaller.call (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\streamingCalls\streamingApiCaller.js:54:16)
+Caused by: Error
+    at QueryUtil._getResponse (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\reference\query-util.js:44:23)
+    at Query._getResponse (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\reference\query.js:784:32)
+    at Query._get (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\reference\query.js:777:35)       
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\reference\query.js:745:43
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\telemetry\enabled-trace-util.js:110:30       
+    at NoopContextManager.with (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@opentelemetry\api\build\src\context\NoopContextManager.js:25:19)
+    at ContextAPI.with (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@opentelemetry\api\build\src\api\context.js:60:46)
+    at NoopTracer.startActiveSpan (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@opentelemetry\api\build\src\trace\NoopTracer.js:65:31)
+    at ProxyTracer.startActiveSpan (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@opentelemetry\api\build\src\trace\ProxyTracer.js:36:24)
+    at EnabledTraceUtil.startActiveSpan (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\telemetry\enabled-trace-util.js:102:28) {
+  code: 16,
+  details: 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.',
+  metadata: Metadata {
+    internalRepr: Map(4) {
+      'google.rpc.errorinfo-bin' => [Array],
+      'grpc-status-details-bin' => [Array],
+      'www-authenticate' => [Array],
+      'x-debug-tracking-id' => [Array]
+    },
+    opaqueData: Map(0) {},
+    options: {}
+  },
+  statusDetails: [
+    ErrorInfo {
+      metadata: [Object],
+      reason: 'ACCESS_TOKEN_EXPIRED',
+      domain: 'googleapis.com'
+    }
+  ],
+  reason: 'ACCESS_TOKEN_EXPIRED',
+  domain: 'googleapis.com',
+  errorInfoMetadata: {
+    service: 'firestore.googleapis.com',
+    method: 'google.firestore.v1.Firestore.RunQuery'
+  }
+}
+⚠️ Using timestamp-based room code as fallback: 9IXA75
+Error creating room: Error: 16 UNAUTHENTICATED: Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+    at callErrorFromStatus (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\call.js:32:19)
+    at Object.onReceiveStatus (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\client.js:193:76)
+    at Object.onReceiveStatus (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\client-interceptors.js:367:141)
+    at Object.onReceiveStatus (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\client-interceptors.js:327:181)
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\resolving-call.js:135:78
+    at process.processTicksAndRejections (node:internal/process/task_queues:85:11)
+for call at
+    at ServiceClientImpl.makeUnaryRequest (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\client.js:161:32)  
+    at ServiceClientImpl.<anonymous> (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@grpc\grpc-js\build\src\make-client.js:105:19)  
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\v1\firestore_client.js:242:33
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\normalCalls\timeout.js:44:16
+    at repeat (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\normalCalls\retries.js:82:25)
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\normalCalls\retries.js:125:13
+    at OngoingCallPromise.call (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\call.js:67:27)
+    at NormalApiCaller.call (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\normalCalls\normalApiCaller.js:34:19)
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\google-gax\build\src\createApiCall.js:112:30
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+Caused by: Error
+    at _firestore._traceUtil.startActiveSpan (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\write-batch.js:438:27)
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\telemetry\enabled-trace-util.js:110:30       
+    at NoopContextManager.with (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@opentelemetry\api\build\src\context\NoopContextManager.js:25:19)
+    at ContextAPI.with (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@opentelemetry\api\build\src\api\context.js:60:46)
+    at NoopTracer.startActiveSpan (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@opentelemetry\api\build\src\trace\NoopTracer.js:65:31)
+    at ProxyTracer.startActiveSpan (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@opentelemetry\api\build\src\trace\ProxyTracer.js:36:24)
+    at EnabledTraceUtil.startActiveSpan (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\telemetry\enabled-trace-util.js:102:28)
+    at WriteBatch.commit (C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\write-batch.js:436:43)    
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\reference\document-reference.js:350:31       
+    at C:\Users\Zachary\Desktop\NurseScript\Nursescriptt\backend\node_modules\@google-cloud\firestore\build\src\telemetry\enabled-trace-util.js:110:30 {     
+  code: 16,
+  details: 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.',
+  metadata: Metadata {
+    internalRepr: Map(4) {
+      'google.rpc.errorinfo-bin' => [Array],
+      'grpc-status-details-bin' => [Array],
+      'www-authenticate' => [Array],
+      'x-debug-tracking-id' => [Array]
+    },
+    opaqueData: Map(0) {},
+    options: {}
+  },
+  note: 'Exception occurred in retry method that was not classified as transient',
+  statusDetails: [
+    ErrorInfo {
+      metadata: [Object],
+      reason: 'ACCESS_TOKEN_EXPIRED',
+      domain: 'googleapis.com'
+    }
+  ],
+  reason: 'ACCESS_TOKEN_EXPIRED',
+  domain: 'googleapis.com',
+  errorInfoMetadata: {
+    method: 'google.firestore.v1.Firestore.Commit',
+    service: 'firestore.googleapis.com'
+  }
+}
