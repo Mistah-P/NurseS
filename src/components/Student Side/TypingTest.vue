@@ -215,6 +215,9 @@ export default {
       // Listeners
       liveSessionListener: null,
       
+      // Time synchronization
+      clientTimezone: null,
+      
       // Toast notifications
       toasts: []
     }
@@ -235,6 +238,9 @@ export default {
     }
   },
   async mounted() {
+    // Perform time synchronization check
+    this.checkTimeSynchronization()
+    
     await this.initializeTest()
     // Auto-focus the typing area after everything is loaded
     this.$nextTick(() => {
@@ -370,16 +376,89 @@ export default {
     calculateRemainingTime(startedAt, timeLimit) {
       if (!startedAt || !timeLimit) return timeLimit || 0
       
-      const now = new Date()
-      const activityStartTime = new Date(startedAt)
-      const elapsedSeconds = Math.floor((now - activityStartTime) / 1000)
-      const remainingTime = Math.max(0, timeLimit - elapsedSeconds)
-      
-      console.log('⏰ Server sync - Activity started at:', activityStartTime.toISOString())
-      console.log('⏰ Server sync - Elapsed seconds:', elapsedSeconds)
-      console.log('⏰ Server sync - Remaining time:', remainingTime)
-      
-      return remainingTime
+      try {
+        // Get current time in UTC
+        const now = new Date()
+        
+        // Parse server timestamp - ensure it's treated as UTC
+        let activityStartTime
+        if (typeof startedAt === 'string') {
+          // If it's a string, ensure it's parsed as UTC
+          if (startedAt.endsWith('Z') || startedAt.includes('+') || startedAt.includes('-')) {
+            // Already has timezone info
+            activityStartTime = new Date(startedAt)
+          } else {
+            // Assume UTC if no timezone info
+            activityStartTime = new Date(startedAt + 'Z')
+          }
+        } else if (startedAt instanceof Date) {
+          activityStartTime = startedAt
+        } else if (startedAt.seconds) {
+          // Firestore timestamp format
+          activityStartTime = new Date(startedAt.seconds * 1000)
+        } else {
+          activityStartTime = new Date(startedAt)
+        }
+        
+        // Calculate elapsed time in seconds
+        const elapsedSeconds = Math.floor((now.getTime() - activityStartTime.getTime()) / 1000)
+        const remainingTime = Math.max(0, timeLimit - elapsedSeconds)
+        
+        console.log('⏰ Server sync - Activity started at:', activityStartTime.toISOString())
+        console.log('⏰ Server sync - Current time UTC:', now.toISOString())
+        console.log('⏰ Server sync - Elapsed seconds:', elapsedSeconds)
+        console.log('⏰ Server sync - Remaining time:', remainingTime)
+        
+        // Additional validation: if elapsed time seems unreasonable, use fallback
+        if (elapsedSeconds > 86400) { // 24 hours
+          console.warn('⚠️ Detected unreasonable elapsed time (>24h), using fallback calculation')
+          return timeLimit
+        }
+        
+        if (elapsedSeconds < -3600) { // Started more than 1 hour in the future
+          console.warn('⚠️ Detected future start time, using fallback calculation')
+          return timeLimit
+        }
+        
+        return remainingTime
+        
+      } catch (error) {
+        console.error('❌ Error calculating remaining time:', error)
+        console.warn('⚠️ Using fallback time calculation')
+        return timeLimit // Return full time limit as fallback
+      }
+    },
+
+    // Check for time synchronization issues that could affect laptops
+    checkTimeSynchronization() {
+      try {
+        const now = new Date()
+        const utcTime = now.toISOString()
+        const localTime = now.toString()
+        const timezoneOffset = now.getTimezoneOffset()
+        
+        console.log('🕐 Client time synchronization check:')
+        console.log('  - UTC time:', utcTime)
+        console.log('  - Local time:', localTime)
+        console.log('  - Timezone offset (minutes):', timezoneOffset)
+        
+        // Check if system clock seems reasonable (within 1 year of expected range)
+        const currentYear = now.getFullYear()
+        if (currentYear < 2024 || currentYear > 2026) {
+          console.warn('⚠️ System clock appears to be incorrect. Year:', currentYear)
+          this.showToast('System clock may be incorrect. Please check your device time settings.', 'warning')
+        }
+        
+        // Store timezone info for debugging
+        this.clientTimezone = {
+          offset: timezoneOffset,
+          utc: utcTime,
+          local: localTime
+        }
+        
+      } catch (error) {
+        console.error('❌ Error checking time synchronization:', error)
+      }
     },
 
     async loadModuleContent(moduleId, difficulty = null) {
