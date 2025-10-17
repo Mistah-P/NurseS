@@ -52,12 +52,122 @@ router.post('/join-room', async (req, res) => {
       });
     }
 
+    // Check if there's an active live session and validate it's not expired
+    if (roomData.status === 'active' && roomData.liveActivity?.isActive) {
+      try {
+        const liveSessionDoc = await db.collection('liveSessions').doc(roomCode.toUpperCase()).get();
+        
+        if (liveSessionDoc.exists) {
+          const liveSessionData = liveSessionDoc.data();
+          const now = new Date();
+          
+          // Check if session is expired based on different criteria
+          let isExpired = false;
+          let expiredReason = '';
+          
+          // 1. Check if session is already completed
+          if (liveSessionData.status === 'completed') {
+            isExpired = true;
+            expiredReason = 'Session has already been completed';
+          }
+          
+          // 2. Check if session has been running too long (more than 30 minutes)
+          if (liveSessionData.startedAt) {
+            const startedAt = liveSessionData.startedAt.toDate ? liveSessionData.startedAt.toDate() : new Date(liveSessionData.startedAt);
+            const sessionAge = (now - startedAt) / 1000; // in seconds
+            
+            if (sessionAge > 1800) { // 30 minutes = 1800 seconds
+              isExpired = true;
+              expiredReason = `Session has been running for ${Math.round(sessionAge / 60)} minutes and is no longer accepting new students`;
+            }
+          }
+          
+          // 3. Check if countdown started too long ago (more than 10 minutes)
+          if (liveSessionData.countdownStartedAt && !liveSessionData.startedAt) {
+            const countdownStartedAt = liveSessionData.countdownStartedAt.toDate ? liveSessionData.countdownStartedAt.toDate() : new Date(liveSessionData.countdownStartedAt);
+            const countdownAge = (now - countdownStartedAt) / 1000; // in seconds
+            
+            if (countdownAge > 600) { // 10 minutes = 600 seconds
+              isExpired = true;
+              expiredReason = `Session countdown started ${Math.round(countdownAge / 60)} minutes ago and is no longer accepting new students`;
+            }
+          }
+          
+          if (isExpired) {
+            console.log(`🚫 Student ${studentName} attempted to join expired session ${roomCode}: ${expiredReason}`);
+            return res.status(400).json({
+              error: 'Session expired',
+              message: expiredReason + '. Please ask your teacher to start a new session.'
+            });
+          }
+        }
+      } catch (liveSessionError) {
+        console.error('Error checking live session:', liveSessionError);
+        // Continue with room joining if live session check fails
+      }
+    }
+
     // Check if student is already in the room
     const existingStudent = roomData.studentsJoined?.find(
       student => student.studentId === studentId
     );
 
     if (existingStudent) {
+      // Check if there's an active live session and validate it's not expired for rejoining students
+      if (roomData.status === 'active' && roomData.liveActivity?.isActive) {
+        try {
+          const liveSessionDoc = await db.collection('liveSessions').doc(roomCode.toUpperCase()).get();
+          
+          if (liveSessionDoc.exists) {
+            const liveSessionData = liveSessionDoc.data();
+            const now = new Date();
+            
+            // Check if session is expired based on different criteria
+            let isExpired = false;
+            let expiredReason = '';
+            
+            // 1. Check if session is already completed
+            if (liveSessionData.status === 'completed') {
+              isExpired = true;
+              expiredReason = 'Session has already been completed';
+            }
+            
+            // 2. Check if session has been running too long (more than 30 minutes)
+            if (liveSessionData.startedAt) {
+              const startedAt = liveSessionData.startedAt.toDate ? liveSessionData.startedAt.toDate() : new Date(liveSessionData.startedAt);
+              const sessionAge = (now - startedAt) / 1000; // in seconds
+              
+              if (sessionAge > 1800) { // 30 minutes = 1800 seconds
+                isExpired = true;
+                expiredReason = `Session has been running for ${Math.round(sessionAge / 60)} minutes and is no longer accepting students`;
+              }
+            }
+            
+            // 3. Check if countdown started too long ago (more than 10 minutes)
+            if (liveSessionData.countdownStartedAt && !liveSessionData.startedAt) {
+              const countdownStartedAt = liveSessionData.countdownStartedAt.toDate ? liveSessionData.countdownStartedAt.toDate() : new Date(liveSessionData.countdownStartedAt);
+              const countdownAge = (now - countdownStartedAt) / 1000; // in seconds
+              
+              if (countdownAge > 600) { // 10 minutes = 600 seconds
+                isExpired = true;
+                expiredReason = `Session countdown started ${Math.round(countdownAge / 60)} minutes ago and is no longer accepting students`;
+              }
+            }
+            
+            if (isExpired) {
+              console.log(`🚫 Student ${studentName} attempted to rejoin expired session ${roomCode}: ${expiredReason}`);
+              return res.status(400).json({
+                error: 'Session expired',
+                message: expiredReason + '. Please ask your teacher to start a new session.'
+              });
+            }
+          }
+        } catch (liveSessionError) {
+          console.error('Error checking live session for rejoining student:', liveSessionError);
+          // Continue with room rejoining if live session check fails
+        }
+      }
+
       // Instead of returning an error, return the existing student data
       // This allows seamless rejoining without duplicates
       console.log(`🔄 Student rejoining room: ${studentName} -> ${roomCode}`);

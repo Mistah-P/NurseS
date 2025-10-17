@@ -7,7 +7,8 @@
     "build": "vue-cli-service build",
     "vercel-build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
-    "preview": "vue-cli-service serve --mode production"
+    "preview": "vue-cli-service serve --mode production",
+    "test:session-validation": "node run-session-tests.js"
   },
   "dependencies": {
     "axios": "^1.12.2",
