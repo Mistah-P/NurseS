@@ -3,6 +3,9 @@ const path = require('path')
 
 module.exports = defineConfig({
   transpileDependencies: true,
+  publicPath: process.env.NODE_ENV === 'production' ? '/' : '/',
+  outputDir: 'dist',
+  assetsDir: 'static',
   configureWebpack: {
     resolve: {
       fallback: {

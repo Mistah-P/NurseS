@@ -6,13 +6,13 @@ import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyC23l35ymdBbukwneaaSLkp5W_i81XZKcY",
-  authDomain: "nursescriptfirebase.firebaseapp.com",
-  projectId: "nursescriptfirebase",
-  storageBucket: "nursescriptfirebase.firebasestorage.app",
-  messagingSenderId: "78287123313",
-  appId: "1:78287123313:web:1e9ff1a53e86d84dc2fcd0",
-  measurementId: "G-ED9T6V7L4D"
+  apiKey: process.env.VUE_APP_FIREBASE_API_KEY || "AIzaSyC23l35ymdBbukwneaaSLkp5W_i81XZKcY",
+  authDomain: process.env.VUE_APP_FIREBASE_AUTH_DOMAIN || "nursescriptfirebase.firebaseapp.com",
+  projectId: process.env.VUE_APP_FIREBASE_PROJECT_ID || "nursescriptfirebase",
+  storageBucket: process.env.VUE_APP_FIREBASE_STORAGE_BUCKET || "nursescriptfirebase.firebasestorage.app",
+  messagingSenderId: process.env.VUE_APP_FIREBASE_MESSAGING_SENDER_ID || "78287123313",
+  appId: process.env.VUE_APP_FIREBASE_APP_ID || "1:78287123313:web:1e9ff1a53e86d84dc2fcd0",
+  measurementId: process.env.VUE_APP_FIREBASE_MEASUREMENT_ID || "G-ED9T6V7L4D"
 };
 
 // Initialize Firebase
