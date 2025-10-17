@@ -10,7 +10,7 @@ class ModuleService {
   constructor() {
     this.modules = []
     this.initialized = false
-    this.useDatabase = true // Flag to switch between file-based and database storage
+    this.useDatabase = false // Temporarily force file-based storage to fix typing test content issue
   }
 
   /**

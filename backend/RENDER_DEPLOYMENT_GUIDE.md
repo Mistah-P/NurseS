@@ -134,7 +134,7 @@ VUE_APP_API_BASE_URL = https://nursescript-backend.onrender.com/api
 ```
 
 ### 6.2 Update Frontend API Calls
-Ensure your frontend services use the environment variable:
+Ensure your frontend services use the environment variable:eee
 ```javascript
 // In your API service files
 const API_BASE_URL = process.env.VUE_APP_API_BASE_URL || 'http://localhost:3000/api';
