@@ -327,6 +327,13 @@ export default {
       console.log('Student data:', this.studentData)
       console.log('Room code:', this.roomCode)
       
+      // Safety check: Don't navigate if session is in countdown state
+      if (this.liveSessionData && this.liveSessionData.status === 'countdown') {
+        console.log('⚠️ Cannot start typing during countdown phase')
+        this.showToast('Please wait for the countdown to finish before starting the test.', 'warning')
+        return
+      }
+      
       // Use route name for more reliable navigation
       const routeConfig = {
         name: 'TypingTest',

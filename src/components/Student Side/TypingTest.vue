@@ -269,20 +269,26 @@ export default {
           return
         }
         
-        // SAFE FIX: Check initial session status before subscribing
-        const initialSessionData = await liveSessionService.getLiveSession(this.roomCode)
-        if (initialSessionData && initialSessionData.status === 'countdown') {
-          console.log('⏰ Initial check: Session is in countdown phase, redirecting to student room interface')
-          this.showToast('Activity is starting soon. Please wait for the countdown to finish.', 'info')
-          this.$router.push(`/student-room/${this.roomCode}`)
-          return
-        }
-        
         // Subscribe to live session for text content and updates
         this.liveSessionListener = liveSessionService.subscribeToLiveSession(
           this.roomCode,
           this.handleLiveSessionUpdate
         )
+        
+        // SAFETY CHECK: Check if session is in countdown state on initial load
+        // This handles direct URL access during countdown phase
+        setTimeout(async () => {
+          try {
+            const sessionData = await liveSessionService.getLiveSession(this.roomCode)
+            if (sessionData && sessionData.status === 'countdown') {
+              console.log('⚠️ Initial check: Session is in countdown state - redirecting to student room')
+              this.showToast('Activity is starting soon! Please wait for the countdown.', 'info')
+              this.$router.push(`/student-room/${this.roomCode}`)
+            }
+          } catch (error) {
+            console.log('Could not check initial session status:', error)
+          }
+        }, 500) // Small delay to ensure live session subscription is established
         
       } catch (error) {
         console.error('Error initializing typing test:', error)
@@ -295,10 +301,11 @@ export default {
         const sessionData = update.data
         console.log('📊 TypingTest received live session update:', sessionData)
         
-        // SAFE FIX: Check if session is still in countdown - redirect to student room interface
+        // SAFETY CHECK: If session is in countdown state, redirect back to student room
+        // This prevents users from bypassing the countdown by directly accessing the typing test URL
         if (sessionData.status === 'countdown') {
-          console.log('⏰ Session is still in countdown phase, redirecting to student room interface')
-          this.showToast('Activity is starting soon. Please wait for the countdown to finish.', 'info')
+          console.log('⚠️ Session is in countdown state - redirecting to student room to show countdown')
+          this.showToast('Activity is starting soon! Please wait for the countdown.', 'info')
           this.$router.push(`/student-room/${this.roomCode}`)
           return
         }
