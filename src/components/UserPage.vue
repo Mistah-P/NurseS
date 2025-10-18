@@ -36,6 +36,40 @@
 
         <!-- Stats Grid -->
         <div class="stats-grid">
+            <div class="stat-card secondary">
+            <div class="stat-header">
+              <h3>Today's Latest Test</h3>
+            </div>
+            <div class="stats-content" v-if="!isLoadingTodayStats">
+              <div class="stat-item">
+                <div class="stat-value">{{ todayStats.avgWpm }}</div>
+                <div class="stat-label">WPM</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value">{{ todayStats.avgAccuracy }}%</div>
+                <div class="stat-label">Accuracy</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value">{{ todayStats.errorsCount }}</div>
+                <div class="stat-label">Errors</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value">{{ todayStats.topModule }}</div>
+                <div class="stat-label">Module</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value">{{ todayStats.topDifficulty }}</div>
+                <div class="stat-label">Difficulty</div>
+              </div>
+            </div>
+            <div class="loading-content" v-else>
+              <div class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+              </div>
+              <p class="loading-text">Loading today's stats...</p>
+            </div>
+          </div>
+
           <!-- Enhanced Teacher Code Input Card -->
           <div class="stat-card teacher-code-card enhanced-join-card">
             <div class="join-card-glow"></div>
@@ -67,55 +101,20 @@
                   class="join-btn enhanced-join-btn"
                   :disabled="!teacherCode.trim() || isJoiningRoom"
                 >
-                  <i v-if="isJoiningRoom" class="fas fa-spinner fa-spin"></i>
-                  <i v-else class="fas fa-rocket"></i>
-                  {{ isJoiningRoom ? 'Joining...' : 'Join Now' }}
+                  <span v-if="!isJoiningRoom">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Join Room
+                  </span>
+                  <span v-else>
+                    <i class="fas fa-spinner fa-spin"></i>
+                    Joining...
+                  </span>
                 </button>
               </div>
-              <div v-if="codeMessage" class="code-message enhanced-message" :class="codeMessageType">
-                <i :class="codeMessageType === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle'"></i>
+              <div v-if="codeMessage" :class="['code-message', codeMessageType]">
+                <i :class="codeMessageType === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'"></i>
                 {{ codeMessage }}
               </div>
-            </div>
-          </div>
-
-
-
-          <div class="stat-card secondary">
-            <div class="stat-header">
-              <h3>Today's Latest Test</h3>
-            </div>
-            <div class="stats-content">
-              <div class="stat-item">
-                <div class="stat-value">{{ todayStats.avgWpm }}</div>
-                <div class="stat-label">WPM</div>
-              </div>
-              <div class="stat-item">
-                <div class="stat-value">{{ todayStats.avgAccuracy }}%</div>
-                <div class="stat-label">Accuracy</div>
-              </div>
-              <div class="stat-item">
-                <div class="stat-value">{{ todayStats.errorsCount }}</div>
-                <div class="stat-label">Errors</div>
-              </div>
-              <div class="stat-item">
-                <div class="stat-value">{{ todayStats.topModule }}</div>
-                <div class="stat-label">Module</div>
-              </div>
-              <div class="stat-item">
-                <div class="stat-value">{{ todayStats.topDifficulty }}</div>
-                <div class="stat-label">Difficulty</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Typing History Chart -->
-          <div class="stat-card chart-card">
-            <div class="stat-header">
-              <h3>Typing History</h3>
-            </div>
-            <div class="chart-content">
-              <Line :data="chartData" :options="chartOptions" />
             </div>
           </div>
         </div>
@@ -125,7 +124,7 @@
           <div class="card-header">
             <h3>Recent Test History</h3>
           </div>
-          <div class="table-content">
+          <div class="table-content" v-if="!isLoadingTestHistory">
             <table>
               <thead>
                 <tr>
@@ -149,6 +148,12 @@
               </tbody>
             </table>
           </div>
+          <div class="loading-content" v-else>
+            <div class="loading-spinner">
+              <i class="fas fa-spinner fa-spin"></i>
+            </div>
+            <p class="loading-text">Loading test history...</p>
+          </div>
         </div>
 
 
@@ -158,7 +163,6 @@
 </template>
 
 <script>
-import { Line } from "vue-chartjs";
 import {
   Chart as ChartJS,
   Title,
@@ -179,7 +183,6 @@ ChartJS.register(Title, Tooltip, Legend, LineElement, PointElement, LinearScale,
 
 export default {
   name: "UserPage",
-  components: { Line },
   data() {
     return {
       username: '',
@@ -189,56 +192,9 @@ export default {
       codeMessage: '',
       codeMessageType: 'success', // 'success' or 'error'
       isJoiningRoom: false, // Add loading state for room joining
+      isLoadingTodayStats: true, // Loading state for today's stats
+      isLoadingTestHistory: true, // Loading state for test history
       authUnsubscribe: null, // Store the auth listener unsubscribe function
-      chartData: {
-        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-        datasets: [{
-          label: 'WPM',
-          data: [45, 52, 48, 61, 55, 67, 58],
-          borderColor: 'rgb(72, 187, 120)',
-          backgroundColor: 'rgba(72, 187, 120, 0.1)',
-          tension: 0.4,
-          borderWidth: 3,
-          pointBackgroundColor: 'rgb(56, 161, 105)',
-          pointBorderColor: 'rgb(72, 187, 120)',
-          pointBorderWidth: 2,
-          pointRadius: 5
-        }]
-      },
-      chartOptions: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false
-          }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            grid: {
-              color: 'var(--border-primary)'
-            },
-            ticks: {
-              color: 'rgb(72, 187, 120)',
-              font: {
-                weight: 'bold'
-              }
-            }
-          },
-          x: {
-            grid: {
-              color: 'var(--border-primary)'
-            },
-            ticks: {
-              color: 'rgb(72, 187, 120)',
-              font: {
-                weight: 'bold'
-              }
-            }
-          }
-        }
-      },
       testHistory: [],
       // Today's Statistics - calculated from real data
       todayStats: {
@@ -368,11 +324,15 @@ export default {
           console.log("No test history found");
         }
 
+        // Set loading state to false after data is loaded
+        this.isLoadingTestHistory = false;
+
         // Fetch today's statistics separately
         await this.fetchTodayStats(user);
       } catch (error) {
         console.error("Error fetching test history:", error);
         // On error, testHistory remains empty array
+        this.isLoadingTestHistory = false;
         this.resetTodayStats();
       }
     },
@@ -391,8 +351,12 @@ export default {
           console.log("No today's results found");
           this.resetTodayStats();
         }
+        
+        // Set loading state to false after data is loaded
+        this.isLoadingTodayStats = false;
       } catch (error) {
         console.error("Error fetching today's statistics:", error);
+        this.isLoadingTodayStats = false;
         this.resetTodayStats();
       }
     },
@@ -883,7 +847,6 @@ body {
 
 /* Teacher Code Card */
 .teacher-code-card {
-  grid-column: 1 / -1; /* Span full width */
   background: var(--accent-gradient);
   border: 1px solid var(--accent-color-alpha-strong);
 }
@@ -1314,6 +1277,41 @@ body {
 
 .table-content tr:hover {
   background: var(--bg-tertiary);
+}
+
+/* Loading Indicators */
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+
+.loading-spinner {
+  margin-bottom: 1rem;
+}
+
+.loading-spinner i {
+  font-size: 2rem;
+  color: var(--primary-color);
+  animation: spin 1s linear infinite;
+}
+
+.loading-text {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Responsive Design */

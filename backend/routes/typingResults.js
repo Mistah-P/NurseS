@@ -1,6 +1,7 @@
 const express = require('express');
 const admin = require('firebase-admin');
 const Joi = require('joi');
+const { verifyTeacherAuth } = require('../middleware/auth');
 
 const router = express.Router();
 const db = admin.firestore();
@@ -371,10 +372,10 @@ router.get('/email/:email', async (req, res) => {
   }
 });
 
-// GET /api/typing-results/top-wpm-monthly - Get top 5 highest WPM performers for current month
-router.get('/top-wpm-monthly', async (req, res) => {
+// GET /api/typing-results/top-wpm-monthly - Get top 5 highest WPM performers for current month (teacher-specific)
+router.get('/top-wpm-monthly', verifyTeacherAuth, async (req, res) => {
   try {
-    console.log('📊 Fetching top 5 WPM performers for current month...');
+    console.log(`📊 Fetching top 5 WPM performers for current month for teacher: ${req.teacher.id}`);
     
     // Get current month date range
     const now = new Date();
@@ -383,28 +384,87 @@ router.get('/top-wpm-monthly', async (req, res) => {
     
     console.log(`📅 Date range: ${startOfMonth.toISOString()} to ${endOfMonth.toISOString()}`);
     
-    // Query typing results for current month
-    const snapshot = await db.collection('typingResults')
-      .where('timestamp', '>=', startOfMonth)
-      .where('timestamp', '<=', endOfMonth)
-      .orderBy('timestamp', 'desc')
+    // First, get all rooms created by this teacher to identify their students
+    const teacherRoomsSnapshot = await db.collection('rooms')
+      .where('teacherId', '==', req.teacher.id)
       .get();
     
-    if (snapshot.empty) {
-      console.log('❌ No typing results found for current month');
+    if (teacherRoomsSnapshot.empty) {
+      console.log('❌ No rooms found for this teacher');
       return res.json({
         success: true,
         data: [],
-        message: 'No typing results found for current month'
+        message: 'No rooms found for this teacher'
       });
     }
     
-    console.log(`📊 Found ${snapshot.size} typing results for current month`);
+    // Collect all student emails from teacher's rooms
+    const studentEmails = new Set();
+    teacherRoomsSnapshot.docs.forEach(doc => {
+      const roomData = doc.data();
+      if (roomData.studentsJoined && Array.isArray(roomData.studentsJoined)) {
+        roomData.studentsJoined.forEach(student => {
+          if (student.email) {
+            studentEmails.add(student.email);
+          }
+        });
+      }
+    });
+    
+    if (studentEmails.size === 0) {
+      console.log('❌ No students found in teacher\'s rooms');
+      return res.json({
+        success: true,
+        data: [],
+        message: 'No students found in your rooms'
+      });
+    }
+    
+    console.log(`👥 Found ${studentEmails.size} unique students in teacher's rooms`);
+    
+    // Query typing results for current month, filtered by student emails
+    const studentEmailsArray = Array.from(studentEmails);
+    const snapshot = await db.collection('typingResults')
+      .where('timestamp', '>=', startOfMonth)
+      .where('timestamp', '<=', endOfMonth)
+      .where('userEmail', 'in', studentEmailsArray.slice(0, 10)) // Firestore 'in' query limit is 10
+      .orderBy('timestamp', 'desc')
+      .get();
+    
+    // If we have more than 10 student emails, we need to make multiple queries
+    let allResults = [];
+    if (studentEmailsArray.length > 10) {
+      // Split into chunks of 10 and query each chunk
+      for (let i = 0; i < studentEmailsArray.length; i += 10) {
+        const chunk = studentEmailsArray.slice(i, i + 10);
+        const chunkSnapshot = await db.collection('typingResults')
+          .where('timestamp', '>=', startOfMonth)
+          .where('timestamp', '<=', endOfMonth)
+          .where('userEmail', 'in', chunk)
+          .orderBy('timestamp', 'desc')
+          .get();
+        
+        allResults = allResults.concat(chunkSnapshot.docs);
+      }
+    } else {
+      allResults = snapshot.docs;
+    }
+    
+    if (allResults.length === 0) {
+      console.log('❌ No typing results found for teacher\'s students in current month');
+      return res.json({
+        success: true,
+        data: [],
+        message: 'No typing results found for your students this month'
+      });
+    }
+    
+    console.log(`📊 Found ${allResults.length} typing results for teacher's students in current month`);
     
     // Group results by user and find their best WPM
     const userBestWPM = {};
     
-    snapshot.docs.forEach(doc => {
+    allResults.forEach(doc => {
       const data = doc.data();
       const userId = data.userId || data.userEmail; // Handle both userId and userEmail
       
@@ -452,26 +512,58 @@ router.get('/top-wpm-monthly', async (req, res) => {
   }
 });
 
-// GET /api/typing-results/recent-activities - Get recent activities for teacher dashboard
-router.get('/recent-activities', async (req, res) => {
+// GET /api/typing-results/recent-activities - Get recent activities for teacher dashboard (teacher-specific)
+router.get('/recent-activities', verifyTeacherAuth, async (req, res) => {
   try {
-    console.log('📋 Fetching recent activities for teacher dashboard');
+    console.log(`📋 Fetching recent activities for teacher dashboard for teacher: ${req.teacher.id}`);
     
-    // Get recent rooms (activities) from the last 30 days
+    // Get recent rooms (activities) created by this teacher
+    // Using a simpler query to avoid index requirements
+    const roomsRef = db.collection('rooms');
+    let roomsSnapshot;
+    
+    try {
+      // Try the complex query first (if index exists)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      roomsSnapshot = await roomsRef
+        .where('teacherId', '==', req.teacher.id)
+        .where('createdAt', '>=', thirtyDaysAgo)
+        .orderBy('createdAt', 'desc')
+        .limit(10)
+        .get();
+    } catch (indexError) {
+      console.log('📋 Complex query failed, using fallback approach...');
+      
+      // Fallback: Get all rooms by teacher and filter/sort in memory
+      roomsSnapshot = await roomsRef
+        .where('teacherId', '==', req.teacher.id)
+        .get();
+    }
+    
+    const activities = [];
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     
-    const roomsRef = db.collection('rooms');
-    const roomsSnapshot = await roomsRef
-      .where('createdAt', '>=', thirtyDaysAgo)
-      .orderBy('createdAt', 'desc')
-      .limit(10)
-      .get();
-    
-    const activities = [];
-    
-    for (const doc of roomsSnapshot.docs) {
-      const roomData = doc.data();
+    for (const roomDoc of roomsSnapshot.docs) {
+      const roomData = roomDoc.data();
+      
+      // If using fallback, filter by date in memory
+      if (roomData.createdAt && roomData.createdAt.toDate) {
+        const createdDate = roomData.createdAt.toDate();
+        if (createdDate < thirtyDaysAgo) {
+          continue; // Skip rooms older than 30 days
+        }
+      }
+      
+      // Use the authenticated teacher's information
+      const teacherInfo = {
+        name: req.teacher.name || 'Unknown Teacher',
+        email: req.teacher.email || '',
+        institution: req.teacher.institution || '',
+        department: req.teacher.department || ''
+      };
       
       // Get student count
       const studentCount = roomData.studentsJoined ? roomData.studentsJoined.length : 0;
@@ -486,7 +578,7 @@ router.get('/recent-activities', async (req, res) => {
       
       // Format the activity
       const activity = {
-        id: doc.id,
+        id: roomDoc.id,
         name: roomData.activityName || 'Unnamed Activity',
         section: roomData.section || 'Unknown Section',
         mode: roomData.mode || 'Unknown Mode',
@@ -496,18 +588,30 @@ router.get('/recent-activities', async (req, res) => {
         roomCode: roomData.roomCode,
         createdAt: roomData.createdAt,
         teacherId: roomData.teacherId,
-        teacherName: roomData.teacherName
+        teacherName: roomData.teacherName,
+        teacherInfo: teacherInfo
       };
       
       activities.push(activity);
     }
     
-    console.log(`📋 Found ${activities.length} recent activities`);
+    // Sort activities by creation date (newest first) and limit to 10
+    activities.sort((a, b) => {
+      if (!a.createdAt || !b.createdAt) return 0;
+      const dateA = a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+      const dateB = b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+      return dateB - dateA;
+    });
+    
+    // Limit to 10 most recent activities
+    const limitedActivities = activities.slice(0, 10);
+    
+    console.log(`📋 Found ${limitedActivities.length} recent activities for teacher: ${req.teacher.id}`);
     
     res.json({
       success: true,
-      data: activities,
-      count: activities.length
+      data: limitedActivities,
+      count: limitedActivities.length
     });
     
   } catch (error) {

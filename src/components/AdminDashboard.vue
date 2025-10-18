@@ -121,8 +121,6 @@
                 <tr>
                   <th>Name</th>
                   <th>Email</th>
-                  <th>Institution</th>
-                  <th>Department</th>
                   <th>Status</th>
                   <th>Setup Status</th>
                   <th>Created</th>
@@ -144,8 +142,6 @@
                     </div>
                   </td>
                   <td>{{ teacher.email }}</td>
-                  <td>{{ teacher.institution }}</td>
-                  <td>{{ teacher.department || 'N/A' }}</td>
                   <td>
                     <span 
                       :class="['badge', teacher.isActive ? 'bg-success' : 'bg-secondary']"
@@ -166,13 +162,6 @@
                   <td>
                     <div class="btn-group btn-group-sm">
                       <button 
-                        class="btn btn-outline-primary"
-                        @click="viewTeacher(teacher)"
-                        title="View Details"
-                      >
-                        <i class="fas fa-eye"></i>
-                      </button>
-                      <button 
                         class="btn btn-outline-warning"
                         @click="editTeacher(teacher)"
                         title="Edit"
@@ -180,12 +169,20 @@
                         <i class="fas fa-edit"></i>
                       </button>
                       <button 
+                        v-if="teacher.isActive"
                         class="btn btn-outline-danger"
                         @click="confirmDeactivate(teacher)"
-                        :disabled="!teacher.isActive"
                         title="Deactivate"
                       >
                         <i class="fas fa-user-times"></i>
+                      </button>
+                      <button 
+                        v-else
+                        class="btn btn-outline-success"
+                        @click="confirmReactivate(teacher)"
+                        title="Reactivate"
+                      >
+                        <i class="fas fa-user-check"></i>
                       </button>
                     </div>
                   </td>
@@ -322,9 +319,173 @@
       </div>
     </div>
 
+    <!-- Edit Teacher Modal -->
+    <div 
+      class="modal fade" 
+      :class="{ show: showEditModal }" 
+      :style="{ display: showEditModal ? 'block' : 'none' }"
+      tabindex="-1"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header bg-warning text-dark">
+            <h5 class="modal-title">
+              <i class="fas fa-edit me-2"></i>
+              Edit Teacher
+            </h5>
+            <button 
+              type="button" 
+              class="btn-close" 
+              @click="closeEditModal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="updateTeacher">
+              <div class="mb-3">
+                <label for="editName" class="form-label">Teacher Name</label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="editName"
+                  v-model="editTeacherData.name"
+                  required
+                >
+              </div>
+              <div class="mb-3">
+                <label for="editEmail" class="form-label">Email Address</label>
+                <input 
+                  type="email" 
+                  class="form-control" 
+                  id="editEmail"
+                  v-model="editTeacherData.email"
+                  required
+                >
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button 
+              type="button" 
+              class="btn btn-secondary" 
+              @click="closeEditModal"
+            >
+              Cancel
+            </button>
+            <button 
+              type="button" 
+              class="btn btn-warning"
+              @click="updateTeacher"
+              :disabled="updatingTeacher"
+            >
+              <span v-if="updatingTeacher" class="spinner-border spinner-border-sm me-2"></span>
+              {{ updatingTeacher ? 'Updating...' : 'Update Teacher' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Deactivate Confirmation Modal -->
+    <div 
+      class="modal fade" 
+      :class="{ show: showDeactivateModal }" 
+      :style="{ display: showDeactivateModal ? 'block' : 'none' }"
+      tabindex="-1"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title">
+              <i class="fas fa-user-times me-2"></i>
+              Deactivate Teacher
+            </h5>
+            <button 
+              type="button" 
+              class="btn-close btn-close-white" 
+              @click="closeDeactivateModal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to deactivate <strong>{{ selectedTeacher?.name }}</strong>?</p>
+            <div class="alert alert-warning">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              This will prevent the teacher from accessing their account. You can reactivate them later if needed.
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button 
+              type="button" 
+              class="btn btn-secondary" 
+              @click="closeDeactivateModal"
+            >
+              Cancel
+            </button>
+            <button 
+              type="button" 
+              class="btn btn-danger"
+              @click="deactivateTeacher"
+              :disabled="deactivatingTeacher"
+            >
+              <span v-if="deactivatingTeacher" class="spinner-border spinner-border-sm me-2"></span>
+              {{ deactivatingTeacher ? 'Deactivating...' : 'Deactivate' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reactivate Confirmation Modal -->
+    <div 
+      class="modal fade" 
+      :class="{ show: showReactivateModal }" 
+      :style="{ display: showReactivateModal ? 'block' : 'none' }"
+      tabindex="-1"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header bg-success text-white">
+            <h5 class="modal-title">
+              <i class="fas fa-user-check me-2"></i>
+              Reactivate Teacher
+            </h5>
+            <button 
+              type="button" 
+              class="btn-close btn-close-white" 
+              @click="closeReactivateModal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to reactivate <strong>{{ selectedTeacher?.name }}</strong>?</p>
+            <div class="alert alert-info">
+              <i class="fas fa-info-circle me-2"></i>
+              This will restore the teacher's access to their account.
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button 
+              type="button" 
+              class="btn btn-secondary" 
+              @click="closeReactivateModal"
+            >
+              Cancel
+            </button>
+            <button 
+              type="button" 
+              class="btn btn-success"
+              @click="reactivateTeacher"
+              :disabled="reactivatingTeacher"
+            >
+              <span v-if="reactivatingTeacher" class="spinner-border spinner-border-sm me-2"></span>
+              {{ reactivatingTeacher ? 'Reactivating...' : 'Reactivate' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal Backdrop -->
     <div 
-      v-if="showAddTeacherModal || showSuccessModal" 
+      v-if="showAddTeacherModal || showSuccessModal || showEditModal || showDeactivateModal || showReactivateModal" 
       class="modal-backdrop fade show"
       @click="closeModals"
     ></div>
@@ -349,8 +510,14 @@ export default {
       // UI State
       loading: true,
       addingTeacher: false,
+      updatingTeacher: false,
+      deactivatingTeacher: false,
+      reactivatingTeacher: false,
       showAddTeacherModal: false,
       showSuccessModal: false,
+      showEditModal: false,
+      showDeactivateModal: false,
+      showReactivateModal: false,
       
       // Data
       teachers: [],
@@ -372,6 +539,13 @@ export default {
         email: ''
       },
       
+      editTeacherData: {
+        id: null,
+        name: '',
+        email: ''
+      },
+      
+      selectedTeacher: null,
       createdTeacher: {}
     };
   },
@@ -501,6 +675,9 @@ export default {
     closeModals() {
       this.showAddTeacherModal = false;
       this.showSuccessModal = false;
+      this.closeEditModal();
+      this.closeDeactivateModal();
+      this.closeReactivateModal();
     },
     
     viewTeacher(teacher) {
@@ -509,29 +686,104 @@ export default {
     },
     
     editTeacher(teacher) {
-      // Implement edit teacher
-      console.log('Edit teacher:', teacher);
+      this.editTeacherData = {
+        id: teacher.id,
+        name: teacher.name,
+        email: teacher.email
+      };
+      this.showEditModal = true;
     },
     
     confirmDeactivate(teacher) {
-      if (confirm(`Are you sure you want to deactivate ${teacher.name}?`)) {
-        this.deactivateTeacher(teacher.id);
-      }
+      this.selectedTeacher = teacher;
+      this.showDeactivateModal = true;
     },
     
-    async deactivateTeacher(teacherId) {
+    confirmReactivate(teacher) {
+      this.selectedTeacher = teacher;
+      this.showReactivateModal = true;
+    },
+    
+    async updateTeacher() {
       try {
-        const response = await adminAPI.deactivateTeacher(teacherId, this.adminId);
+        this.updatingTeacher = true;
+        
+        const response = await adminAPI.updateTeacher(this.editTeacherData.id, {
+          name: this.editTeacherData.name,
+          email: this.editTeacherData.email
+        }, this.adminId);
+        
+        if (response.success) {
+          this.$toast?.success?.('Teacher updated successfully');
+          this.closeEditModal();
+          await this.loadTeachers();
+        }
+      } catch (error) {
+        console.error('Error updating teacher:', error);
+        const message = error.message || 'Failed to update teacher';
+        this.$toast?.error?.(message);
+      } finally {
+        this.updatingTeacher = false;
+      }
+    },
+
+    async deactivateTeacher() {
+      try {
+        this.deactivatingTeacher = true;
+        
+        const response = await adminAPI.deactivateTeacher(this.selectedTeacher.id, this.adminId);
         
         if (response.success) {
           this.$toast?.success?.('Teacher deactivated successfully');
+          this.closeDeactivateModal();
           await this.loadTeachers();
         }
       } catch (error) {
         console.error('Error deactivating teacher:', error);
         const message = error.message || 'Failed to deactivate teacher';
         this.$toast?.error?.(message);
+      } finally {
+        this.deactivatingTeacher = false;
       }
+    },
+
+    async reactivateTeacher() {
+      try {
+        this.reactivatingTeacher = true;
+        
+        const response = await adminAPI.reactivateTeacher(this.selectedTeacher.id, this.adminId);
+        
+        if (response.success) {
+          this.$toast?.success?.('Teacher reactivated successfully');
+          this.closeReactivateModal();
+          await this.loadTeachers();
+        }
+      } catch (error) {
+        console.error('Error reactivating teacher:', error);
+        const message = error.message || 'Failed to reactivate teacher';
+        this.$toast?.error?.(message);
+      } finally {
+        this.reactivatingTeacher = false;
+      }
+    },
+
+    closeEditModal() {
+      this.showEditModal = false;
+      this.editTeacherData = {
+        id: null,
+        name: '',
+        email: ''
+      };
+    },
+
+    closeDeactivateModal() {
+      this.showDeactivateModal = false;
+      this.selectedTeacher = null;
+    },
+
+    closeReactivateModal() {
+      this.showReactivateModal = false;
+      this.selectedTeacher = null;
     },
     
     formatDate(dateString) {

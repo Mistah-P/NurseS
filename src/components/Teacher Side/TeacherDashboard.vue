@@ -166,9 +166,7 @@ import CreateRoomModal from './CreateRoomModal.vue'
 import sessionService from '../../services/sessionService'
 import teacherDataService from '../../services/teacherDataService'
 import { auth } from '../../firebase/init'
-
-// API configuration
-const API_BASE_URL = process.env.VUE_APP_API_URL || 'http://localhost:3000/api';
+import api from '../../services/api'
 
 export default {
   name: 'TeacherDashboard',
@@ -287,8 +285,8 @@ export default {
     async fetchTopWPM() {
       this.loadingTopWPM = true;
       try {
-        const response = await fetch(`${API_BASE_URL}/typing-results/top-wpm-monthly`);
-        const result = await response.json();
+        const response = await api.get('/typing-results/top-wpm-monthly');
+        const result = response.data;
         
         if (result.success) {
           this.topWPMData = result.data;
@@ -331,8 +329,8 @@ export default {
     async fetchRecentActivities() {
       this.loadingActivities = true;
       try {
-        const response = await fetch(`${API_BASE_URL}/typing-results/recent-activities`);
-        const result = await response.json();
+        const response = await api.get('/typing-results/recent-activities');
+        const result = response.data;
         
         if (result.success) {
           this.recentActivities = result.data;

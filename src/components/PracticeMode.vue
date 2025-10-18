@@ -118,7 +118,7 @@
           </button>
         </div>
       </div>
-    </div>
+    </div> <!-- End setup-section -->
 
         <!-- Typing Section -->
         <div class="typing-section" v-if="isTyping">
@@ -144,7 +144,13 @@
       </div>
 
       <div class="typing-area">
-        <div class="text-display">
+        <div 
+          class="text-display"
+          tabindex="0"
+          @keydown="handleKeydown"
+          @focus="handleFocus"
+          ref="textDisplay"
+        >
           <span 
             v-for="(char, index) in displayText" 
             :key="index"
@@ -153,18 +159,10 @@
             {{ char }}
           </span>
         </div>
-        <textarea 
-          v-model="userInput"
-          @input="handleInput"
-          @keydown="handleKeydown"
-          class="typing-input"
-          placeholder="Start typing here..."
-          ref="typingInput"
-        ></textarea>
-          </div>
-        </div>
-
       </div>
+      </div>
+
+      </div> <!-- End practice-content -->
     </main>
 
     <!-- Completion Modal -->
@@ -177,7 +175,7 @@
           <div class="final-stats">
             <div class="final-stat">
               <div class="final-stat-value">{{ finalWPM }}</div>
-              <div class="final-stat-label">Words Per Minute</div>
+              <div class="final-stat-label">WPM</div>
             </div>
             <div class="final-stat">
               <div class="final-stat-value">{{ finalAccuracy }}%</div>
@@ -232,6 +230,8 @@ export default {
       finalWPM: 0,
       finalAccuracy: 0,
       practiceTime: 0,
+      // Timer reference to prevent multiple timers
+      timerInterval: null,
       timeOptions: [
         { value: 60, label: '1 minute' },
         { value: 180, label: '3 minutes' },
@@ -350,14 +350,20 @@ export default {
       this.correctCharacters = 0;
       
       this.$nextTick(() => {
-        this.$refs.typingInput.focus();
+        this.$refs.textDisplay.focus();
       });
-
+  
       if (this.selectedMode === 'time') {
         this.startTimer();
       }
     },
     async stopPractice() {
+      // Clear timer if running
+      if (this.timerInterval) {
+        clearInterval(this.timerInterval);
+        this.timerInterval = null;
+      }
+      
       // Capture final stats before stopping
       if (this.isTyping && this.startTime) {
         this.finalWPM = this.wpm;
@@ -398,15 +404,21 @@ export default {
       this.isTyping = false;
     },
     startTimer() {
+      // Clear any existing timer first
+      if (this.timerInterval) {
+        clearInterval(this.timerInterval);
+      }
+      
       // Get the actual duration value (custom or preset)
       const actualDuration = this.selectedDuration === 'custom' ? this.customTimeValue : this.selectedDuration;
       
-      const timer = setInterval(() => {
+      this.timerInterval = setInterval(() => {
         const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
         const remaining = actualDuration - elapsed;
         
         if (remaining <= 0) {
-          clearInterval(timer);
+          clearInterval(this.timerInterval);
+          this.timerInterval = null;
           this.stopPractice();
           return;
         }
@@ -430,17 +442,39 @@ export default {
       this.calculateAccuracy();
       
       if (this.selectedMode === 'words') {
-        const wordsTyped = this.userInput.trim().split(/\s+/).length;
+        // Count only complete words that match the target text
+        const correctWordsTyped = this.getCorrectWordsCount();
         const targetWords = this.selectedDuration === 'custom' ? this.customWordValue : this.selectedDuration;
-        this.currentProgress = `${wordsTyped}/${targetWords}`;
+        this.currentProgress = `${correctWordsTyped}/${targetWords}`;
         
-        if (wordsTyped >= targetWords) {
+        if (correctWordsTyped >= targetWords) {
           this.stopPractice();
         }
       }
     },
-    handleKeydown() {
-      // Handle special keys if needed
+    handleKeydown(event) {
+      // Prevent default behavior for most keys
+      if (event.key.length === 1 || event.key === 'Backspace') {
+        event.preventDefault();
+        
+        if (event.key === 'Backspace') {
+          // Handle backspace
+          if (this.userInput.length > 0) {
+            this.userInput = this.userInput.slice(0, -1);
+            this.handleInput();
+          }
+        } else {
+          // Handle regular character input
+          this.userInput += event.key;
+          this.handleInput();
+        }
+      }
+    },
+    handleFocus() {
+      // Keep focus on the text display area
+      if (this.isTyping) {
+        this.$refs.textDisplay.focus();
+      }
     },
     calculateWPM() {
       if (!this.startTime) return;
@@ -1129,6 +1163,15 @@ export default {
   min-height: 200px;
   letter-spacing: 0.5px;
   word-spacing: 2px;
+  cursor: text;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.text-display:focus {
+  border-color: #4299e1;
+  box-shadow: 0 0 0 4px rgba(66, 153, 225, 0.2);
+  background: var(--bg-secondary);
 }
 
 .text-display span {
@@ -1152,29 +1195,6 @@ export default {
   color: white;
   animation: pulse 1.5s ease-in-out infinite;
   box-shadow: 0 0 8px rgba(66, 153, 225, 0.4);
-}
-
-.typing-input {
-  width: 100%;
-  min-height: 180px;
-  padding: 2rem;
-  border: 2px solid var(--border-color);
-  border-radius: 12px;
-  font-size: 1.4rem;
-  font-family: 'Segoe UI', 'Arial', sans-serif;
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-  resize: vertical;
-  transition: all 0.3s ease;
-  letter-spacing: 0.5px;
-  line-height: 1.8;
-}
-
-.typing-input:focus {
-  outline: none;
-  border-color: #4299e1;
-  box-shadow: 0 0 0 4px rgba(66, 153, 225, 0.2);
-  background: var(--bg-secondary);
 }
 
 @keyframes fadeInDown {

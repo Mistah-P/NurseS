@@ -1,5 +1,4 @@
 import axios from 'axios'
-import sessionService from './sessionService'
 import { auth } from '../firebase/init'
 
 // Create axios instance with base configuration
@@ -18,8 +17,8 @@ api.interceptors.request.use(
       // Get current user from Firebase Auth
       const currentUser = auth.currentUser;
       if (currentUser) {
-        // Get auth token from Firebase using sessionService
-        const token = await sessionService.getAuthToken(currentUser.uid);
+        // Get Firebase ID token directly
+        const token = await currentUser.getIdToken();
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -231,6 +230,19 @@ export const adminAPI = {
     }
   },
 
+  // Update teacher
+  updateTeacher: async (teacherId, updateData, adminId) => {
+    try {
+      const response = await api.put(`/admin/teachers/${teacherId}`, {
+        ...updateData,
+        adminId
+      })
+      return response.data
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to update teacher')
+    }
+  },
+
   // Deactivate teacher
   deactivateTeacher: async (teacherId, adminId) => {
     try {
@@ -240,6 +252,19 @@ export const adminAPI = {
       return response.data
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to deactivate teacher')
+    }
+  },
+
+  // Reactivate teacher
+  reactivateTeacher: async (teacherId, adminId) => {
+    try {
+      const response = await api.put(`/admin/teachers/${teacherId}`, {
+        isActive: true,
+        adminId
+      })
+      return response.data
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to reactivate teacher')
     }
   }
 }
@@ -260,5 +285,10 @@ export default {
   roomAPI,
   studentAPI,
   adminAPI,
-  liveSessionAPI
+  liveSessionAPI,
+  // Export the axios instance for direct API calls
+  get: api.get.bind(api),
+  post: api.post.bind(api),
+  put: api.put.bind(api),
+  delete: api.delete.bind(api)
 };

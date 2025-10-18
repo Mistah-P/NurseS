@@ -1,13 +1,7 @@
 <template>
   <div class="admin-panel">
-    <!-- Show login if not authenticated -->
-    <AdminLogin 
-      v-if="!isAuthenticated" 
-      @login-success="handleLoginSuccess"
-    />
-    
     <!-- Show dashboard if authenticated -->
-    <div v-else class="admin-content">
+    <div v-if="isAuthenticated" class="admin-content">
       <!-- Admin Navigation Bar -->
       <nav class="admin-navbar">
         <div class="container-fluid">
@@ -121,7 +115,6 @@
 </template>
 
 <script>
-import AdminLogin from '../components/AdminLogin.vue';
 import AdminDashboard from '../components/AdminDashboard.vue';
 import sessionService from '../services/sessionService';
 import { auth } from '../firebase/init';
@@ -130,7 +123,6 @@ import { onAuthStateChanged } from 'firebase/auth';
 export default {
   name: 'AdminPanel',
   components: {
-    AdminLogin,
     AdminDashboard
   },
   
@@ -160,23 +152,17 @@ export default {
             this.adminSession = adminSession;
             this.isAuthenticated = true;
           } else {
-            // No valid session found
-            this.clearSession();
+            // No valid session found, redirect to main login
+            this.$router.push('/login');
           }
         } else {
-          // User not authenticated
-          this.clearSession();
+          // User not authenticated, redirect to main login
+          this.$router.push('/login');
         }
       });
     },
     
-    handleLoginSuccess(adminSession) {
-      this.adminSession = adminSession;
-      this.isAuthenticated = true;
-      
-      // Log admin login
-      console.log(`Admin logged in: ${adminSession.name} (${adminSession.id})`);
-    },
+
     
     confirmLogout() {
       this.showLogoutModal = true;

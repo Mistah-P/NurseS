@@ -1,4 +1,4 @@
-# meditype
+# NurseScript
 
 ## Project setup
 ```
