@@ -4,15 +4,15 @@
     <header class="stats-header">
       <div class="stats-container centered">
         <div class="stat-item">
-          <div class="stat-value">{{ currentWPM }}</div>
+          <div class="stat-value">{{ userInput.length > 0 ? currentWPM : '-' }}</div>
           <div class="stat-label">WPM</div>
         </div>
         <div class="stat-item">
-          <div class="stat-value">{{ currentAccuracy }}%</div>
+          <div class="stat-value">{{ userInput.length > 0 ? currentAccuracy + '%' : '-' }}</div>
           <div class="stat-label">Accuracy</div>
         </div>
         <div class="stat-item">
-          <div class="stat-value">{{ currentVisibleErrors }}</div>
+          <div class="stat-value">{{ userInput.length > 0 ? currentVisibleErrors : '-' }}</div>
           <div class="stat-label">Errors</div>
         </div>
       </div>
@@ -183,6 +183,7 @@ export default {
       totalErrors: 0,       // Track total errors across all chunks
       currentVisibleErrors: 0, // Track only currently visible red characters
       finalErrorsForDatabase: 0, // Track correct final error count for database saving
+      totalCompletedWords: 0, // Track total completed words across all chunks
       
       // Timing
       startTime: null,
@@ -681,29 +682,101 @@ export default {
       
       // Update word count for word-count mode
       if (this.gameMode === 'word-count') {
-        // Count actual completed words instead of character-based calculation
-        this.wordsTyped = this.countCompletedWords()
+        // Count actual completed words: total from previous chunks + current chunk
+        const currentChunkWords = this.countCompletedWords()
+        this.wordsTyped = this.totalCompletedWords + currentChunkWords
+        console.log('🔢 Word count update:', {
+          totalCompletedWords: this.totalCompletedWords,
+          currentChunkWords: currentChunkWords,
+          totalWordsTyped: this.wordsTyped,
+          userInput: this.userInput,
+          displayedText: this.displayedText.substring(0, 50) + '...'
+        })
       }
     },
     
     countCompletedWords() {
-      // Simple and safe word counting: count correctly typed words in current displayed text
+      // Count only words that are 100% correctly typed (all green characters)
       if (!this.userInput || !this.displayedText) {
+        console.log('🔢 countCompletedWords: No input or displayed text')
         return 0
       }
       
-      // Split both user input and displayed text into words
-      const userWords = this.userInput.trim().split(/\s+/).filter(word => word.length > 0)
+      // Split displayed text into words to get the target structure
       const displayWords = this.displayedText.trim().split(/\s+/).filter(word => word.length > 0)
       
       let correctWords = 0
+      let charPosition = 0
       
-      // Count words that are completely and correctly typed
-      for (let i = 0; i < userWords.length && i < displayWords.length; i++) {
-        if (userWords[i] === displayWords[i]) {
-          correctWords++
+      for (let i = 0; i < displayWords.length; i++) {
+        const word = displayWords[i]
+        const wordStartPosition = charPosition
+        const wordEndPosition = charPosition + word.length
+        
+        // Check if user has typed enough characters to cover this word
+        if (this.userInput.length < wordEndPosition) {
+          console.log(`🔢 Word ${i + 1} not fully typed: "${word}" (need ${wordEndPosition} chars, have ${this.userInput.length})`)
+          break
         }
+        
+        // Check if every character in this word is correct (green)
+        let wordIsCorrect = true
+        for (let charIndex = wordStartPosition; charIndex < wordEndPosition; charIndex++) {
+          if (this.userInput[charIndex] !== this.displayedText[charIndex]) {
+            wordIsCorrect = false
+            console.log(`🔢 Word ${i + 1} has incorrect character at position ${charIndex}: "${this.userInput[charIndex]}" !== "${this.displayedText[charIndex]}"`)
+            break
+          }
+        }
+        
+        if (wordIsCorrect) {
+          // For words that aren't the last word, also check if the space after is correct (if typed)
+          const spacePosition = wordEndPosition
+          const isLastWord = i === displayWords.length - 1
+          
+          if (!isLastWord && this.userInput.length > spacePosition) {
+             // Check if the separator after the word is correct (space or line break)
+             const userSeparator = this.userInput[spacePosition]
+             const expectedSeparator = this.displayedText[spacePosition]
+             
+             // Normalize separators: treat space and line break as equivalent
+             const normalizeChar = (char) => (char === ' ' || char === '\n') ? ' ' : char
+             const normalizedUser = normalizeChar(userSeparator)
+             const normalizedExpected = normalizeChar(expectedSeparator)
+             
+             if (normalizedUser === normalizedExpected) {
+               correctWords++
+               console.log(`🔢 Word ${i + 1} is 100% correct: "${word}" (separator: "${expectedSeparator.charCodeAt(0)}")`)
+             } else {
+               console.log(`🔢 Word ${i + 1} has incorrect separator after: "${userSeparator}" !== "${expectedSeparator}"`)
+               break // Stop counting if separator is wrong
+             }
+          } else if (isLastWord) {
+            // Last word doesn't need a space check
+            correctWords++
+            console.log(`🔢 Word ${i + 1} is 100% correct: "${word}" (last word)`)
+          } else {
+            // Word is correct but space hasn't been typed yet
+            console.log(`🔢 Word ${i + 1} is correct but space not typed yet: "${word}"`)
+            break
+          }
+        } else {
+          // Word has incorrect characters, stop counting
+          console.log(`🔢 Word ${i + 1} is incorrect, stopping count: "${word}"`)
+          break
+        }
+        
+        // Move to next word position (word + space)
+         charPosition = wordEndPosition + (i === displayWords.length - 1 ? 0 : 1)
       }
+      
+      console.log('🔢 countCompletedWords debug:', {
+        userInputLength: this.userInput.length,
+        displayWordsLength: displayWords.length,
+        correctWords: correctWords,
+        userInput: this.userInput.substring(0, 50) + '...',
+        displayText: this.displayedText.substring(0, 50) + '...'
+      })
       
       return correctWords
     },
@@ -762,6 +835,7 @@ export default {
       // Reset accumulated stats when loading new content
       this.totalCorrectChars = 0
       this.totalTypedChars = 0
+      this.totalCompletedWords = 0
       
       // Display first chunk
       this.updateDisplayedText()
@@ -789,6 +863,13 @@ export default {
         if (i < this.displayedText.length && this.userInput[i] === this.displayedText[i]) {
           correctChars++
         }
+      }
+      
+      // Accumulate completed words from current chunk before resetting userInput
+      if (this.gameMode === 'word-count') {
+        const completedWordsInChunk = this.countCompletedWords()
+        this.totalCompletedWords += completedWordsInChunk
+        console.log('📝 Added', completedWordsInChunk, 'words from chunk. Total words:', this.totalCompletedWords)
       }
       
       // Accumulate total stats
@@ -951,6 +1032,7 @@ export default {
       
       // Reset word count mode properties
       this.wordsTyped = 0
+      this.totalCompletedWords = 0
       
       // Reset accumulated stats - FIX: This was missing and causing WPM to accumulate incorrectly
       this.totalCorrectChars = 0

@@ -124,4 +124,116 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// Get consultation for a specific student (for teachers in AI Patient rooms)
+router.get('/student/:studentId', async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    
+    if (!studentId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Student ID is required'
+      });
+    }
+
+    // Find the most recent consultation for this student
+    const consultationsRef = db.collection('consultations');
+    const snapshot = await consultationsRef
+      .where('userId', '==', studentId)
+      .orderBy('createdAt', 'desc')
+      .limit(1)
+      .get();
+    
+    if (snapshot.empty) {
+      return res.status(404).json({
+        success: false,
+        message: 'No consultation found for this student'
+      });
+    }
+
+    const doc = snapshot.docs[0];
+    const consultationData = doc.data();
+
+    res.status(200).json({
+      success: true,
+      consultation: {
+        id: doc.id,
+        ...consultationData
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching student consultation:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch student consultation',
+      error: error.message
+    });
+  }
+});
+
+// Add or update teacher feedback for a consultation
+router.post('/feedback', async (req, res) => {
+  try {
+    const { studentId, consultationId, feedback } = req.body;
+    
+    if (!studentId || !consultationId || !feedback) {
+      return res.status(400).json({
+        success: false,
+        message: 'Student ID, consultation ID, and feedback are required'
+      });
+    }
+
+    // Validate feedback structure
+    if (!feedback.content || !feedback.teacherName) {
+      return res.status(400).json({
+        success: false,
+        message: 'Feedback content and teacher name are required'
+      });
+    }
+
+    // Get the consultation document
+    const consultationRef = db.collection('consultations').doc(consultationId);
+    const consultationDoc = await consultationRef.get();
+    
+    if (!consultationDoc.exists) {
+      return res.status(404).json({
+        success: false,
+        message: 'Consultation not found'
+      });
+    }
+
+    const consultationData = consultationDoc.data();
+    
+    // Verify the consultation belongs to the specified student
+    if (consultationData.userId !== studentId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Consultation does not belong to the specified student'
+      });
+    }
+
+    // Update the consultation with teacher feedback
+    await consultationRef.update({
+      teacherFeedback: {
+        content: feedback.content,
+        teacherName: feedback.teacherName,
+        createdAt: feedback.createdAt || admin.firestore.FieldValue.serverTimestamp()
+      },
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Feedback added successfully'
+    });
+  } catch (error) {
+    console.error('Error adding feedback:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to add feedback',
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;

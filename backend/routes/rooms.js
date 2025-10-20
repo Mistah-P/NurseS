@@ -11,26 +11,36 @@ const createRoomSchema = Joi.object({
   activityName: Joi.string().required().min(1).max(100),
   section: Joi.string().required().min(1).max(50),
   yearLevel: Joi.string().required().min(1).max(20),
-  mode: Joi.string().required().valid('Timed', 'Word Count Challenge'),
+  mode: Joi.string().required().valid('Timed', 'Word Count Challenge', 'AI Patient'),
   duration: Joi.number().integer().min(0).max(180).allow(null),
   wordCount: Joi.number().integer().min(0).max(500).allow(null),
   module: Joi.string().required().min(1).max(100),
-  difficultyLevel: Joi.string().required().valid('Easy', 'Normal', 'Hard'),
+  difficultyLevel: Joi.string().required().valid('Easy', 'Normal', 'Hard', 'Interactive'),
   teacherId: Joi.string().required(),
-  teacherName: Joi.string().required()
+  teacherName: Joi.string().required(),
+  roomType: Joi.string().optional().valid('Typing Test', 'AI Patient').default('Typing Test')
 }).custom((value, helpers) => {
-  // If mode is 'Timed', duration must be at least 1 minute
+  // Validation for Typing Test rooms (existing functionality)
   if (value.mode === 'Timed') {
     if (!value.duration || value.duration < 1) {
       return helpers.error('custom.timedDurationRequired');
     }
   }
-  // If mode is 'Word Count Challenge', wordCount must be at least 10 words
   if (value.mode === 'Word Count Challenge') {
     if (!value.wordCount || value.wordCount < 10) {
       return helpers.error('custom.wordCountRequired');
     }
   }
+  
+  // Validation for AI Patient rooms (new functionality)
+  if (value.mode === 'AI Patient') {
+    // AI Patient rooms don't need duration or wordCount
+    // Set roomType to 'AI Patient' if not already set
+    if (!value.roomType) {
+      value.roomType = 'AI Patient';
+    }
+  }
+  
   return value;
 }, 'Mode validation').messages({
   'custom.timedDurationRequired': 'Duration must be at least 1 minute for Timed mode',
@@ -137,8 +147,10 @@ router.post('/', async (req, res) => {
         yearLevel: value.yearLevel,
         mode: value.mode,
         duration: value.duration,
+        wordCount: value.wordCount,
         module: value.module,
         difficultyLevel: value.difficultyLevel,
+        roomType: value.roomType,
         status: 'waiting',
         studentsJoined: []
       }

@@ -8,6 +8,57 @@ class MistralService {
   }
 
   /**
+   * Generate a generic response using Mistral 7B
+   * @param {string} prompt - The prompt to send to the AI
+   * @param {Array} conversationHistory - Previous messages in the conversation (optional)
+   * @returns {Promise<string>} - Generated response
+   */
+  async generateResponse(prompt, conversationHistory = []) {
+    try {
+      const messages = [
+        { role: 'user', content: prompt }
+      ];
+
+      // Add conversation history if provided
+      if (conversationHistory && conversationHistory.length > 0) {
+        const historyMessages = [];
+        conversationHistory.forEach(msg => {
+          historyMessages.push({
+            role: msg.sender === 'user' ? 'user' : 'assistant',
+            content: msg.message
+          });
+        });
+        messages.unshift(...historyMessages);
+      }
+
+      const response = await axios.post(
+        `${this.baseURL}/chat/completions`,
+        {
+          model: this.model,
+          messages: messages,
+          max_tokens: 500,
+          temperature: 0.7,
+          top_p: 0.9,
+          stream: false
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'http://localhost:3000',
+            'X-Title': 'NurseScript AI'
+          }
+        }
+      );
+
+      return response.data.choices[0].message.content.trim();
+    } catch (error) {
+      console.error('Mistral API Error:', error.response?.data || error.message);
+      throw new Error('Failed to generate response');
+    }
+  }
+
+  /**
    * Generate patient response using Mistral 7B
    * @param {string} userMessage - The nurse's message/question
    * @param {Object} patientContext - Patient information and medical context
@@ -24,8 +75,8 @@ class MistralService {
         {
           model: this.model,
           messages: messages,
-          max_tokens: 150,
-          temperature: 0.7,
+          max_tokens: 250, // Increased for more detailed responses
+          temperature: 0.8, // Higher creativity for dynamic patient generation
           top_p: 0.9,
           stream: false
         },
@@ -47,39 +98,66 @@ class MistralService {
   }
 
   /**
-   * Build system prompt based on patient context
-   * @param {Object} patientContext - Patient information
-   * @returns {string} - System prompt
+   * Build dynamic system prompt for truly AI-generated patient simulation
+   * @param {Object} patientContext - Context for the patient
+   * @returns {string} - Dynamic system prompt
    */
   buildSystemPrompt(patientContext) {
-    const { patientData, findings } = patientContext;
+    const { roomCode, studentId } = patientContext;
     
-    return `You are a virtual patient in a medical simulation. You must respond as a real patient would, staying in character throughout the conversation.
+    // Create a unique seed for consistency within the same room/student combination
+    const sessionSeed = this.simpleHash(`${roomCode}-${studentId}`);
+    const seedNumber = Math.abs(sessionSeed) % 1000;
+    
+    return `You are a virtual patient in a medical simulation. You must create and embody a realistic patient character throughout this conversation.
 
-PATIENT PROFILE:
-- Name: ${patientData?.name || 'Patient'}
-- Age: ${this.calculateAge(patientData?.dateOfBirth) || 'Unknown'}
-- Gender: ${patientData?.gender || 'Unknown'}
-- Occupation: ${patientData?.occupation || 'Unknown'}
+PATIENT CREATION GUIDELINES:
+- Create a unique patient identity (name, age, gender, occupation, address) 
+- Develop realistic medical symptoms and history
+- Be consistent with your created identity throughout the conversation
+- Use session seed ${seedNumber} to maintain consistency if asked the same questions multiple times
 
-MEDICAL CONTEXT:
-- Chief Complaint: ${findings?.chiefComplaint || 'General consultation'}
-- Present Illness: ${findings?.presentIllness || 'None specified'}
-- Past Illnesses: ${findings?.pastIllnesses || 'None specified'}
-- Allergies: ${findings?.allergies || 'None known'}
-- Current Medications: ${findings?.medications || 'None'}
+PATIENT BEHAVIOR:
+1. When first greeted, briefly introduce yourself with your name and main concern
+2. Create realistic personal details when asked (age, occupation, address, etc.)
+3. Develop symptoms that make medical sense together
+4. Show appropriate emotions (pain, worry, relief, etc.)
+5. Answer questions naturally - don't volunteer everything at once
+6. Be cooperative but realistic about what you know/remember
+7. Use first person ("I feel...", "My pain started...", "I work as...")
+8. Keep responses conversational (50-100 words typically)
 
-INSTRUCTIONS:
-1. Respond as this patient would, using first person ("I feel...", "My pain is...")
-2. Be realistic about symptoms and feelings
-3. Show appropriate emotions (concern, pain, relief, etc.)
-4. Ask relevant questions a real patient might ask
-5. Keep responses conversational and natural (50-100 words)
-6. Stay consistent with the medical context provided
-7. If asked about symptoms not in your profile, respond appropriately ("I don't have that symptom" or "I'm not sure")
-8. Show human-like uncertainty when appropriate
+MEDICAL REALISM:
+- Create symptoms that could realistically occur together
+- Have a believable timeline for your illness
+- Include relevant medical history if appropriate
+- Be uncertain about medical terms you wouldn't know as a patient
+- Show human-like memory gaps or uncertainty when realistic
 
-Remember: You are a patient seeking medical care, not a medical professional.`;
+CONSISTENCY RULES:
+- Once you establish your identity (name, age, etc.), stick to it
+- Keep your symptoms and timeline consistent
+- Remember what you've already told the student
+- Build on previous conversation naturally
+
+Remember: You are a real person seeking medical help, not a medical textbook. Create a believable, consistent character and stay in role throughout the entire conversation.`;
+  }
+
+
+
+  /**
+   * Simple hash function for consistent randomization
+   * @param {string} str - String to hash
+   * @returns {number} - Hash value
+   */
+  simpleHash(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash);
   }
 
   /**

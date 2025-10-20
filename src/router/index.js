@@ -13,6 +13,7 @@ import RegisterForm from '@/components/RegisterForm.vue'
 // Student components
 import PracticeMode from '@/components/PracticeMode.vue'
 import AIPatient from '@/components/AIPatient.vue'
+import AIPatientRoom from '@/components/AIPatientRoom.vue'
 import StudentSettings from '@/components/Settings.vue'
 import StudentRoomInterface from '@/components/Student Side/StudentRoomInterface.vue'
 import TypingTest from '@/components/Student Side/TypingTest.vue'
@@ -36,6 +37,7 @@ const routes = [
   // Student routes
   { path: '/practice-mode', name: 'PracticeMode', component: PracticeMode },
   { path: '/ai-patient', name: 'AIPatient', component: AIPatient },
+  { path: '/ai-patient-room/:roomCode', name: 'AIPatientRoom', component: AIPatientRoom, props: true },
   { path: '/settings', name: 'Settings', component: StudentSettings },
   { path: '/student-room/:roomCode', name: 'StudentRoomInterface', component: StudentRoomInterface, props: true },
   { path: '/typing-test/:roomCode', name: 'TypingTest', component: TypingTest, props: true },

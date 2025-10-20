@@ -40,7 +40,13 @@ api.interceptors.response.use(
     return response
   },
   (error) => {
-    console.error('API Error:', error.response?.data || error.message)
+    // Don't log 404 errors for consultation endpoints as they're expected when no consultation exists
+    const isConsultationNotFound = error.response?.status === 404 && 
+                                   error.config?.url?.includes('/consultations/student/')
+    
+    if (!isConsultationNotFound) {
+      console.error('API Error:', error.response?.data || error.message)
+    }
     return Promise.reject(error)
   }
 )

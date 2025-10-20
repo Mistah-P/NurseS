@@ -323,21 +323,37 @@ export default {
     },
 
     startTyping() {
-      console.log('🚀 Starting typing - Current route:', this.$route.path)
+      console.log('🚀 Starting activity - Current route:', this.$route.path)
       console.log('Student data:', this.studentData)
       console.log('Room code:', this.roomCode)
+      console.log('Room data:', this.roomData)
       
       // Safety check: Don't navigate if session is in countdown state
       if (this.liveSessionData && this.liveSessionData.status === 'countdown') {
-        console.log('⚠️ Cannot start typing during countdown phase')
-        this.showToast('Please wait for the countdown to finish before starting the test.', 'warning')
+        console.log('⚠️ Cannot start activity during countdown phase')
+        this.showToast('Please wait for the countdown to finish before starting the activity.', 'warning')
         return
       }
       
-      // Use route name for more reliable navigation
-      const routeConfig = {
-        name: 'TypingTest',
-        params: { roomCode: this.roomCode }
+      // Determine the route based on room type
+      let routeConfig;
+      let fallbackPath;
+      
+      // Check if this is an AI Patient room
+      if (this.roomData && (this.roomData.mode === 'AI Patient' || this.roomData.module === 'AI Patient Simulation')) {
+        console.log('🤖 Redirecting to AI Patient room interface')
+        routeConfig = {
+          name: 'AIPatientRoom',
+          params: { roomCode: this.roomCode }
+        }
+        fallbackPath = `/ai-patient-room/${this.roomCode}`
+      } else {
+        console.log('⌨️ Redirecting to Typing Test interface')
+        routeConfig = {
+          name: 'TypingTest',
+          params: { roomCode: this.roomCode }
+        }
+        fallbackPath = `/typing-test/${this.roomCode}`
       }
       
       console.log('Attempting to navigate with config:', routeConfig)
@@ -345,11 +361,10 @@ export default {
       // Use nextTick to ensure DOM updates are complete before navigation
       this.$nextTick(() => {
         this.$router.push(routeConfig).then(() => {
-          console.log('✅ Student navigation successful to TypingTest with roomCode:', this.roomCode)
+          console.log('✅ Student navigation successful to', routeConfig.name, 'with roomCode:', this.roomCode)
         }).catch((error) => {
           console.error('❌ Student navigation failed:', error)
           // Fallback to path-based navigation
-          const fallbackPath = `/typing-test/${this.roomCode}`
           console.log('Trying fallback navigation to:', fallbackPath)
           this.$router.push(fallbackPath).catch((fallbackError) => {
             console.error('❌ Fallback navigation also failed:', fallbackError)
@@ -474,8 +489,13 @@ export default {
       this.showCountdown = false;
       this.stopCountdownTimer();
       
-      // Show completion notification
-      this.showToast('Activity completed!', 'info');
+      // Show completion notification and redirect to student dashboard
+      this.showToast('Activity completed! Redirecting to dashboard...', 'info');
+      
+      // Redirect to student dashboard after a short delay
+      setTimeout(() => {
+        this.$router.push('/student-dashboard')
+      }, 1500)
     },
 
     startCountdownTimer() {

@@ -152,10 +152,24 @@
       </div>
     </main>
 
-    <!-- Create Room Modal -->
-    <CreateRoomModal 
+    <!-- Room Type Selection Modal -->
+    <RoomTypeSelectionModal 
       :show="showCreateRoomModal" 
       @close="showCreateRoomModal = false"
+      @room-type-selected="handleRoomTypeSelected"
+    />
+
+    <!-- Typing Test Room Modal -->
+    <CreateRoomModal 
+      :show="showTypingTestModal" 
+      @close="showTypingTestModal = false"
+      @room-created="handleRoomCreated"
+    />
+
+    <!-- AI Patient Room Modal -->
+    <CreateAIPatientRoomModal 
+      :show="showAIPatientModal" 
+      @close="showAIPatientModal = false"
       @room-created="handleRoomCreated"
     />
   </div>
@@ -163,6 +177,8 @@
 
 <script>
 import CreateRoomModal from './CreateRoomModal.vue'
+import RoomTypeSelectionModal from './RoomTypeSelectionModal.vue'
+import CreateAIPatientRoomModal from './CreateAIPatientRoomModal.vue'
 import sessionService from '../../services/sessionService'
 import teacherDataService from '../../services/teacherDataService'
 import { auth } from '../../firebase/init'
@@ -171,7 +187,9 @@ import api from '../../services/api'
 export default {
   name: 'TeacherDashboard',
   components: {
-    CreateRoomModal
+    CreateRoomModal,
+    RoomTypeSelectionModal,
+    CreateAIPatientRoomModal
   },
   data() {
     return {
@@ -181,6 +199,8 @@ export default {
       currentSession: null,
       isLoggingOut: false,
       showCreateRoomModal: false,
+      showTypingTestModal: false,
+      showAIPatientModal: false,
       stats: {
         totalStudents: 156,
         activeRooms: 8,
@@ -269,10 +289,26 @@ export default {
         this.isLoggingOut = false;
       }
     },
-    handleRoomCreated() {
-      // Handle room creation logic here
+    handleRoomTypeSelected(roomType) {
+      // Close the room type selection modal
       this.showCreateRoomModal = false
-      // You can add the new room to recent activities or refresh data
+      
+      // Open the appropriate modal based on selection
+      if (roomType === 'typing-test') {
+        this.showTypingTestModal = true
+      } else if (roomType === 'ai-patient') {
+        this.showAIPatientModal = true
+      }
+    },
+    
+    handleRoomCreated() {
+      // Close all modals
+      this.showCreateRoomModal = false
+      this.showTypingTestModal = false
+      this.showAIPatientModal = false
+      
+      // Refresh recent activities to show the new room
+      this.fetchRecentActivities()
     },
 
     // Top WPM Methods

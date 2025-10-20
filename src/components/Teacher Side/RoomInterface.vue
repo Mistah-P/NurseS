@@ -41,6 +41,7 @@
           </button>
           
           <button 
+            v-if="!isAIPatientRoom"
             class="leaderboard-btn" 
             :class="{ active: showLeaderboardModal }"
             @click="toggleLeaderboard"
@@ -60,15 +61,15 @@
             {{ isStartingActivity ? 'Starting...' : 'Start Activity' }}
           </button>
 
-          <!-- Complete Activity Button - Always visible when activity has started -->
+          <!-- Complete Activity Button / Mark as Done Button for AI Patient Room -->
           <button 
             v-if="hasActivityStarted"
             class="complete-btn" 
-            @click="completeActivity"
+            @click="isAIPatientRoom ? markAsDone() : completeActivity()"
             :disabled="isCompletingActivity"
           >
             <i class="fas fa-check-circle"></i>
-            {{ isCompletingActivity ? 'Completing...' : 'Complete Activity' }}
+            {{ isCompletingActivity ? (isAIPatientRoom ? 'Marking...' : 'Completing...') : (isAIPatientRoom ? 'Mark as Done' : 'Complete Activity') }}
           </button>
           
           <button 
@@ -130,8 +131,15 @@
             v-for="(student, index) in activeStudents" 
             :key="student.id"
             class="student-card"
+            :class="{ 'clickable-card': isAIPatientRoom, 'has-consultation': isAIPatientRoom && hasConsultationSubmitted(student) }"
             :style="{ animationDelay: `${index * 0.1}s` }"
+            @click="isAIPatientRoom ? openConsultationModal(student) : null"
           >
+            <!-- Notification badge for AI Patient rooms -->
+            <div v-if="isAIPatientRoom && hasConsultationSubmitted(student)" class="consultation-badge">
+              <i class="fas fa-clipboard-check"></i>
+            </div>
+            
             <div class="student-avatar">
               <span>{{ student.studentName ? student.studentName.charAt(0) : '?' }}</span>
             </div>
@@ -141,8 +149,18 @@
                 <div class="status-dot"></div>
                 {{ student.status === 'ready' ? 'Ready' : 'Waiting' }}
               </div>
+              <!-- AI Patient room specific info -->
+              <div v-if="isAIPatientRoom" class="consultation-info">
+                <span v-if="hasConsultationSubmitted(student)" class="consultation-status submitted">
+                  <i class="fas fa-check-circle"></i> Form Submitted
+                </span>
+                <span v-else class="consultation-status pending">
+                  <i class="fas fa-clock"></i> Awaiting Form
+                </span>
+              </div>
             </div>
-            <div class="student-actions">              <button @click="kickStudent(student)" class="kick-btn" title="Remove Student">
+            <div class="student-actions">              
+              <button @click.stop="kickStudent(student)" class="kick-btn" title="Remove Student">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                   <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
                   <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
@@ -168,8 +186,8 @@
         </div>
       </div>
 
-      <!-- Live Leaderboard Modal -->
-      <div v-if="activityStarted && showLeaderboard" class="leaderboard-modal" @click="closeLeaderboard">
+      <!-- Live Leaderboard Modal (hidden for AI Patient rooms) -->
+      <div v-if="activityStarted && showLeaderboard && !isAIPatientRoom" class="leaderboard-modal" @click="closeLeaderboard">
         <div class="leaderboard-modal-content" @click.stop>
           <div class="modal-header">
             <h3>
@@ -240,8 +258,9 @@
       </div>
     </div>
 
-    <!-- Live Leaderboard Modal -->
+    <!-- Live Leaderboard Modal (hidden for AI Patient rooms) -->
     <LiveLeaderboardModal
+      v-if="!isAIPatientRoom"
       :isVisible="showLeaderboardModal"
       :roomCode="roomCode"
       @close="showLeaderboardModal = false"
@@ -314,6 +333,171 @@
         </div>
       </div>
     </div>
+
+    <!-- Student Consultation Modal (AI Patient rooms only) -->
+    <div v-if="showConsultationModal && isAIPatientRoom" class="modal-overlay" @click="closeConsultationModal">
+      <div class="consultation-modal" @click.stop>
+        <div class="modal-header">
+          <h3>
+            <i class="fas fa-user-md"></i>
+            {{ selectedStudent?.studentName }}'s Consultation Form
+          </h3>
+          <button class="close-btn" @click="closeConsultationModal">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div class="modal-body">
+          <div v-if="isLoadingConsultation" class="loading-state">
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>Loading consultation form...</span>
+          </div>
+          
+          <div v-else-if="consultationError" class="error-state">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>{{ consultationError }}</span>
+          </div>
+          
+          <div v-else-if="!studentConsultation" class="no-consultation-state">
+            <i class="fas fa-clipboard"></i>
+            <h4>No Consultation Form Submitted</h4>
+            <p>{{ selectedStudent?.studentName }} hasn't submitted their consultation form yet.</p>
+          </div>
+          
+          <div v-else class="consultation-content">
+            <!-- Patient Information Section -->
+            <div class="consultation-section">
+              <h4 class="section-title">
+                <i class="fas fa-user"></i>
+                Patient Information
+              </h4>
+              <div class="info-grid">
+                <div class="info-item">
+                  <label>Patient Name:</label>
+                  <span>{{ studentConsultation.patientName || studentConsultation.patientData?.name || 'Not specified' }}</span>
+                </div>
+                <div class="info-item">
+                  <label>Date of Birth:</label>
+                  <span>{{ studentConsultation.patientData?.dateOfBirth || 'Not specified' }}</span>
+                </div>
+                <div class="info-item">
+                  <label>Gender:</label>
+                  <span>{{ studentConsultation.patientData?.gender || 'Not specified' }}</span>
+                </div>
+                <div class="info-item">
+                  <label>Occupation:</label>
+                  <span>{{ studentConsultation.patientData?.occupation || 'Not specified' }}</span>
+                </div>
+                <div class="info-item full-width">
+                  <label>Address:</label>
+                  <span>{{ studentConsultation.patientData?.address || 'Not specified' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Findings Section -->
+            <div class="consultation-section">
+              <h4 class="section-title">
+                <i class="fas fa-stethoscope"></i>
+                Findings
+              </h4>
+              <div class="findings-content">
+                <div class="finding-item">
+                  <label>Chief Complaint:</label>
+                  <p>{{ studentConsultation.findings?.chiefComplaint || 'Not specified' }}</p>
+                </div>
+                <div class="finding-item">
+                  <label>Present Illness:</label>
+                  <p>{{ studentConsultation.findings?.presentIllness || 'Not specified' }}</p>
+                </div>
+                <div class="finding-item">
+                  <label>Past Illnesses:</label>
+                  <p>{{ studentConsultation.findings?.pastIllness || 'Not specified' }}</p>
+                </div>
+                <div class="finding-item">
+                  <label>Allergies:</label>
+                  <p>{{ studentConsultation.findings?.allergies || 'Not specified' }}</p>
+                </div>
+                <div class="finding-item">
+                  <label>Medications:</label>
+                  <p>{{ studentConsultation.findings?.medications || 'Not specified' }}</p>
+                </div>
+                <div class="finding-item">
+                  <label>Previous Surgeries:</label>
+                  <p>{{ studentConsultation.findings?.previousSurgeries || 'Not specified' }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recommendations Section -->
+            <div class="consultation-section">
+              <h4 class="section-title">
+                <i class="fas fa-lightbulb"></i>
+                Recommendations
+              </h4>
+              <div class="findings-content">
+                <div class="finding-item">
+                  <label>Treatment Plan:</label>
+                  <p>{{ studentConsultation.recommendations?.treatmentPlan || 'Not specified' }}</p>
+                </div>
+                <div class="finding-item">
+                  <label>Follow-up Instructions:</label>
+                  <p>{{ studentConsultation.recommendations?.followUpInstructions || 'Not specified' }}</p>
+                </div>
+                <div class="finding-item">
+                  <label>Additional Notes:</label>
+                  <p>{{ studentConsultation.recommendations?.additionalNotes || 'Not specified' }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Teacher Feedback Section -->
+            <div class="consultation-section feedback-section">
+              <h4 class="section-title">
+                <i class="fas fa-comment-dots"></i>
+                Teacher Feedback
+              </h4>
+              <div v-if="studentConsultation.teacherFeedback" class="existing-feedback">
+                <div class="feedback-item">
+                  <div class="feedback-header">
+                    <span class="feedback-author">{{ studentConsultation.teacherFeedback.teacherName }}</span>
+                    <span class="feedback-date">{{ formatDate(studentConsultation.teacherFeedback.createdAt) }}</span>
+                  </div>
+                  <p class="feedback-content">{{ studentConsultation.teacherFeedback.content }}</p>
+                </div>
+              </div>
+              
+              <div class="feedback-form">
+                <label for="feedbackText">{{ studentConsultation.teacherFeedback ? 'Update Feedback:' : 'Provide Feedback:' }}</label>
+                <textarea 
+                  id="feedbackText"
+                  v-model="feedbackText"
+                  placeholder="Enter your feedback for this consultation..."
+                  rows="4"
+                  class="feedback-textarea"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button class="cancel-btn" @click="closeConsultationModal">
+            <i class="fas fa-times"></i>
+            Close
+          </button>
+          <button 
+            v-if="studentConsultation"
+            class="feedback-btn" 
+            @click="sendFeedback"
+            :disabled="!feedbackText.trim() || isSendingFeedback"
+          >
+            <i class="fas fa-paper-plane"></i>
+            {{ isSendingFeedback ? 'Sending...' : (studentConsultation.teacherFeedback ? 'Update Feedback' : 'Send Feedback') }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -321,6 +505,7 @@
 import liveSessionService from '../../services/liveSessionService'
 import LiveLeaderboardModal from './LiveLeaderboardModal.vue'
 import { roomAPI } from '../../services/api'
+import api from '../../services/api'
 
 export default {
   name: 'RoomInterface',
@@ -363,7 +548,17 @@ export default {
       // Modal loading indicators
       showStartActivityModal: false,
       showCompleteActivityModal: false,
-      showEndRoomModal: false
+      showEndRoomModal: false,
+      // Consultation modal data (AI Patient rooms only)
+      showConsultationModal: false,
+      selectedStudent: null,
+      studentConsultation: null,
+      isLoadingConsultation: false,
+      consultationError: null,
+      feedbackText: '',
+      isSendingFeedback: false,
+      // Track students with submitted consultations for badge display
+      studentsWithConsultations: new Set()
     }
   },
   computed: {
@@ -413,6 +608,14 @@ export default {
       // Use real room data if available, otherwise fallback to props
       return Object.keys(this.realRoomData).length > 0 ? this.realRoomData : this.roomData
     },
+    
+    // Check if this is an AI Patient room (hide leaderboard for these rooms)
+    isAIPatientRoom() {
+      const roomData = this.displayRoomData
+      return roomData.roomType === 'AI Patient' || 
+             roomData.mode === 'AI Patient' ||
+             roomData.module === 'AI Patient Simulation'
+    },
     isCountdownActive() {
       return this.liveSessionData && 
              this.liveSessionData.status === 'countdown' && 
@@ -461,6 +664,9 @@ export default {
     await this.loadRoomData()
     this.setupLiveSessionListener()
     this.startStudentsPolling()
+    
+    // Check for existing consultations for badge display
+    await this.checkAllStudentConsultations()
   },
   beforeUnmount() {
     this.cleanup()
@@ -511,6 +717,11 @@ export default {
           ...student,
           joinedAt: new Date(student.joinedAt)
         }))
+        
+        // Check for consultations after loading students (for AI Patient rooms)
+        if (this.isAIPatientRoom) {
+          await this.checkAllStudentConsultations()
+        }
       } catch (error) {
         console.error('Error loading students:', error)
         this.showToast('Failed to load students', 'error')
@@ -714,6 +925,36 @@ export default {
         this.showCompleteActivityModal = false
       }
     },
+
+    // Simple Mark as Done method for AI Patient rooms
+    async markAsDone() {
+      try {
+        this.isCompletingActivity = true
+        
+        // End the live session to notify students
+        if (this.liveSessionData && this.liveSessionData.status !== 'completed') {
+          await liveSessionService.endActivity(this.roomCode)
+        }
+        
+        // Simple redirect to teacher dashboard without complex activity completion logic
+        this.showToast('Marked as done! Redirecting to dashboard...', 'success')
+        
+        // Redirect to teacher dashboard after a short delay
+        setTimeout(() => {
+          this.$router.push('/teacher-dashboard')
+        }, 1500)
+        
+      } catch (error) {
+        console.error('❌ Error marking as done:', error)
+        this.showToast('Failed to mark as done', 'error')
+      } finally {
+        // Reset loading state after redirect delay
+        setTimeout(() => {
+          this.isCompletingActivity = false
+        }, 2000)
+      }
+    },
+
     refreshLeaderboard() {
       // Get live leaderboard data from Firebase
       if (this.liveSessionData && this.liveSessionData.status === 'active') {
@@ -1038,6 +1279,140 @@ export default {
       
       // Clean up all live session service listeners
       liveSessionService.cleanup()
+    },
+
+    // Consultation Modal Methods (AI Patient rooms only)
+    async openConsultationModal(student) {
+      if (!this.isAIPatientRoom) return
+      
+      this.selectedStudent = student
+      this.showConsultationModal = true
+      this.consultationError = null
+      this.feedbackText = ''
+      
+      await this.loadStudentConsultation(student.studentId)
+    },
+
+    closeConsultationModal() {
+      this.showConsultationModal = false
+      this.selectedStudent = null
+      this.studentConsultation = null
+      this.consultationError = null
+      this.feedbackText = ''
+      this.isLoadingConsultation = false
+      this.isSendingFeedback = false
+    },
+
+    async loadStudentConsultation(studentId) {
+      this.isLoadingConsultation = true
+      this.consultationError = null
+      
+      try {
+        // Make API call to get student's consultation data
+        const response = await api.get(`/consultations/student/${studentId}`)
+        
+        if (response.data.success) {
+          this.studentConsultation = response.data.consultation
+          
+          // Pre-fill feedback text if there's existing feedback
+          if (this.studentConsultation?.teacherFeedback?.content) {
+            this.feedbackText = this.studentConsultation.teacherFeedback.content
+          }
+        } else {
+          // No consultation found - this is normal
+          this.studentConsultation = null
+        }
+        
+      } catch (error) {
+        if (error.response?.status === 404) {
+          // No consultation found - this is normal, don't log as error
+          this.studentConsultation = null
+        } else {
+          console.error('Error loading student consultation:', error)
+          this.consultationError = 'Failed to load consultation data. Please try again.'
+        }
+      } finally {
+        this.isLoadingConsultation = false
+      }
+    },
+
+    async sendFeedback() {
+      if (!this.feedbackText.trim() || !this.selectedStudent || !this.studentConsultation) return
+      
+      this.isSendingFeedback = true
+      
+      try {
+        // Get teacher info from localStorage or user store
+        const teacherName = localStorage.getItem('teacherName') || 'Teacher'
+        
+        const feedbackData = {
+          studentId: this.selectedStudent.studentId,
+          consultationId: this.studentConsultation.id,
+          feedback: {
+            content: this.feedbackText.trim(),
+            teacherName: teacherName,
+            createdAt: new Date().toISOString()
+          }
+        }
+        
+        const response = await api.post('/consultations/feedback', feedbackData)
+        
+        if (response.data.success) {
+          // Update the consultation data with the new feedback
+          this.studentConsultation.teacherFeedback = feedbackData.feedback
+          
+          this.showToast('Feedback sent successfully!', 'success')
+          
+          // Optionally close the modal after sending feedback
+          // this.closeConsultationModal()
+        } else {
+          throw new Error(response.data.message || 'Failed to send feedback')
+        }
+        
+      } catch (error) {
+        console.error('Error sending feedback:', error)
+        this.showToast('Failed to send feedback. Please try again.', 'error')
+      } finally {
+        this.isSendingFeedback = false
+      }
+    },
+
+    formatDate(dateString) {
+      if (!dateString) return 'Unknown date'
+      
+      try {
+        const date = new Date(dateString)
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        })
+      } catch (error) {
+        return 'Invalid date'
+      }
+    },
+
+    // Check if student has submitted consultation (for notification badge)
+    hasConsultationSubmitted(student) {
+      return this.studentsWithConsultations.has(student.studentId)
+    },
+
+    // Check for consultations for all students (called when room loads)
+    async checkAllStudentConsultations() {
+      if (!this.isAIPatientRoom) return
+      
+      for (const student of this.activeStudents) {
+        try {
+          const response = await api.get(`/consultations/student/${student.studentId}`)
+          if (response.data.success && response.data.consultation) {
+            this.studentsWithConsultations.add(student.studentId)
+          }
+        } catch (error) {
+          // 404 is expected when no consultation exists, don't log as error
+          if (error.response?.status !== 404) {
+            console.error(`Error checking consultation for student ${student.studentId}:`, error)
+          }
+        }
+      }
     }
   }
 }
@@ -1885,6 +2260,418 @@ export default {
   width: 90%;
   animation: slideInUp 0.3s ease;
   border: 1px solid var(--border-primary);
+}
+
+/* Consultation Modal Styles (AI Patient rooms only) */
+.consultation-modal {
+  background: var(--bg-secondary);
+  border-radius: 20px;
+  box-shadow: 0 25px 50px var(--shadow-dark);
+  max-width: 800px;
+  width: 95%;
+  max-height: 90vh;
+  overflow: hidden;
+  animation: slideInUp 0.3s ease;
+  border: 1px solid var(--border-primary);
+  display: flex;
+  flex-direction: column;
+}
+
+.consultation-modal .modal-header {
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--border-primary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-tertiary);
+  border-radius: 20px 20px 0 0;
+}
+
+.consultation-modal .modal-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.consultation-modal .modal-header h3 i {
+  color: var(--accent-primary);
+  font-size: 22px;
+}
+
+.consultation-modal .close-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.consultation-modal .close-btn:hover {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.consultation-modal .modal-body {
+  padding: 24px 32px;
+  overflow-y: auto;
+  flex: 1;
+  max-height: calc(90vh - 200px);
+}
+
+.consultation-modal .modal-footer {
+  padding: 20px 32px;
+  border-top: 1px solid var(--border-primary);
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  background: var(--bg-tertiary);
+  border-radius: 0 0 20px 20px;
+}
+
+/* Loading, Error, and No Consultation States */
+.loading-state, .error-state, .no-consultation-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.loading-state i, .error-state i, .no-consultation-state i {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.loading-state i {
+  color: var(--accent-primary);
+}
+
+.error-state i {
+  color: var(--error-color);
+}
+
+.no-consultation-state i {
+  color: var(--text-tertiary);
+}
+
+.no-consultation-state h4 {
+  margin: 0 0 8px 0;
+  color: var(--text-primary);
+  font-size: 18px;
+}
+
+.no-consultation-state p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Consultation Content Styles */
+.consultation-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.consultation-section {
+  background: var(--bg-primary);
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid var(--border-primary);
+}
+
+.consultation-section.feedback-section {
+  background: var(--bg-tertiary);
+  border-color: var(--accent-primary);
+}
+
+.section-title {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-title i {
+  color: var(--accent-primary);
+  font-size: 18px;
+}
+
+/* Patient Information Grid */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.info-item label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-item span {
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-primary);
+}
+
+/* Findings Content */
+.findings-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.finding-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.finding-item label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.finding-item p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-primary);
+  line-height: 1.5;
+  min-height: 20px;
+}
+
+/* Feedback Section */
+.existing-feedback {
+  margin-bottom: 16px;
+}
+
+.feedback-item {
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid var(--border-primary);
+}
+
+.feedback-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.feedback-author {
+  font-weight: 600;
+  color: var(--accent-primary);
+  font-size: 14px;
+}
+
+.feedback-date {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.feedback-content {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.feedback-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.feedback-form label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.feedback-textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+  transition: border-color 0.2s ease;
+}
+
+.feedback-textarea:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-color-alpha);
+}
+
+.feedback-textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* Modal Footer Buttons */
+.cancel-btn, .feedback-btn {
+  padding: 12px 20px;
+  border-radius: 8px;
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.cancel-btn {
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-primary);
+}
+
+.cancel-btn:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.feedback-btn {
+  background: var(--accent-gradient);
+  color: var(--text-on-accent);
+  min-width: 140px;
+  justify-content: center;
+}
+
+.feedback-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px var(--accent-color-alpha);
+}
+
+.feedback-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Student Card Enhancements for AI Patient Rooms */
+.student-card.clickable-card {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.student-card.clickable-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px var(--shadow-medium);
+  border-color: var(--accent-primary);
+}
+
+.student-card.clickable-card.has-consultation {
+  border-left: 4px solid var(--success-color);
+}
+
+.student-card.clickable-card.has-consultation::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 12px;
+  height: 12px;
+  background: var(--success-color);
+  border-radius: 50%;
+  border: 2px solid var(--bg-secondary);
+  z-index: 2;
+}
+
+.consultation-status {
+  margin-top: 8px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.consultation-status.submitted {
+  background: var(--success-color-alpha);
+  color: var(--success-color);
+}
+
+.consultation-status.pending {
+  background: var(--warning-color-alpha);
+  color: var(--warning-color);
+}
+
+/* Responsive Design for Consultation Modal */
+@media (max-width: 768px) {
+  .consultation-modal {
+    max-width: 95%;
+    margin: 20px;
+    max-height: calc(100vh - 40px);
+  }
+  
+  .consultation-modal .modal-header,
+  .consultation-modal .modal-body,
+  .consultation-modal .modal-footer {
+    padding: 16px 20px;
+  }
+  
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .consultation-modal .modal-footer {
+    flex-direction: column;
+  }
+  
+  .cancel-btn, .feedback-btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 .loading-content {

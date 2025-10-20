@@ -245,6 +245,14 @@
                   <i class="fas fa-save"></i>
                   Save Form
                 </button>
+                <button class="submit-teacher-btn" @click="checkToTeacher" :disabled="!isFormValid">
+                  <i class="fas fa-user-check"></i>
+                  Check to Teacher
+                </button>
+                <button v-if="showStatusButton" class="status-btn" @click="showStatus">
+                  <i class="fas fa-clipboard-check"></i>
+                  Status
+                </button>
                 <button class="clear-btn" @click="clearConsultationForm">
                   <i class="fas fa-trash"></i>
                   Clear Form
@@ -412,6 +420,156 @@
            </div>
          </div>
        </div>
+
+       <!-- Teacher Selection Modal -->
+       <div v-if="showTeacherSelectionModal" class="modal-overlay" @click="closeTeacherSelectionModal">
+         <div class="modal-content teacher-selection-modal" @click.stop>
+           <div class="modal-header">
+             <h3>
+               <i class="fas fa-user-graduate"></i>
+               Select Teacher
+             </h3>
+             <button class="close-btn" @click="closeTeacherSelectionModal">
+               <i class="fas fa-times"></i>
+             </button>
+           </div>
+           <div class="modal-body">
+             <div v-if="isLoadingTeachers" class="loading-state">
+               <i class="fas fa-spinner fa-spin"></i>
+               <span>Loading teachers...</span>
+             </div>
+             <div v-else class="teacher-list">
+               <p class="selection-instruction">Please select a teacher to send your consultation to:</p>
+               <div class="teacher-options">
+                 <div 
+                   v-for="teacher in assignedTeachers" 
+                   :key="teacher.teacherId"
+                   class="teacher-option"
+                   @click="selectTeacher(teacher)"
+                 >
+                   <div class="teacher-info">
+                     <i class="fas fa-user-tie"></i>
+                     <span class="teacher-name">{{ teacher.teacherName }}</span>
+                   </div>
+                   <div class="teacher-meta">
+                     <small>Assigned: {{ new Date(teacher.assignedAt).toLocaleDateString() }}</small>
+                   </div>
+                 </div>
+               </div>
+             </div>
+           </div>
+         </div>
+       </div>
+
+       <!-- Questionnaire Modal -->
+       <div v-if="showQuestionnaireModal" class="modal-overlay" @click="closeQuestionnaireModal">
+         <div class="modal-content questionnaire-modal" @click.stop>
+           <div class="modal-header">
+             <h3>
+               <i class="fas fa-clipboard-list"></i>
+               Submit to Teacher - Questionnaire
+             </h3>
+             <button class="close-btn" @click="closeQuestionnaireModal">
+               <i class="fas fa-times"></i>
+             </button>
+           </div>
+           <div class="modal-body">
+             <div class="questionnaire-form">
+               <div v-for="(question, index) in questionnaireQuestions" :key="index" class="question-section">
+                 <label :for="`question-${index}`" class="question-label">
+                   {{ index + 1 }}. {{ question }}
+                 </label>
+                 <textarea
+                   :id="`question-${index}`"
+                   v-model="questionnaireAnswers[index]"
+                   class="question-textarea"
+                   :placeholder="`Please provide your answer for question ${index + 1}...`"
+                   rows="4"
+                   required
+                 ></textarea>
+               </div>
+               
+               <div class="questionnaire-actions">
+                 <button class="submit-questionnaire-btn" @click="submitToTeacher" :disabled="!areAllQuestionsAnswered || isSubmitting">
+                   <i class="fas fa-paper-plane"></i>
+                   <span v-if="isSubmitting">Submitting...</span>
+                   <span v-else>Submit to Teacher</span>
+                 </button>
+                 <button class="cancel-btn" @click="closeQuestionnaireModal" :disabled="isSubmitting">
+                   <i class="fas fa-times"></i>
+                   Cancel
+                 </button>
+               </div>
+             </div>
+           </div>
+         </div>
+       </div>
+
+       <!-- Status Modal -->
+       <div v-if="showStatusModal" class="modal-overlay" @click="closeStatusModal">
+         <div class="modal-content status-modal" @click.stop>
+           <div class="modal-header">
+             <h3>
+               <i class="fas fa-clipboard-check"></i>
+               Submission Status
+             </h3>
+             <button class="close-btn" @click="closeStatusModal">
+               <i class="fas fa-times"></i>
+             </button>
+           </div>
+           <div class="modal-body">
+             <div v-if="submissionStatus" class="status-content">
+               <div class="status-header">
+                 <div class="status-badge" :class="submissionStatus.status">
+                   <i class="fas" :class="{
+                     'fa-clock': submissionStatus.status === 'submitted',
+                     'fa-eye': submissionStatus.status === 'under_review',
+                     'fa-check-circle': submissionStatus.status === 'reviewed',
+                     'fa-edit': submissionStatus.status === 'revision_requested'
+                   }"></i>
+                   <span>{{ getStatusText(submissionStatus.status) }}</span>
+                 </div>
+               </div>
+               
+               <div class="status-details">
+                 <div class="detail-item">
+                   <label>Teacher:</label>
+                   <span>{{ submissionStatus.teacherName }}</span>
+                 </div>
+                 <div class="detail-item">
+                   <label>Submitted:</label>
+                   <span>{{ formatDate(submissionStatus.submittedAt) }}</span>
+                 </div>
+                 <div v-if="submissionStatus.reviewedAt" class="detail-item">
+                   <label>Reviewed:</label>
+                   <span>{{ formatDate(submissionStatus.reviewedAt) }}</span>
+                 </div>
+                 <div v-if="submissionStatus.score" class="detail-item">
+                   <label>Score:</label>
+                   <span class="score">{{ submissionStatus.score }}/100</span>
+                 </div>
+                 <div v-if="submissionStatus.feedback" class="detail-item feedback">
+                   <label>Teacher Feedback:</label>
+                   <div class="feedback-content">{{ submissionStatus.feedback }}</div>
+                 </div>
+               </div>
+             </div>
+           </div>
+         </div>
+       </div>
+
+       <!-- Submit Success Notification -->
+       <div v-if="showSubmitNotification" class="sticky-note-notification" :class="{ 'show': showSubmitNotification }">
+         <div class="sticky-note success">
+           <div class="sticky-note-header">
+             <i class="fas fa-check-circle"></i>
+             <span>Submitted to Teacher!</span>
+           </div>
+           <div class="sticky-note-body">
+             Your consultation has been successfully submitted to your teacher for review.
+           </div>
+         </div>
+       </div>
       </main>
   </div>
 </template>
@@ -486,7 +644,39 @@ export default {
       isVoicePlaying: false,
       currentUtterance: null,
       // Random patient details
-      randomPatientProfile: null
+      randomPatientProfile: null,
+      // Questionnaire properties
+      showQuestionnaireModal: false,
+      questionnaireQuestions: [
+        'What are the primary symptoms observed in this patient?',
+        'What is your nursing assessment and clinical findings?',
+        'What care plan would you recommend for this patient?'
+      ],
+      questionnaireAnswers: ['', '', ''],
+      isSubmitting: false,
+      showSubmitNotification: false,
+      hasAssignedTeacher: false,
+      assignedTeacher: null,
+      // Teacher selection properties
+      showTeacherSelectionModal: false,
+      assignedTeachers: [],
+      selectedTeacher: null,
+      isLoadingTeachers: false,
+      // Status tracking properties
+      showStatusButton: false,
+      showStatusModal: false,
+      submissionStatus: null,
+      lastSubmissionId: null
+    }
+  },
+  computed: {
+    isFormValid() {
+      return this.consultationData.patientName.trim() !== '' &&
+             this.consultationData.chiefComplaint.trim() !== '' &&
+             this.consultationData.treatmentPlan.trim() !== '';
+    },
+    areAllQuestionsAnswered() {
+      return this.questionnaireAnswers.every(answer => answer.trim() !== '');
     }
   },
   mounted() {
@@ -1338,7 +1528,221 @@ export default {
        const minutes = Math.floor(durationInSeconds / 60);
        const seconds = durationInSeconds % 60;
        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-     }
+     },
+
+     // Questionnaire methods
+     async checkToTeacher() {
+       if (!this.currentUserId) {
+         alert('You must be logged in to submit to teacher.');
+         return;
+       }
+
+       if (!this.isFormValid) {
+         alert('Please fill in all required fields before submitting to teacher.');
+         return;
+       }
+
+       try {
+         this.isLoadingTeachers = true;
+         
+         // Get all assigned teachers for this student
+         const response = await axios.get(`${API_BASE_URL}/consultations/assigned-teachers/${this.currentUserId}`);
+         
+         if (!response.data.hasTeachers || response.data.teachers.length === 0) {
+           alert('You are not assigned to any teacher. Please contact your instructor to get assigned.');
+           return;
+         }
+
+         this.assignedTeachers = response.data.teachers;
+         this.hasAssignedTeacher = true;
+
+         // If only one teacher, auto-select and proceed to questionnaire
+         if (this.assignedTeachers.length === 1) {
+           this.selectedTeacher = this.assignedTeachers[0];
+           await this.proceedToQuestionnaire();
+         } else {
+           // Show teacher selection modal
+           this.showTeacherSelectionModal = true;
+         }
+       } catch (error) {
+         console.error('Error checking teacher assignment:', error);
+         alert('Failed to check teacher assignment. Please try again.');
+       } finally {
+         this.isLoadingTeachers = false;
+       }
+     },
+
+     async proceedToQuestionnaire() {
+       try {
+         // Load questionnaire template
+         await this.loadQuestionnaireTemplate();
+         
+         // Close teacher selection modal and show questionnaire modal
+         this.showTeacherSelectionModal = false;
+         this.showQuestionnaireModal = true;
+       } catch (error) {
+         console.error('Error proceeding to questionnaire:', error);
+         alert('Failed to load questionnaire. Please try again.');
+       }
+     },
+
+     selectTeacher(teacher) {
+       this.selectedTeacher = teacher;
+     },
+
+     closeTeacherSelectionModal() {
+       this.showTeacherSelectionModal = false;
+       this.selectedTeacher = null;
+     },
+
+     async loadQuestionnaireTemplate() {
+       try {
+         const response = await axios.get(`${API_BASE_URL}/consultations/template/${this.currentUserId}`);
+         
+         if (response.data.success && response.data.template.questions) {
+           this.questionnaireQuestions = response.data.template.questions;
+           // Reset answers array to match questions length
+           this.questionnaireAnswers = new Array(this.questionnaireQuestions.length).fill('');
+         }
+       } catch (error) {
+         console.error('Error loading questionnaire template:', error);
+         // Use default questions if template loading fails
+         this.questionnaireQuestions = [
+           'What are the primary symptoms observed in this patient?',
+           'What is your nursing assessment and clinical findings?',
+           'What care plan would you recommend for this patient?'
+         ];
+         this.questionnaireAnswers = ['', '', ''];
+       }
+     },
+
+     closeQuestionnaireModal() {
+       this.showQuestionnaireModal = false;
+       // Reset questionnaire answers
+       this.questionnaireAnswers = new Array(this.questionnaireQuestions.length).fill('');
+     },
+
+     async submitToTeacher() {
+       if (!this.areAllQuestionsAnswered) {
+         alert('Please answer all questions before submitting.');
+         return;
+       }
+
+       this.isSubmitting = true;
+
+       try {
+         // Prepare consultation data
+         const consultationData = {
+           userId: this.currentUserId,
+           patientName: this.consultationData.patientName,
+           patientData: {
+             dateOfBirth: this.consultationData.dateOfBirth,
+             gender: this.consultationData.gender,
+             occupation: this.consultationData.occupation,
+             address: this.consultationData.address
+           },
+           findings: {
+             chiefComplaint: this.consultationData.chiefComplaint,
+             presentIllness: this.consultationData.presentIllness,
+             pastIllness: this.consultationData.pastIllness,
+             allergies: this.consultationData.allergies,
+             medications: this.consultationData.medications,
+             previousSurgeries: this.consultationData.previousSurgeries
+           },
+           recommendations: {
+             treatmentPlan: this.consultationData.treatmentPlan,
+             followUpInstructions: this.consultationData.followUpInstructions,
+             additionalNotes: this.consultationData.additionalNotes
+           }
+         };
+
+         // Prepare questionnaire data
+         const questionnaireData = {
+           questions: this.questionnaireQuestions,
+           answers: this.questionnaireAnswers
+         };
+
+         // Submit to teacher with selected teacher ID
+         const response = await axios.post(`${API_BASE_URL}/consultations/submit-to-teacher`, {
+           consultationData,
+           questionnaireData,
+           selectedTeacherId: this.selectedTeacher.teacherId
+         });
+
+         if (response.data.success) {
+           // Store submission info for status tracking
+           this.lastSubmissionId = response.data.submissionId;
+           this.submissionStatus = {
+             teacherName: this.selectedTeacher.teacherName,
+             submittedAt: new Date(),
+             status: 'submitted'
+           };
+           
+           // Close modal
+           this.closeQuestionnaireModal();
+           
+           // Show success notification
+           this.showSubmitNotification = true;
+           setTimeout(() => {
+             this.showSubmitNotification = false;
+           }, 4000);
+
+           // Show status button
+           this.showStatusButton = true;
+
+           // Clear form after successful submission
+           this.clearConsultationForm();
+         } else {
+           alert(response.data.message || 'Failed to submit consultation to teacher.');
+         }
+       } catch (error) {
+         console.error('Error submitting to teacher:', error);
+         if (error.response && error.response.data && error.response.data.message) {
+           alert(error.response.data.message);
+         } else {
+           alert('Failed to submit consultation to teacher. Please try again.');
+         }
+       } finally {
+         this.isSubmitting = false;
+       }
+     },
+
+     // Status-related methods
+     showStatus() {
+       this.showStatusModal = true;
+       this.fetchSubmissionStatus();
+     },
+
+     closeStatusModal() {
+       this.showStatusModal = false;
+     },
+
+     async fetchSubmissionStatus() {
+       if (!this.lastSubmissionId) return;
+
+       try {
+         const response = await axios.get(`${API_BASE_URL}/consultations/submission-status/${this.lastSubmissionId}`);
+         if (response.data.success) {
+           this.submissionStatus = {
+             ...this.submissionStatus,
+             ...response.data.submission,
+             status: response.data.submission.status || 'submitted'
+           };
+         }
+       } catch (error) {
+          console.error('Error fetching submission status:', error);
+        }
+      },
+
+      getStatusText(status) {
+        const statusMap = {
+          'submitted': 'Submitted',
+          'under_review': 'Under Review',
+          'reviewed': 'Reviewed',
+          'revision_requested': 'Revision Requested'
+        };
+        return statusMap[status] || 'Unknown';
+      }
   }
 }
 </script>
@@ -1529,6 +1933,158 @@ export default {
 .clear-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(245, 101, 101, 0.4);
+}
+
+.submit-teacher-btn {
+  background: linear-gradient(135deg, #4299e1, #3182ce);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  flex: 1;
+  justify-content: center;
+}
+
+.submit-teacher-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(66, 153, 225, 0.4);
+}
+
+.submit-teacher-btn:disabled {
+  background: #a0aec0;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Questionnaire Modal Styles */
+.questionnaire-modal {
+  max-width: 700px;
+  width: 90%;
+}
+
+.questionnaire-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.question-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  border: 1px solid var(--border-primary);
+}
+
+.question-label {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.question-textarea {
+  border: 2px solid var(--border-primary);
+  border-radius: 8px;
+  padding: 0.75rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  transition: all 0.3s ease;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  resize: vertical;
+  min-height: 100px;
+}
+
+.question-textarea:focus {
+  outline: none;
+  border-color: var(--accent-success);
+  box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.1);
+}
+
+.question-textarea::placeholder {
+  color: var(--text-secondary);
+}
+
+.questionnaire-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-primary);
+}
+
+.submit-questionnaire-btn {
+  background: linear-gradient(135deg, #48bb78, #38a169);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  flex: 1;
+  justify-content: center;
+}
+
+.submit-questionnaire-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(72, 187, 120, 0.4);
+}
+
+.submit-questionnaire-btn:disabled {
+  background: #a0aec0;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.cancel-btn {
+  background: #718096;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  flex: 1;
+  justify-content: center;
+}
+
+.cancel-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(113, 128, 150, 0.4);
+}
+
+.cancel-btn:disabled {
+  background: #a0aec0;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Success notification styles */
+.sticky-note.success {
+  background: linear-gradient(135deg, #48bb78, #38a169);
 }
 
 /* Chat Section Styles (Left Side) */
