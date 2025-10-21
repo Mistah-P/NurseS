@@ -15,11 +15,13 @@ const createTeacherSchema = Joi.object({
 
 const updateTeacherSchema = Joi.object({
   name: Joi.string().optional().min(2).max(100),
+  email: Joi.string().email().optional(),
   institution: Joi.string().optional().min(2).max(200),
   department: Joi.string().optional().max(100),
   employeeId: Joi.string().optional().max(50),
   phone: Joi.string().optional().pattern(/^[+]?[\d\s\-()]+$/).max(20),
-  isActive: Joi.boolean().optional()
+  isActive: Joi.boolean().optional(),
+  adminId: Joi.string().optional() // Admin ID for authorization
 });
 
 // Middleware to verify admin access

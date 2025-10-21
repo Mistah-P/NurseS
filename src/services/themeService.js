@@ -35,6 +35,12 @@ class ThemeService {
     try {
       if (!this.currentUser) return null
 
+      // Check for admin session first (highest priority)
+      const adminSession = await sessionService.getAdminSession()
+      if (adminSession) {
+        return 'admin'
+      }
+
       // Try to get user type from existing session
       const studentSession = await sessionService.getStudentSession()
       if (studentSession) {
@@ -48,7 +54,9 @@ class ThemeService {
 
       // Fallback: check current route
       const currentPath = window.location.pathname
-      if (currentPath.includes('/teacher') || currentPath.includes('/dashboard')) {
+      if (currentPath.includes('/admin')) {
+        return 'admin'
+      } else if (currentPath.includes('/teacher')) {
         return 'teacher'
       } else {
         return 'student'
@@ -62,7 +70,10 @@ class ThemeService {
   // Load user's theme preference from database
   async loadUserTheme() {
     try {
-      if (!this.currentUser) return
+      if (!this.currentUser) {
+        this.setTheme('dark') // Default theme for non-authenticated users
+        return
+      }
 
       this.userType = await this.determineUserType()
       let preferences = {}
@@ -70,13 +81,14 @@ class ThemeService {
       if (this.userType === 'teacher') {
         preferences = await sessionService.getTeacherPreferences(this.currentUser.uid)
       } else {
+        // For students and admins, use regular user preferences
         preferences = await sessionService.getUserPreferences(this.currentUser.uid)
       }
 
-      const savedTheme = preferences.theme || 'dark'
+      const savedTheme = preferences?.theme || 'dark'
       this.setTheme(savedTheme)
     } catch (error) {
-      console.error('Error loading user theme:', error)
+      console.warn('Could not load user theme preferences, using default:', error.message)
       this.setTheme('dark') // Fallback to dark theme
     }
   }
@@ -84,7 +96,10 @@ class ThemeService {
   // Save user's theme preference to database
   async saveUserTheme(theme) {
     try {
-      if (!this.currentUser || !this.userType) return
+      if (!this.currentUser || !this.userType) {
+        console.warn('Cannot save theme: user not authenticated or user type not determined')
+        return
+      }
 
       if (this.userType === 'teacher') {
         const currentPrefs = await sessionService.getTeacherPreferences(this.currentUser.uid)
@@ -93,6 +108,7 @@ class ThemeService {
           theme
         })
       } else {
+        // For students and admins, use regular user preferences
         const currentPrefs = await sessionService.getUserPreferences(this.currentUser.uid)
         await sessionService.saveUserPreferences(this.currentUser.uid, {
           ...currentPrefs,
@@ -100,7 +116,13 @@ class ThemeService {
         })
       }
     } catch (error) {
-      console.error('Error saving user theme:', error)
+      // Handle permission errors gracefully without breaking functionality
+      if (error.code === 'permission-denied' || error.message?.includes('Missing or insufficient permissions')) {
+        console.warn('⚠️ Insufficient permissions to save theme preference. Theme applied locally only.')
+      } else {
+        console.warn('Could not save theme preference:', error.message)
+      }
+      // Don't throw the error - theme is still applied locally
     }
   }
 

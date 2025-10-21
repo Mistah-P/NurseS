@@ -212,13 +212,24 @@ router.post('/feedback', async (req, res) => {
       });
     }
 
+    // Prepare teacher feedback object
+    const teacherFeedbackData = {
+      content: feedback.content,
+      teacherName: feedback.teacherName,
+      createdAt: feedback.createdAt || admin.firestore.FieldValue.serverTimestamp()
+    };
+
+    // Add score if provided and valid
+    if (feedback.score !== undefined && feedback.score !== null) {
+      const score = parseInt(feedback.score);
+      if (!isNaN(score) && score >= 0 && score <= 100) {
+        teacherFeedbackData.score = score;
+      }
+    }
+
     // Update the consultation with teacher feedback
     await consultationRef.update({
-      teacherFeedback: {
-        content: feedback.content,
-        teacherName: feedback.teacherName,
-        createdAt: feedback.createdAt || admin.firestore.FieldValue.serverTimestamp()
-      },
+      teacherFeedback: teacherFeedbackData,
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
 

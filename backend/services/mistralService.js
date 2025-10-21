@@ -103,16 +103,22 @@ class MistralService {
    * @returns {string} - Dynamic system prompt
    */
   buildSystemPrompt(patientContext) {
-    const { roomCode, studentId } = patientContext;
+    const { roomCode, studentId, patientData } = patientContext;
     
     // Create a unique seed for consistency within the same room/student combination
     const sessionSeed = this.simpleHash(`${roomCode}-${studentId}`);
     const seedNumber = Math.abs(sessionSeed) % 1000;
     
+    // Extract predetermined gender if available
+    const predeterminedGender = patientData?.gender && patientData.gender !== 'Unknown' ? patientData.gender : null;
+    const genderInstruction = predeterminedGender ? 
+      `- You are a ${predeterminedGender.toLowerCase()} patient. Always refer to yourself using appropriate pronouns and maintain this gender identity consistently.` :
+      `- Create a unique patient identity (name, age, gender, occupation, address)`;
+    
     return `You are a virtual patient in a medical simulation. You must create and embody a realistic patient character throughout this conversation.
 
 PATIENT CREATION GUIDELINES:
-- Create a unique patient identity (name, age, gender, occupation, address) 
+${genderInstruction}
 - Develop realistic medical symptoms and history
 - Be consistent with your created identity throughout the conversation
 - Use session seed ${seedNumber} to maintain consistency if asked the same questions multiple times

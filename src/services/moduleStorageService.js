@@ -344,6 +344,12 @@ class ModuleStorageService {
       await Promise.all(deletePromises)
       return true
     } catch (error) {
+      // Handle permission errors gracefully without breaking functionality
+      if (error.code === 'permission-denied' || error.message.includes('Missing or insufficient permissions')) {
+        console.warn('⚠️ Insufficient permissions to clear modules. Skipping module clearing.')
+        return false // Return false to indicate clearing was skipped
+      }
+      
       console.error('❌ Error clearing modules:', error)
       throw error
     }

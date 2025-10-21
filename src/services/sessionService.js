@@ -195,10 +195,70 @@ class SessionService {
   }
 
   async getAdminSession() {
-    if (!this.currentSession || this.currentSession.userType !== 'admin') {
+    try {
+      // First check if we have a current session in memory
+      if (this.currentSession && this.currentSession.userType === 'admin') {
+        return this.currentSession
+      }
+      
+      // If not in memory, query Firestore for admin session
+      const sessionsQuery = query(
+        collection(db, 'sessions'),
+        where('userType', '==', 'admin'),
+        where('isActive', '==', true)
+      )
+      
+      const querySnapshot = await getDocs(sessionsQuery)
+      
+      if (!querySnapshot.empty) {
+        // Get the first active admin session (there should only be one)
+        const sessionDoc = querySnapshot.docs[0]
+        const sessionData = sessionDoc.data()
+        const sessionId = sessionDoc.id
+        
+        const adminSession = { sessionId, ...sessionData }
+        
+        // Store in memory for future use
+        this.currentSession = adminSession
+        
+        return adminSession
+      }
+      
+      return null
+    } catch (error) {
+      console.error('Error getting admin session:', error)
       return null
     }
-    return this.currentSession
+  }
+
+  async destroyAdminSession() {
+    try {
+      // Clear current session from memory immediately for faster UI response
+      this.currentSession = null
+      
+      // Find and destroy admin session in Firestore (run in background)
+      const sessionsQuery = query(
+        collection(db, 'sessions'),
+        where('userType', '==', 'admin'),
+        where('isActive', '==', true)
+      )
+      
+      const querySnapshot = await getDocs(sessionsQuery)
+      
+      if (!querySnapshot.empty) {
+        // Destroy all active admin sessions in parallel
+        const deletePromises = querySnapshot.docs.map(doc => 
+          this.destroySession(doc.id)
+        )
+        await Promise.all(deletePromises)
+      }
+      
+      return true
+    } catch (error) {
+      console.error('Error destroying admin session:', error)
+      // Don't throw error to prevent logout from failing
+      return false
+    }
   }
 
   // Teacher session methods
@@ -369,12 +429,32 @@ class SessionService {
   // Preferences methods
   async saveUserPreferences(userId, preferences) {
     try {
-      await updateDoc(doc(db, 'users', userId), {
+      const userDocRef = doc(db, 'users', userId)
+      
+      // Use setDoc with merge option to handle both create and update cases
+      // This avoids race conditions and simplifies the logic
+      await setDoc(userDocRef, {
+        userId,
         preferences,
-        updatedAt: serverTimestamp()
-      })
+        updatedAt: serverTimestamp(),
+        // Only set createdAt if document doesn't exist
+        ...(!(await getDoc(userDocRef)).exists() && { createdAt: serverTimestamp() })
+      }, { merge: true })
+      
     } catch (error) {
-      console.error('Error saving user preferences:', error)
+      // If there's still an error, try a simpler approach
+      console.warn('Primary save method failed, trying fallback:', error.message)
+      try {
+        const userDocRef = doc(db, 'users', userId)
+        await setDoc(userDocRef, {
+          userId,
+          preferences,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        }, { merge: true })
+      } catch (fallbackError) {
+        console.error('Error saving user preferences (fallback also failed):', fallbackError)
+      }
     }
   }
 

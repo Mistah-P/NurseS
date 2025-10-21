@@ -62,7 +62,8 @@
             <div class="countdown-number">{{ countdownRemaining }}</div>
           </div>
           <h3>Activity starting in {{ countdownRemaining }} seconds</h3>
-          <p>Get ready to type!</p>
+          <p v-if="isAIPatientActivity">Get ready for your AI Patient simulation!</p>
+          <p v-else>Get ready to type!</p>
         </div>
 
         <div v-else-if="roomData.status === 'waiting'" class="waiting-status">
@@ -72,18 +73,25 @@
               <polyline points="12,6 12,12 16,14" stroke="currentColor" stroke-width="2"/>
             </svg>
           </div>
-          <h3>Waiting for teacher to start the activity</h3>
-          <p>Stay on this page. The activity will begin automatically when your teacher starts it.</p>
+          <h3 v-if="isAIPatientActivity">Waiting for teacher to start the AI Patient simulation</h3>
+          <h3 v-else>Waiting for teacher to start the activity</h3>
+          <p v-if="isAIPatientActivity">Stay on this page. The simulation will begin automatically when your teacher starts it.</p>
+          <p v-else>Stay on this page. The activity will begin automatically when your teacher starts it.</p>
         </div>
 
         <div v-else-if="roomData.status === 'active'" class="active-status">
           <div class="status-icon active">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <svg v-if="isAIPatientActivity" width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L13.09 8.26L22 9L13.09 9.74L12 16L10.91 9.74L2 9L10.91 8.26L12 2Z" fill="currentColor"/>
+            </svg>
+            <svg v-else width="24" height="24" viewBox="0 0 24 24" fill="none">
               <polygon points="5,3 19,12 5,21" fill="currentColor"/>
             </svg>
           </div>
-          <h3>Activity is now active!</h3>
-          <p>You will be automatically redirected to the typing test...</p>
+          <h3 v-if="isAIPatientActivity">AI Patient simulation is now active!</h3>
+          <h3 v-else>Activity is now active!</h3>
+          <p v-if="isAIPatientActivity">You will be automatically redirected to the AI Patient simulation...</p>
+          <p v-else>You will be automatically redirected to the typing test...</p>
         </div>
 
         <div v-else-if="roomData.status === 'completed'" class="completed-status">
@@ -93,14 +101,38 @@
               <polyline points="22,4 12,14.01 9,11.01" stroke="currentColor" stroke-width="2"/>
             </svg>
           </div>
-          <h3>Activity completed</h3>
+          <h3 v-if="isAIPatientActivity">AI Patient simulation completed</h3>
+          <h3 v-else>Activity completed</h3>
           <p>Thank you for participating! You can now close this window.</p>
         </div>
       </div>
 
       <!-- Student Progress (if activity is active) -->
       <div v-if="roomData.status === 'active'" class="progress-section">
-        <div class="progress-card">
+        <!-- AI Patient Progress -->
+        <div v-if="isAIPatientActivity" class="progress-card">
+          <h4>Your Simulation Progress</h4>
+          <div class="progress-stats">
+            <div class="stat-item">
+              <div class="stat-value">{{ studentData.interactions || 0 }}</div>
+              <div class="stat-label">Interactions</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value">{{ studentData.assessments || 0 }}</div>
+              <div class="stat-label">Assessments</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value">{{ studentData.progress || 0 }}%</div>
+              <div class="stat-label">Complete</div>
+            </div>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" :style="{ width: (studentData.progress || 0) + '%' }"></div>
+          </div>
+        </div>
+        
+        <!-- Typing Test Progress -->
+        <div v-else class="progress-card">
           <h4>Your Progress</h4>
           <div class="progress-stats">
             <div class="stat-item">
@@ -124,7 +156,8 @@
 
       <!-- Other Students -->
       <div class="other-students-section">
-        <h4>Other Students ({{ otherStudents.length }})</h4>
+        <h4 v-if="isAIPatientActivity">Other Participants ({{ otherStudents.length }})</h4>
+        <h4 v-else>Other Students ({{ otherStudents.length }})</h4>
         <div class="students-list">
           <div 
             v-for="student in otherStudents" 
@@ -136,10 +169,13 @@
             </div>
             <div class="student-info">
               <div class="student-name">{{ student.studentName }}</div>
-              <div class="student-progress">{{ student.progress }}% complete</div>
+              <div class="student-progress">{{ student.progress || 0 }}% complete</div>
             </div>
-            <div class="student-stats">
-              <span class="wpm">{{ student.wpm }} WPM</span>
+            <div v-if="isAIPatientActivity" class="student-stats">
+              <span class="interactions">{{ student.interactions || 0 }} interactions</span>
+            </div>
+            <div v-else class="student-stats">
+              <span class="wpm">{{ student.wpm || 0 }} WPM</span>
             </div>
           </div>
         </div>
@@ -225,6 +261,15 @@ export default {
       countdownInterval: null,
       showCountdown: false,
       toasts: []
+    }
+  },
+  computed: {
+    isAIPatientActivity() {
+      // Check if this is an AI Patient activity
+      return this.roomData && (
+        (this.roomData.mode && this.roomData.mode.includes('AI Patient')) ||
+        (this.roomData.module && this.roomData.module.includes('AI Patient'))
+      );
     }
   },
   async mounted() {

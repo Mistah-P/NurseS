@@ -69,6 +69,7 @@ class ActivityService {
 
       console.log('📋 Fetching fresh activities for teacher:', teacherId)
       
+      // Fetch regular typing activities from rooms collection
       const roomsRef = collection(db, 'rooms')
       const q = query(roomsRef, where('teacherId', '==', teacherId))
       
@@ -81,8 +82,15 @@ class ActivityService {
         activities.push(activity)
       })
       
+      // Fetch AI Patient activities from typingResults collection
+      const aiPatientActivities = await this.getAIPatientActivities(teacherId)
+      console.log(`📊 Regular activities: ${activities.length}, AI Patient activities: ${aiPatientActivities.length}`)
+      activities.push(...aiPatientActivities)
+      
       // Sort by date (newest first)
       activities.sort((a, b) => new Date(b.date) - new Date(a.date))
+      
+      console.log(`📋 Total activities for teacher ${teacherId}: ${activities.length}`)
       
       // Cache the results
       this.cacheActivities(teacherId, activities)
@@ -93,6 +101,81 @@ class ActivityService {
     } catch (error) {
       console.error('❌ Error in getTeacherActivities:', error)
       throw error
+    }
+  }
+
+  // Fetch AI Patient activities from typingResults collection
+  async getAIPatientActivities(teacherId) {
+    try {
+      const typingResultsRef = collection(db, 'typingResults')
+      const q = query(typingResultsRef, where('sessionType', '==', 'ai-patient'))
+      
+      const querySnapshot = await getDocs(q)
+      
+      // First, get all room IDs that belong to this teacher
+      const roomsRef = collection(db, 'rooms')
+      const teacherRoomsQuery = query(roomsRef, where('teacherId', '==', teacherId))
+      const teacherRoomsSnapshot = await getDocs(teacherRoomsQuery)
+      
+      const teacherRoomIds = new Set()
+      teacherRoomsSnapshot.forEach((doc) => {
+        teacherRoomIds.add(doc.id)
+      })
+      
+      // Group results by roomId to create activities (only for teacher's rooms)
+      const roomGroups = new Map()
+      
+      querySnapshot.forEach((doc) => {
+        const data = doc.data()
+        
+        // Only include results that have AI Patient data and belong to this teacher
+        if (data.aiPatientData && data.roomId && teacherRoomIds.has(data.roomId)) {
+          if (!roomGroups.has(data.roomId)) {
+            roomGroups.set(data.roomId, {
+              roomId: data.roomId,
+              results: [],
+              firstResult: data
+            })
+          }
+          roomGroups.get(data.roomId).results.push(data)
+        }
+      })
+      
+      // Transform grouped results into activities
+      const aiPatientActivities = []
+      
+      for (const [roomId, group] of roomGroups) {
+        const firstResult = group.firstResult
+        const activity = {
+          id: `ai-patient-${roomId}`,
+          name: firstResult.aiPatientData?.patientName ? 
+                `AI Patient: ${firstResult.aiPatientData.patientName}` : 
+                'AI Patient Consultation',
+          section: 'AI Patient', // We could enhance this by storing section in the result
+          date: firstResult.timestamp?.toDate() || new Date(),
+          participants: group.results.length,
+          gameMode: 'AI Patient',
+          difficulty: firstResult.content?.difficulty || 'Medium',
+          status: 'completed',
+          roomCode: roomId,
+          isAIPatient: true,
+          aiPatientData: {
+            totalResults: group.results.length,
+            averageScore: group.results.reduce((sum, r) => sum + (r.aiPatientData?.score || 0), 0) / group.results.length
+          }
+        }
+        
+        aiPatientActivities.push(activity)
+      }
+      
+      console.log(`📋 Found ${aiPatientActivities.length} AI Patient activities for teacher ${teacherId}`)
+      console.log('🔍 AI Patient activities:', aiPatientActivities)
+      
+      return aiPatientActivities
+      
+    } catch (error) {
+      console.error('❌ Error fetching AI Patient activities:', error)
+      return [] // Return empty array on error to not break the main flow
     }
   }
 
@@ -146,6 +229,30 @@ class ActivityService {
 
       console.log('🏆 Fetching fresh leaderboard for room:', roomCode)
 
+      // Check if this is an AI Patient activity by looking for AI Patient results first
+      console.log('🔍 Checking for AI Patient activities in room:', roomCode)
+      const aiPatientQuery = query(
+        collection(db, 'typingResults'),
+        where('roomId', '==', roomCode),
+        where('sessionType', '==', 'ai-patient')
+      )
+      
+      const aiPatientSnapshot = await getDocs(aiPatientQuery)
+      console.log('📊 AI Patient query result:', {
+        isEmpty: aiPatientSnapshot.empty,
+        docsCount: aiPatientSnapshot.docs.length,
+        roomCode: roomCode
+      })
+      
+      if (!aiPatientSnapshot.empty) {
+        // This is an AI Patient activity - fetch AI Patient leaderboard
+        console.log('✅ Detected AI Patient activity, routing to getAIPatientLeaderboard')
+        return await this.getAIPatientLeaderboard(roomCode, aiPatientSnapshot)
+      }
+      
+      console.log('📝 No AI Patient activities found, proceeding with regular leaderboard')
+
+      // This is a regular typing activity - use existing logic
       // First get the room data
       const roomsQuery = query(
         collection(db, 'rooms'),
@@ -250,6 +357,66 @@ class ActivityService {
     } catch (error) {
       console.error('Error fetching activity leaderboard:', error)
       throw new Error('Failed to fetch leaderboard data')
+    }
+  }
+
+  // Get AI Patient leaderboard from typingResults
+  async getAIPatientLeaderboard(roomCode, aiPatientSnapshot) {
+    try {
+      console.log('🔍 getAIPatientLeaderboard called for room:', roomCode)
+      console.log('📊 Found', aiPatientSnapshot.docs.length, 'snapshot documents')
+      
+      const leaderboard = []
+      
+      aiPatientSnapshot.docs.forEach((doc, index) => {
+        const data = doc.data()
+        console.log(`🎯 Processing document ${index + 1}:`, {
+          docId: doc.id,
+          userId: data.userId,
+          sessionType: data.sessionType,
+          roomId: data.roomId,
+          hasAiPatientData: !!data.aiPatientData,
+          aiPatientDataKeys: data.aiPatientData ? Object.keys(data.aiPatientData) : [],
+          fullData: data
+        })
+        
+        if (data.aiPatientData && data.userId) {
+          const studentData = {
+             id: data.userId,
+             name: data.aiPatientData.studentName || 'Unknown Student',
+             score: data.aiPatientData.score || 0,
+             feedback: data.aiPatientData.feedback || '',
+             patientName: data.aiPatientData.patientName || 'Virtual Patient',
+             consultationId: data.aiPatientData.consultationId,
+             timestamp: data.timestamp?.toDate() || new Date(),
+             hasFeedback: !!(data.aiPatientData.feedback && data.aiPatientData.feedback.trim())
+           }
+           
+           console.log('✅ Adding student to leaderboard:', studentData)
+           leaderboard.push(studentData)
+        } else {
+          console.log('❌ Skipping doc - missing data:', {
+            hasAiPatientData: !!data.aiPatientData,
+            hasUserId: !!data.userId,
+            aiPatientData: data.aiPatientData,
+            userId: data.userId
+          })
+        }
+      })
+      
+      // Sort by score descending
+      leaderboard.sort((a, b) => b.score - a.score)
+      
+      // Cache the results
+      this.cacheLeaderboard(roomCode, leaderboard)
+      
+      console.log(`🏆 Final AI Patient leaderboard with ${leaderboard.length} students:`, leaderboard)
+      
+      return leaderboard
+      
+    } catch (error) {
+      console.error('❌ Error fetching AI Patient leaderboard:', error)
+      throw error
     }
   }
 

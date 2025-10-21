@@ -41,7 +41,17 @@ const typingResultSchema = Joi.object({
       count: Joi.number().min(1).required(),
       positions: Joi.array().items(Joi.number().min(0)).required()
     })
-  ).optional()
+  ).optional(),
+  
+  // AI Patient specific data (optional)
+  aiPatientData: Joi.object({
+    score: Joi.number().min(0).max(100).required(),
+    feedback: Joi.string().allow('').required(),
+    teacherName: Joi.string().required(),
+    studentName: Joi.string().required(),
+    consultationId: Joi.string().required(),
+    patientName: Joi.string().required()
+  }).optional()
 });
 
 // POST /api/typing-results/save - Save typing test results

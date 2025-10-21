@@ -1,7 +1,18 @@
 <template>
   <div class="admin-panel">
+    <!-- Loading state while checking authentication -->
+    <div v-if="isLoading" class="loading-container">
+      <div class="loading-content">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <h4 class="mt-3">Loading Admin Panel...</h4>
+        <p class="text-muted">Please wait while we verify your credentials</p>
+      </div>
+    </div>
+
     <!-- Show dashboard if authenticated -->
-    <div v-if="isAuthenticated" class="admin-content">
+    <div v-else-if="isAuthenticated" class="admin-content">
       <!-- Admin Navigation Bar -->
       <nav class="admin-navbar">
         <div class="container-fluid">
@@ -17,37 +28,23 @@
                 <small class="text-muted d-block">{{ adminSession.id }}</small>
               </div>
               
-              <div class="dropdown">
-                <button 
-                  class="btn btn-outline-light btn-sm dropdown-toggle" 
-                  type="button" 
-                  data-bs-toggle="dropdown"
-                >
-                  <i class="fas fa-user-circle me-1"></i>
-                  Account
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                  <li>
-                    <a class="dropdown-item" href="#" @click="showProfile">
-                      <i class="fas fa-user me-2"></i>
-                      Profile
-                    </a>
-                  </li>
-                  <li>
-                    <a class="dropdown-item" href="#" @click="showSettings">
-                      <i class="fas fa-cog me-2"></i>
-                      Settings
-                    </a>
-                  </li>
-                  <li><hr class="dropdown-divider"></li>
-                  <li>
-                    <a class="dropdown-item text-danger" href="#" @click="confirmLogout">
-                      <i class="fas fa-sign-out-alt me-2"></i>
-                      Logout
-                    </a>
-                  </li>
-                </ul>
-              </div>
+              <button 
+                class="btn btn-outline-light btn-sm" 
+                type="button" 
+                @click="confirmLogout"
+                :disabled="isLoggingOut"
+              >
+                <span v-if="isLoggingOut">
+                  <div class="spinner-border spinner-border-sm me-2" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                  </div>
+                  Logging out...
+                </span>
+                <span v-else>
+                  <i class="fas fa-sign-out-alt me-2"></i>
+                  Logout
+                </span>
+              </button>
             </div>
           </div>
         </div>
@@ -75,6 +72,7 @@
               type="button" 
               class="btn-close" 
               @click="showLogoutModal = false"
+              :disabled="isLoggingOut"
             ></button>
           </div>
           <div class="modal-body">
@@ -89,6 +87,7 @@
               type="button" 
               class="btn btn-secondary" 
               @click="showLogoutModal = false"
+              :disabled="isLoggingOut"
             >
               Cancel
             </button>
@@ -96,9 +95,18 @@
               type="button" 
               class="btn btn-danger"
               @click="handleLogout"
+              :disabled="isLoggingOut"
             >
-              <i class="fas fa-sign-out-alt me-2"></i>
-              Logout
+              <span v-if="isLoggingOut">
+                <div class="spinner-border spinner-border-sm me-2" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                Logging out...
+              </span>
+              <span v-else>
+                <i class="fas fa-sign-out-alt me-2"></i>
+                Logout
+              </span>
             </button>
           </div>
         </div>
@@ -109,7 +117,7 @@
     <div 
       v-if="showLogoutModal" 
       class="modal-backdrop fade show"
-      @click="showLogoutModal = false"
+      @click="!isLoggingOut && (showLogoutModal = false)"
     ></div>
   </div>
 </template>
@@ -128,10 +136,13 @@ export default {
   
   data() {
     return {
+      isLoading: true,
       isAuthenticated: false,
       adminSession: null,
       currentUser: null,
-      showLogoutModal: false
+      showLogoutModal: false,
+      isLoggingOut: false,
+      authUnsubscribe: null
     };
   },
   
@@ -139,24 +150,43 @@ export default {
     this.checkAuthStatus();
   },
   
+  beforeUnmount() {
+    // Clean up Firebase auth listener
+    if (this.authUnsubscribe) {
+      this.authUnsubscribe();
+    }
+  },
+  
   methods: {
     checkAuthStatus() {
       // Set up Firebase Auth state listener
-      onAuthStateChanged(auth, async (user) => {
-        if (user) {
-          this.currentUser = user;
-          
-          // Get admin session from Firestore
-          const adminSession = await sessionService.getAdminSession();
-          if (adminSession) {
-            this.adminSession = adminSession;
-            this.isAuthenticated = true;
+      this.authUnsubscribe = onAuthStateChanged(auth, async (user) => {
+        try {
+          if (user) {
+            this.currentUser = user;
+            
+            // Get admin session from Firestore
+            const adminSession = await sessionService.getAdminSession();
+            if (adminSession) {
+              this.adminSession = adminSession;
+              this.isAuthenticated = true;
+              this.isLoading = false;
+            } else {
+              // No valid session found, redirect to main login
+              this.isLoading = false;
+              this.$router.push('/login');
+            }
           } else {
-            // No valid session found, redirect to main login
-            this.$router.push('/login');
+            // User not authenticated, redirect to main login
+            this.isLoading = false;
+            if (this.$router.currentRoute.value.path !== '/login') {
+              this.$router.push('/login');
+            }
           }
-        } else {
-          // User not authenticated, redirect to main login
+        } catch (error) {
+          console.error('Error in auth state change:', error);
+          // On error, redirect to login
+          this.isLoading = false;
           this.$router.push('/login');
         }
       });
@@ -168,42 +198,57 @@ export default {
       this.showLogoutModal = true;
     },
     
-    handleLogout() {
-      this.clearSession();
-      this.showLogoutModal = false;
-      
-      // Show logout message
-      this.$toast?.success?.('Logged out successfully');
-      
-      console.log('Admin logged out');
+    async handleLogout() {
+      try {
+        // Set loading state
+        this.isLoggingOut = true;
+        
+        await this.clearSession();
+        this.showLogoutModal = false;
+        
+        // Show logout message
+        this.$toast?.success?.('Logged out successfully');
+        
+        console.log('Admin logged out');
+        
+        // Redirect to main login page
+        this.$router.push('/login');
+      } catch (error) {
+        console.error('Error during logout:', error);
+        this.$toast?.error?.('Error during logout');
+        // Still redirect even if there's an error
+        this.$router.push('/login');
+      } finally {
+        // Reset loading state
+        this.isLoggingOut = false;
+      }
     },
     
     async clearSession() {
       try {
+        // Run session destruction and Firebase signout in parallel for faster logout
+        const promises = [];
+        
         // Destroy session in Firestore
-        await sessionService.destroyAdminSession();
+        promises.push(sessionService.destroyAdminSession());
         
         // Sign out from Firebase Auth
         if (auth.currentUser) {
-          await auth.signOut();
+          promises.push(auth.signOut());
         }
+        
+        // Wait for both operations to complete
+        await Promise.all(promises);
       } catch (error) {
         console.error('Error clearing session:', error);
+        // Continue with cleanup even if there's an error
       }
       
+      // Clear local state
       this.adminSession = null;
       this.currentUser = null;
       this.isAuthenticated = false;
-    },
-    
-    showProfile() {
-      // Implement profile view
-      this.$toast?.info?.('Profile feature coming soon');
-    },
-    
-    showSettings() {
-      // Implement settings view
-      this.$toast?.info?.('Settings feature coming soon');
+      this.isLoading = false;
     }
   },
   
@@ -338,9 +383,50 @@ export default {
   }
 }
 
+/* Loading container styles */
+.loading-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.loading-content {
+  text-align: center;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.loading-content h4 {
+  color: white;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.loading-content p {
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 0;
+}
+
+.spinner-border {
+  width: 3rem;
+  height: 3rem;
+  border-width: 0.3em;
+}
+
 /* Animation for content transition */
 .admin-content {
   animation: fadeIn 0.5s ease-in-out;
+}
+
+.loading-content {
+  animation: fadeIn 0.3s ease-in-out;
 }
 
 @keyframes fadeIn {

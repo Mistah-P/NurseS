@@ -19,9 +19,46 @@
         </div>
       </div>
 
-      <!-- Leaderboard Stats -->
+      <!-- Stats Section - Different for AI Patient vs Typing Test -->
       <div class="stats-section">
-        <div class="stat-card">
+        <!-- AI Patient Stats -->
+        <div v-if="isAIPatientActivity" class="stat-card">
+          <div class="stat-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M16 21V19C16 17.9391 15.5786 16.9217 14.8284 16.1716C14.0783 15.4214 13.0609 15 12 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="8.5" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ aiPatientData.length }}</span>
+            <span class="stat-label">Students</span>
+          </div>
+        </div>
+        <div v-if="isAIPatientActivity" class="stat-card">
+          <div class="stat-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ consultationsWithFeedback }}</span>
+            <span class="stat-label">Feedback Given</span>
+          </div>
+        </div>
+        <div v-if="isAIPatientActivity" class="stat-card">
+          <div class="stat-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L15.09 8.26L22 9L17 14L18.18 21L12 17.77L5.82 21L7 14L2 9L8.91 8.26L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="stat-info">
+            <span class="stat-value">{{ consultationsSubmitted }}</span>
+            <span class="stat-label">Consultations</span>
+          </div>
+        </div>
+
+        <!-- Typing Test Stats (Original) -->
+        <div v-if="!isAIPatientActivity" class="stat-card">
           <div class="stat-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path d="M16 21V19C16 17.9391 15.5786 16.9217 14.8284 16.1716C14.0783 15.4214 13.0609 15 12 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -34,7 +71,7 @@
             <span class="stat-label">Participants</span>
           </div>
         </div>
-        <div class="stat-card">
+        <div v-if="!isAIPatientActivity" class="stat-card">
           <div class="stat-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path d="M12 2L15.09 8.26L22 9L17 14L18.18 21L12 17.77L5.82 21L7 14L2 9L8.91 8.26L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -45,7 +82,7 @@
             <span class="stat-label">Avg WPM</span>
           </div>
         </div>
-        <div class="stat-card">
+        <div v-if="!isAIPatientActivity" class="stat-card">
           <div class="stat-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
               <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -60,80 +97,146 @@
 
       <!-- Leaderboard Table -->
       <div class="leaderboard-section">
-        <div class="section-header">
-          <h3>Leaderboard Rankings</h3>
-          <div class="filter-controls">
-            <select v-model="sortBy" class="sort-select">
-              <option value="wpm">Sort by WPM</option>
-              <option value="accuracy">Sort by Accuracy</option>
-            </select>
+        <!-- AI Patient Table -->
+        <div v-if="isAIPatientActivity">
+          <div class="section-header">
+            <h3>AI Patient Activity Results</h3>
+          </div>
+
+          <div class="leaderboard-table ai-patient-table">
+            <div class="table-header">
+              <div class="rank-col">No.</div>
+              <div class="name-col">Student Name</div>
+              <div class="wpm-col">Score</div>
+              <div class="accuracy-col">Feedback</div>
+            </div>
+            
+            <div class="table-body">
+              <!-- Loading State -->
+              <div v-if="isLoading" class="loading-state">
+                <div class="loading-spinner"></div>
+                <span>Loading AI Patient data...</span>
+              </div>
+              
+              <!-- Empty State -->
+              <div v-else-if="aiPatientData.length === 0" class="empty-state">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                  <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>No AI Patient data available</span>
+              </div>
+              
+              <!-- AI Patient Data -->
+              <div 
+                v-else
+                v-for="(student, index) in aiPatientData" 
+                :key="student.id"
+                class="table-row"
+                :style="{ animationDelay: `${index * 0.1}s` }"
+              >
+                <div class="rank-col">
+                  <span class="student-number">{{ index + 1 }}</span>
+                </div>
+                <div class="name-col">
+                  <div class="student-info">
+                    <div class="avatar">{{ student.name.charAt(0) }}</div>
+                    <span class="name">{{ student.name }}</span>
+                  </div>
+                </div>
+                <div class="wpm-col">
+                  <span class="score-value">{{ student.score || 0 }}</span>
+                </div>
+                <div class="accuracy-col">
+                  <button 
+                    class="view-feedback-btn" 
+                    @click="viewFeedback(student)"
+                    :disabled="!student.hasFeedback"
+                  >
+                    {{ student.hasFeedback ? 'View' : 'No Feedback' }}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div class="leaderboard-table">
-          <div class="table-header">
-            <div class="rank-col">Rank</div>
-            <div class="name-col">Student Name</div>
-            <div class="wpm-col">WPM</div>
-            <div class="accuracy-col">Accuracy</div>
-            <div class="errors-col">Errors</div>
-            <div class="status-col">Status</div>
+        <!-- Original Typing Test Table -->
+        <div v-else>
+          <div class="section-header">
+            <h3>Leaderboard Rankings</h3>
+            <div class="filter-controls">
+              <select v-model="sortBy" class="sort-select">
+                <option value="wpm">Sort by WPM</option>
+                <option value="accuracy">Sort by Accuracy</option>
+              </select>
+            </div>
           </div>
-          
-          <div class="table-body">
-            <!-- Loading State -->
-            <div v-if="isLoading" class="loading-state">
-              <div class="loading-spinner"></div>
-              <span>Loading leaderboard data...</span>
+
+          <div class="leaderboard-table">
+            <div class="table-header">
+              <div class="rank-col">Rank</div>
+              <div class="name-col">Student Name</div>
+              <div class="wpm-col">WPM</div>
+              <div class="accuracy-col">Accuracy</div>
+              <div class="errors-col">Errors</div>
+              <div class="status-col">Status</div>
             </div>
             
-            <!-- Empty State -->
-            <div v-else-if="leaderboardData.length === 0" class="empty-state">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
-                <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              <span>No leaderboard data available</span>
-            </div>
-            
-            <!-- Leaderboard Data -->
-            <div 
-              v-else
-              v-for="(student, index) in sortedLeaderboard" 
-              :key="student.id"
-              class="table-row"
-              :class="{ 'top-performer': index < 3 }"
-              :style="{ animationDelay: `${index * 0.1}s` }"
-            >
-              <div class="rank-col">
-                <div class="rank-badge" :class="`rank-${index + 1}`">
-                  <span v-if="index < 3" class="medal">
-                    {{ index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉' }}
+            <div class="table-body">
+              <!-- Loading State -->
+              <div v-if="isLoading" class="loading-state">
+                <div class="loading-spinner"></div>
+                <span>Loading leaderboard data...</span>
+              </div>
+              
+              <!-- Empty State -->
+              <div v-else-if="leaderboardData.length === 0" class="empty-state">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                  <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>No leaderboard data available</span>
+              </div>
+              
+              <!-- Leaderboard Data -->
+              <div 
+                v-else
+                v-for="(student, index) in sortedLeaderboard" 
+                :key="student.id"
+                class="table-row"
+                :class="{ 'top-performer': index < 3 }"
+                :style="{ animationDelay: `${index * 0.1}s` }"
+              >
+                <div class="rank-col">
+                  <div class="rank-badge" :class="`rank-${index + 1}`">
+                    <span v-if="index < 3" class="medal">
+                      {{ index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉' }}
+                    </span>
+                    <span v-else>{{ index + 1 }}</span>
+                  </div>
+                </div>
+                <div class="name-col">
+                  <div class="student-info">
+                    <div class="avatar">{{ student.name.charAt(0) }}</div>
+                    <span class="name">{{ student.name }}</span>
+                  </div>
+                </div>
+                <div class="wpm-col">
+                  <span class="wpm-value">{{ student.wpm }}</span>
+                </div>
+                <div class="accuracy-col">
+                  <div class="accuracy-bar">
+                    <div class="accuracy-fill" :style="{ width: `${student.accuracy}%` }"></div>
+                    <span class="accuracy-text">{{ student.accuracy }}%</span>
+                  </div>
+                </div>
+                <div class="errors-col">
+                  <span class="errors-value">{{ student.errorsCount || 0 }}</span>
+                </div>
+                <div class="status-col">
+                  <span class="status-badge" :class="student.status">
+                    {{ getStatusLabel(student.status) }}
                   </span>
-                  <span v-else>{{ index + 1 }}</span>
                 </div>
-              </div>
-              <div class="name-col">
-                <div class="student-info">
-                  <div class="avatar">{{ student.name.charAt(0) }}</div>
-                  <span class="name">{{ student.name }}</span>
-                </div>
-              </div>
-              <div class="wpm-col">
-                <span class="wpm-value">{{ student.wpm }}</span>
-              </div>
-              <div class="accuracy-col">
-                <div class="accuracy-bar">
-                  <div class="accuracy-fill" :style="{ width: `${student.accuracy}%` }"></div>
-                  <span class="accuracy-text">{{ student.accuracy }}%</span>
-                </div>
-              </div>
-              <div class="errors-col">
-                <span class="errors-value">{{ student.errorsCount || 0 }}</span>
-              </div>
-              <div class="status-col">
-                <span class="status-badge" :class="student.status">
-                  {{ getStatusLabel(student.status) }}
-                </span>
               </div>
             </div>
           </div>
@@ -151,6 +254,41 @@
           Export Results
         </button>
         <button @click="closeModal" class="close-action-btn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feedback Modal -->
+  <div v-if="showFeedbackModal" class="modal-overlay" @click="closeFeedbackModal">
+    <div class="modal-container feedback-modal" @click.stop>
+      <div class="modal-header">
+        <h2>Teacher Feedback</h2>
+        <button @click="closeFeedbackModal" class="close-btn">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="feedback-content">
+        <div class="student-info-header">
+          <div class="avatar">{{ selectedStudent?.name?.charAt(0).toUpperCase() }}</div>
+          <div class="student-details">
+            <h3>{{ selectedStudent?.name }}</h3>
+            <p>AI Patient Consultation</p>
+          </div>
+        </div>
+        
+        <div class="feedback-text">
+          <h4>Teacher's Feedback:</h4>
+          <div class="feedback-message">
+            {{ selectedStudent?.feedback || 'No feedback available.' }}
+          </div>
+        </div>
+      </div>
+      
+      <div class="feedback-actions">
+        <button @click="closeFeedbackModal" class="close-feedback-btn">Close</button>
       </div>
     </div>
   </div>
@@ -175,10 +313,28 @@ export default {
     return {
       sortBy: 'wpm',
       leaderboardData: [],
-      isLoading: false
+      isLoading: false,
+      showFeedbackModal: false,
+      selectedStudent: null
     }
   },
   computed: {
+    isAIPatientActivity() {
+      return this.activity && this.activity.gameMode === 'AI Patient';
+    },
+    aiPatientData() {
+      // For AI Patient activities, return the leaderboard data with feedback info
+      return this.leaderboardData.map(student => ({
+        ...student,
+        hasFeedback: student.feedback && student.feedback.length > 0
+      }));
+    },
+    consultationsWithFeedback() {
+      return this.aiPatientData.filter(student => student.hasFeedback).length;
+    },
+    consultationsSubmitted() {
+      return this.aiPatientData.length;
+    },
     sortedLeaderboard() {
       const sorted = [...this.leaderboardData].sort((a, b) => {
         switch (this.sortBy) {
@@ -222,7 +378,11 @@ export default {
 
       this.isLoading = true;
       try {
+        // Clear cache to ensure fresh data
+        activityService.clearLeaderboardCache(this.activity.roomCode);
+        
         const leaderboardData = await activityService.getActivityLeaderboard(this.activity.roomCode);
+        console.log('📊 Leaderboard data received in modal:', leaderboardData);
         this.leaderboardData = leaderboardData;
       } catch (error) {
         console.error('Error loading leaderboard data:', error);
@@ -250,6 +410,17 @@ export default {
       }
       return statusLabels[status] || status
     },
+    viewFeedback(student) {
+       // Handle viewing feedback for AI Patient activities
+       this.selectedStudent = student;
+       this.showFeedbackModal = true;
+       document.body.style.overflow = 'hidden';
+     },
+     closeFeedbackModal() {
+       this.showFeedbackModal = false;
+       this.selectedStudent = null;
+       document.body.style.overflow = '';
+     },
     exportData() {
       // Export functionality
     }
@@ -488,6 +659,15 @@ export default {
 
 .table-row.top-performer {
   background: var(--accent-gradient-alpha);
+}
+
+/* AI Patient specific table layout - 4 columns only */
+.ai-patient-table .table-header {
+  grid-template-columns: 80px 1fr 100px 120px;
+}
+
+.ai-patient-table .table-row {
+  grid-template-columns: 80px 1fr 100px 120px;
 }
 
 .rank-badge {
@@ -749,6 +929,132 @@ export default {
   }
 }
 
+/* AI Patient specific styles */
+ .student-number {
+   color: var(--text-primary);
+   font-weight: 600;
+   font-family: 'DM Sans', sans-serif;
+ }
+ 
+ .view-feedback-btn {
+   background: var(--accent-gradient);
+   color: var(--text-white);
+   border: none;
+   padding: 6px 12px;
+   border-radius: 6px;
+   font-size: 12px;
+   font-weight: 600;
+   cursor: pointer;
+   transition: all 0.3s ease;
+   font-family: 'DM Sans', sans-serif;
+ }
+ 
+ .view-feedback-btn:hover:not(:disabled) {
+   transform: translateY(-1px);
+   box-shadow: var(--shadow-accent);
+ }
+ 
+ .view-feedback-btn:disabled {
+   background: var(--bg-tertiary);
+   color: var(--text-tertiary);
+   cursor: not-allowed;
+ }
+
+ /* Feedback Modal Styles */
+ .feedback-modal {
+   max-width: 600px;
+   width: 90%;
+ }
+
+ .feedback-content {
+   padding: 24px;
+ }
+
+ .student-info-header {
+   display: flex;
+   align-items: center;
+   gap: 16px;
+   margin-bottom: 24px;
+   padding: 16px;
+   background: var(--bg-secondary);
+   border-radius: 12px;
+ }
+
+ .student-info-header .avatar {
+   width: 48px;
+   height: 48px;
+   border-radius: 50%;
+   background: var(--accent-gradient);
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   color: var(--text-white);
+   font-weight: 600;
+   font-size: 18px;
+   font-family: 'DM Sans', sans-serif;
+ }
+
+ .student-details h3 {
+   margin: 0;
+   color: var(--text-primary);
+   font-size: 18px;
+   font-weight: 600;
+   font-family: 'DM Sans', sans-serif;
+ }
+
+ .student-details p {
+   margin: 4px 0 0 0;
+   color: var(--text-secondary);
+   font-size: 14px;
+   font-family: 'DM Sans', sans-serif;
+ }
+
+ .feedback-text h4 {
+   margin: 0 0 12px 0;
+   color: var(--text-primary);
+   font-size: 16px;
+   font-weight: 600;
+   font-family: 'DM Sans', sans-serif;
+ }
+
+ .feedback-message {
+   background: var(--bg-secondary);
+   border: 1px solid var(--border-color);
+   border-radius: 8px;
+   padding: 16px;
+   color: var(--text-primary);
+   font-size: 14px;
+   line-height: 1.6;
+   font-family: 'DM Sans', sans-serif;
+   min-height: 100px;
+   white-space: pre-wrap;
+ }
+
+ .feedback-actions {
+   padding: 16px 24px;
+   border-top: 1px solid var(--border-color);
+   display: flex;
+   justify-content: flex-end;
+ }
+
+ .close-feedback-btn {
+   background: var(--bg-tertiary);
+   color: var(--text-primary);
+   border: 1px solid var(--border-color);
+   padding: 8px 16px;
+   border-radius: 6px;
+   font-size: 14px;
+   font-weight: 500;
+   cursor: pointer;
+   transition: all 0.3s ease;
+   font-family: 'DM Sans', sans-serif;
+ }
+
+ .close-feedback-btn:hover {
+   background: var(--bg-secondary);
+   transform: translateY(-1px);
+ }
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .modal-container {
@@ -775,6 +1081,12 @@ export default {
     font-size: 12px;
   }
 
+  /* AI Patient responsive layout */
+  .ai-patient-table .table-header,
+  .ai-patient-table .table-row {
+    grid-template-columns: 50px 1fr 60px 100px;
+  }
+
   .student-info {
     flex-direction: column;
     gap: 4px;
@@ -785,6 +1097,11 @@ export default {
     width: 28px;
     height: 28px;
     font-size: 12px;
+  }
+
+  .view-feedback-btn {
+    font-size: 10px;
+    padding: 4px 8px;
   }
 }
 </style>

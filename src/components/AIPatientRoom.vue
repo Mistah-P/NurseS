@@ -23,6 +23,14 @@
                 </div>
               </div>
               <div class="chat-controls">
+                <!-- Back to Dashboard button - always visible for students -->
+                <button 
+                  class="back-to-dashboard-btn" 
+                  @click="backToDashboard"
+                >
+                  <i class="fas fa-arrow-left"></i>
+                  Back to Dashboard
+                </button>
                 <button 
                   v-if="!sessionStarted" 
                   class="start-session-btn" 
@@ -344,6 +352,10 @@
                   <i class="fas fa-calendar me-1"></i>
                   {{ formatDate(consultationFeedback.createdAt) }}
                 </span>
+                <span v-if="consultationFeedback.score !== undefined" class="feedback-score">
+                  <i class="fas fa-star me-1"></i>
+                  {{ consultationFeedback.score }}/100
+                </span>
               </div>
               <div class="feedback-content">
                 {{ consultationFeedback.content }}
@@ -363,6 +375,49 @@
             Close
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Back to Dashboard Confirmation Modal -->
+  <div v-if="showBackToDashboardModal" class="modal-overlay" @click="closeBackToDashboardModal">
+    <div class="modal-content confirmation-modal" @click.stop>
+      <div class="modal-header">
+        <h3>
+          <i class="fas fa-exclamation-triangle"></i>
+          Confirm Navigation
+        </h3>
+        <button class="close-btn" @click="closeBackToDashboardModal">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="warning-message">
+          <div class="warning-icon">
+            <i class="fas fa-info-circle"></i>
+          </div>
+          <div class="warning-text">
+            <p><strong>Are you sure you want to return to your dashboard?</strong></p>
+            <p>
+              You are about to leave the AI Patient simulation. Any unsaved progress in your current session may be lost.
+            </p>
+            <p>
+              Make sure you have completed all required tasks and saved your consultation form before proceeding.
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="btn btn-secondary" @click="closeBackToDashboardModal">
+          <i class="fas fa-times me-2"></i>
+          Cancel
+        </button>
+        <button class="btn btn-primary" @click="confirmBackToDashboard">
+          <i class="fas fa-arrow-left me-2"></i>
+          Yes, Go to Dashboard
+        </button>
       </div>
     </div>
   </div>
@@ -400,6 +455,7 @@ export default {
       currentPlayingMessageId: null,
       speechSynthesis: null,
       genderUpdated: false,
+      selectedVoice: null, // Pre-selected voice based on predetermined gender
       
       // Patient profile (generated uniquely per student)
       patientProfile: {
@@ -436,7 +492,16 @@ export default {
       showFeedbackModal: false,
       isLoadingFeedback: false,
       consultationFeedback: null,
-      feedbackError: null
+      feedbackError: null,
+      
+      // Back to Dashboard modal state
+      showBackToDashboardModal: false,
+      
+      // Room status tracking
+      roomData: null,
+      roomStatus: 'waiting', // waiting, active, completed
+      isLoadingRoomStatus: false,
+      statusCheckInterval: null
     };
   },
   computed: {
@@ -444,6 +509,9 @@ export default {
       return this.consultationData.patientName.trim() !== '' &&
              this.consultationData.chiefComplaint.trim() !== '' &&
              this.consultationData.presentIllness.trim() !== '';
+    },
+    isRoomCompleted() {
+      return this.roomStatus === 'completed';
     }
   },
   async mounted() {
@@ -477,6 +545,12 @@ export default {
         throw new Error(`Missing required data - roomCode: ${this.roomCode}, currentUserId: ${this.currentUserId}`);
       }
 
+      // Load room status to check if activity is completed
+      await this.loadRoomStatus();
+      
+      // Start monitoring room status for changes
+      this.startRoomStatusMonitoring();
+      
       // Generate unique patient for this student in this room
       await this.generatePatientProfile();
       
@@ -486,6 +560,12 @@ export default {
       console.error('Error in AIPatientRoom mounted:', error);
     }
   },
+
+  beforeUnmount() {
+    // Clean up room status monitoring
+    this.stopRoomStatusMonitoring();
+  },
+
   methods: {
     async generatePatientProfile() {
       try {
@@ -546,6 +626,16 @@ export default {
     },
     
     startSession() {
+      // Generate random gender for voice consistency
+      const genders = ['Male', 'Female'];
+      const randomGender = genders[Math.floor(Math.random() * genders.length)];
+      
+      // Set the predetermined gender in patient profile
+      this.patientProfile.gender = randomGender;
+      
+      // Initialize voice for the predetermined gender
+      this.initializeVoiceForGender();
+      
       this.sessionStarted = true;
       // No initial message - students must initiate conversation naturally
     },
@@ -809,8 +899,90 @@ export default {
       this.speechSynthesis.speak(utterance);
     },
 
+    // Initialize voice based on predetermined gender (called at session start)
+    initializeVoiceForGender() {
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length === 0) {
+        // If voices aren't loaded yet, try again after a short delay
+        setTimeout(() => {
+          this.initializeVoiceForGender();
+        }, 100);
+        return;
+      }
+      
+      // Store the selected voice for this session
+      this.selectedVoice = this.getVoiceForGender(voices);
+      console.log('Voice initialized for gender:', this.patientProfile.gender, 'Selected voice:', this.selectedVoice?.name);
+    },
+
+    // Get appropriate voice for the current patient gender
+    getVoiceForGender(voices) {
+      let selectedVoice = null;
+      const patientGender = this.patientProfile?.gender;
+      
+      if (patientGender === 'Female') {
+        // Enhanced female voice detection
+        const femaleKeywords = [
+          'female', 'woman', 'zira', 'hazel', 'susan', 'samantha', 'cortana', 'siri',
+          'eva', 'anna', 'emma', 'sophia', 'olivia', 'ava', 'isabella', 'mia'
+        ];
+        
+        selectedVoice = voices.find(voice => 
+          femaleKeywords.some(keyword => 
+            voice.name.toLowerCase().includes(keyword)
+          )
+        );
+        
+        if (!selectedVoice) {
+          selectedVoice = voices.find(voice => 
+            voice.name.toLowerCase().includes('microsoft') && 
+            (voice.name.toLowerCase().includes('zira') || 
+             voice.name.toLowerCase().includes('hazel') ||
+             voice.name.toLowerCase().includes('eva'))
+          );
+        }
+        
+      } else if (patientGender === 'Male') {
+        // Enhanced male voice detection
+        const maleKeywords = [
+          'male', 'man', 'david', 'mark', 'alex', 'daniel', 'james', 'john',
+          'michael', 'robert', 'william', 'richard', 'thomas', 'christopher'
+        ];
+        
+        selectedVoice = voices.find(voice => 
+          maleKeywords.some(keyword => 
+            voice.name.toLowerCase().includes(keyword)
+          )
+        );
+        
+        if (!selectedVoice) {
+          selectedVoice = voices.find(voice => 
+            voice.name.toLowerCase().includes('microsoft') && 
+            (voice.name.toLowerCase().includes('david') || 
+             voice.name.toLowerCase().includes('mark') ||
+             voice.name.toLowerCase().includes('george'))
+          );
+        }
+      }
+
+      // Final fallback: use first available English voice
+      if (!selectedVoice) {
+        selectedVoice = voices.find(voice => voice.lang.startsWith('en')) || voices[0];
+      }
+
+      return selectedVoice;
+    },
+
     // Helper method to set voice for utterance based on patient gender
     setVoiceForUtterance(utterance) {
+      // Use pre-selected voice if available (from session start)
+      if (this.selectedVoice) {
+        utterance.voice = this.selectedVoice;
+        console.log('Using pre-selected voice:', this.selectedVoice.name, 'for gender:', this.patientProfile.gender);
+        return;
+      }
+      
+      // Fallback to dynamic selection if no pre-selected voice
       const voices = window.speechSynthesis.getVoices();
       if (voices.length === 0) {
         // If voices aren't loaded yet, try again after a short delay
@@ -1005,57 +1177,63 @@ export default {
       }
       
       // Extract gender - enhanced indicators and patterns
-      const femaleIndicators = ['woman', 'female', 'girl', 'lady', 'she', 'her', 'herself', 'ms.', 'mrs.', 'miss', 'daughter', 'sister', 'mother', 'wife', 'girlfriend', 'aunt', 'niece', 'grandmother'];
-      const maleIndicators = ['man', 'male', 'boy', 'gentleman', 'he', 'him', 'himself', 'mr.', 'sir', 'son', 'brother', 'father', 'husband', 'boyfriend', 'uncle', 'nephew', 'grandfather'];
-      
-      // Store previous gender to detect changes
-      const previousGender = this.patientProfile.gender;
-      
-      // Direct gender statements - enhanced patterns
-      const genderPatterns = [
-        /(?:i am|i'm)\s+(?:a\s+)?(female|male|woman|man)/i,
-        /(?:my gender is|gender is)\s+(female|male|woman|man)/i,
-        /(?:i identify as|identify as)\s+(?:a\s+)?(female|male|woman|man)/i,
-        /(?:i'm|i am)\s+(?:a\s+)?\d+(?:-year-old)?\s+(female|male|woman|man)/i,
-        /(?:as a|being a)\s+(female|male|woman|man)/i
-      ];
-      
-      for (const pattern of genderPatterns) {
-        const genderMatch = response.match(pattern);
-        if (genderMatch && genderMatch[1]) {
-          const gender = genderMatch[1].toLowerCase();
-          if (['female', 'woman'].includes(gender)) {
-            this.patientProfile.gender = 'Female';
-            console.log('Extracted patient gender: Female (direct pattern)');
-            break;
-          } else if (['male', 'man'].includes(gender)) {
-            this.patientProfile.gender = 'Male';
-            console.log('Extracted patient gender: Male (direct pattern)');
-            break;
+      // IMPORTANT: Only detect gender if it's currently unknown to maintain voice consistency
+      if (this.patientProfile.gender === 'Unknown') {
+        const femaleIndicators = ['woman', 'female', 'girl', 'lady', 'she', 'her', 'herself', 'ms.', 'mrs.', 'miss', 'daughter', 'sister', 'mother', 'wife', 'girlfriend', 'aunt', 'niece', 'grandmother'];
+        const maleIndicators = ['man', 'male', 'boy', 'gentleman', 'he', 'him', 'himself', 'mr.', 'sir', 'son', 'brother', 'father', 'husband', 'boyfriend', 'uncle', 'nephew', 'grandfather'];
+        
+        // Store previous gender to detect changes
+        const previousGender = this.patientProfile.gender;
+        
+        // Direct gender statements - enhanced patterns
+        const genderPatterns = [
+          /(?:i am|i'm)\s+(?:a\s+)?(female|male|woman|man)/i,
+          /(?:my gender is|gender is)\s+(female|male|woman|man)/i,
+          /(?:i identify as|identify as)\s+(?:a\s+)?(female|male|woman|man)/i,
+          /(?:i'm|i am)\s+(?:a\s+)?\d+(?:-year-old)?\s+(female|male|woman|man)/i,
+          /(?:as a|being a)\s+(female|male|woman|man)/i
+        ];
+        
+        for (const pattern of genderPatterns) {
+          const genderMatch = response.match(pattern);
+          if (genderMatch && genderMatch[1]) {
+            const gender = genderMatch[1].toLowerCase();
+            if (['female', 'woman'].includes(gender)) {
+              this.patientProfile.gender = 'Female';
+              console.log('Extracted patient gender: Female (direct pattern) - Voice will remain consistent');
+              break;
+            } else if (['male', 'man'].includes(gender)) {
+              this.patientProfile.gender = 'Male';
+              console.log('Extracted patient gender: Male (direct pattern) - Voice will remain consistent');
+              break;
+            }
           }
         }
-      }
-      
-      // Fallback to indicator-based detection if no direct statement
-      if (this.patientProfile.gender === 'Unknown') {
-        const femaleCount = femaleIndicators.filter(indicator => text.includes(indicator)).length;
-        const maleCount = maleIndicators.filter(indicator => text.includes(indicator)).length;
         
-        // Use count-based approach for better accuracy
-        if (femaleCount > maleCount && femaleCount > 0) {
-          this.patientProfile.gender = 'Female';
-          console.log('Extracted patient gender: Female (indicators)', femaleCount, 'vs', maleCount);
-        } else if (maleCount > femaleCount && maleCount > 0) {
-          this.patientProfile.gender = 'Male';
-          console.log('Extracted patient gender: Male (indicators)', maleCount, 'vs', femaleCount);
+        // Fallback to indicator-based detection if no direct statement
+        if (this.patientProfile.gender === 'Unknown') {
+          const femaleCount = femaleIndicators.filter(indicator => text.includes(indicator)).length;
+          const maleCount = maleIndicators.filter(indicator => text.includes(indicator)).length;
+          
+          // Use count-based approach for better accuracy
+          if (femaleCount > maleCount && femaleCount > 0) {
+            this.patientProfile.gender = 'Female';
+            console.log('Extracted patient gender: Female (indicators)', femaleCount, 'vs', maleCount, '- Voice will remain consistent');
+          } else if (maleCount > femaleCount && maleCount > 0) {
+            this.patientProfile.gender = 'Male';
+            console.log('Extracted patient gender: Male (indicators)', maleCount, 'vs', femaleCount, '- Voice will remain consistent');
+          }
         }
-      }
-      
-      // If gender was detected/changed, update voice selection for future speech
-      if (this.patientProfile.gender !== 'Unknown' && this.patientProfile.gender !== previousGender) {
-        console.log('Patient gender updated from', previousGender, 'to', this.patientProfile.gender, '- voice will be updated for next speech');
-        // Store the gender change for voice update
-        this.genderUpdated = true;
+        
+        // If gender was detected for the first time, update voice selection for future speech
+        if (this.patientProfile.gender !== 'Unknown' && this.patientProfile.gender !== previousGender) {
+          console.log('Patient gender determined as', this.patientProfile.gender, '- voice will be consistent for all future speech');
+          // Store the gender determination for voice update
+          this.genderUpdated = true;
+        }
+      } else {
+        // Gender already determined - skip re-detection to maintain voice consistency
+        console.log('Gender already determined as', this.patientProfile.gender, '- Skipping re-detection to maintain voice consistency');
       }
       
       // Extract occupation - enhanced patterns
@@ -1199,6 +1377,52 @@ export default {
       const minutes = Math.floor(durationInSeconds / 60);
       const seconds = durationInSeconds % 60;
       return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    },
+
+    async loadRoomStatus() {
+      if (!this.roomCode) return;
+      
+      try {
+        this.isLoadingRoomStatus = true;
+        const response = await this.$http.get(`/api/rooms/${this.roomCode}`);
+        if (response.data && response.data.room) {
+          this.roomData = response.data.room;
+          this.roomStatus = response.data.room.status || 'waiting';
+        }
+      } catch (error) {
+        console.error('Error loading room status:', error);
+      } finally {
+        this.isLoadingRoomStatus = false;
+      }
+    },
+
+    startRoomStatusMonitoring() {
+      // Check room status every 5 seconds
+      this.statusCheckInterval = setInterval(async () => {
+        await this.loadRoomStatus();
+      }, 5000);
+    },
+
+    stopRoomStatusMonitoring() {
+      if (this.statusCheckInterval) {
+        clearInterval(this.statusCheckInterval);
+        this.statusCheckInterval = null;
+      }
+    },
+
+    backToDashboard() {
+      // Show confirmation modal instead of direct navigation
+      this.showBackToDashboardModal = true;
+    },
+
+    closeBackToDashboardModal() {
+      this.showBackToDashboardModal = false;
+    },
+
+    confirmBackToDashboard() {
+      // Close modal and navigate to student dashboard
+      this.showBackToDashboardModal = false;
+      this.$router.push('/user');
     }
   }
 };
@@ -1290,7 +1514,7 @@ export default {
   color: #856404;
 }
 
-.start-session-btn, .control-btn {
+.start-session-btn, .control-btn, .back-to-dashboard-btn {
   background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
   border: none;
@@ -1301,9 +1525,18 @@ export default {
   transition: all 0.3s ease;
 }
 
-.start-session-btn:hover, .control-btn:hover {
+.start-session-btn:hover, .control-btn:hover, .back-to-dashboard-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.back-to-dashboard-btn {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  margin-right: 10px;
+}
+
+.back-to-dashboard-btn:hover {
+  box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
 }
 
 .chat-messages {
@@ -1904,5 +2137,174 @@ input:checked + .toggle-slider:before {
 
 .me-2 {
   margin-right: 0.5rem;
+}
+
+/* Confirmation Modal Styles */
+.confirmation-modal {
+  max-width: 500px;
+  width: 90%;
+}
+
+.confirmation-modal .modal-header {
+  background: linear-gradient(135deg, #f39c12, #e67e22);
+  color: white;
+  border-radius: 12px 12px 0 0;
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.confirmation-modal .modal-header h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.confirmation-modal .modal-header h3 i {
+  font-size: 1.4rem;
+}
+
+.confirmation-modal .close-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.confirmation-modal .close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.confirmation-modal .modal-body {
+  padding: 2rem;
+}
+
+.warning-message {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.warning-icon {
+  color: #f39c12;
+  font-size: 2rem;
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+}
+
+.warning-text {
+  flex: 1;
+}
+
+.warning-text p {
+  margin: 0 0 1rem 0;
+  line-height: 1.6;
+  color: #333;
+}
+
+.warning-text p:last-child {
+  margin-bottom: 0;
+}
+
+.warning-text strong {
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.confirmation-modal .modal-footer {
+  padding: 1.5rem 2rem;
+  background: #f8f9fa;
+  border-radius: 0 0 12px 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.confirmation-modal .btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.confirmation-modal .btn.btn-primary {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: white;
+}
+
+.confirmation-modal .btn.btn-primary:hover {
+  background: linear-gradient(135deg, #2980b9, #1f5f8b);
+  transform: translateY(-1px);
+}
+
+.confirmation-modal .btn.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.confirmation-modal .btn.btn-secondary:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+/* Feedback score styling */
+.feedback-score {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 10px;
+}
+
+.feedback-score i {
+  font-size: 10px;
+}
+
+.feedback-header-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.feedback-author,
+.feedback-date {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.feedback-author i,
+.feedback-date i {
+  color: #9ca3af;
+}
+
+/* Dark theme adjustments */
+[data-theme="dark"] .feedback-author,
+[data-theme="dark"] .feedback-date {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .feedback-author i,
+[data-theme="dark"] .feedback-date i {
+  color: #9ca3af;
 }
 </style>

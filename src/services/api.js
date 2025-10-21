@@ -4,7 +4,7 @@ import { auth } from '../firebase/init'
 // Create axios instance with base configuration
 const api = axios.create({
   baseURL: process.env.VUE_APP_API_URL || 'http://localhost:3000/api',
-  timeout: 10000,
+  timeout: 30000, // Increased from 10s to 30s for slow backend responses
   headers: {
     'Content-Type': 'application/json'
   }

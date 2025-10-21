@@ -27,7 +27,7 @@
     <!-- Stats Cards -->
     <div class="container-fluid mt-4">
       <div class="row">
-        <div class="col-md-3">
+        <div class="col-md-4">
           <div class="stat-card">
             <div class="stat-icon bg-primary">
               <i class="fas fa-chalkboard-teacher"></i>
@@ -38,7 +38,7 @@
             </div>
           </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
           <div class="stat-card">
             <div class="stat-icon bg-success">
               <i class="fas fa-user-check"></i>
@@ -49,18 +49,7 @@
             </div>
           </div>
         </div>
-        <div class="col-md-3">
-          <div class="stat-card">
-            <div class="stat-icon bg-warning">
-              <i class="fas fa-key"></i>
-            </div>
-            <div class="stat-content">
-              <h3>{{ stats.pendingPasswordChange }}</h3>
-              <p>Pending Setup</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
           <div class="stat-card">
             <div class="stat-icon bg-info">
               <i class="fas fa-calendar-plus"></i>
@@ -122,7 +111,6 @@
                   <th>Name</th>
                   <th>Email</th>
                   <th>Status</th>
-                  <th>Setup Status</th>
                   <th>Created</th>
                   <th>Actions</th>
                 </tr>
@@ -136,8 +124,6 @@
                       </div>
                       <div>
                         <strong>{{ teacher.name }}</strong>
-                        <br>
-                        <small class="text-muted">ID: {{ teacher.employeeId || 'N/A' }}</small>
                       </div>
                     </div>
                   </td>
@@ -147,13 +133,6 @@
                       :class="['badge', teacher.isActive ? 'bg-success' : 'bg-secondary']"
                     >
                       {{ teacher.isActive ? 'Active' : 'Inactive' }}
-                    </span>
-                  </td>
-                  <td>
-                    <span 
-                      :class="['badge', teacher.passwordChanged ? 'bg-success' : 'bg-warning']"
-                    >
-                      {{ teacher.passwordChanged ? 'Complete' : 'Pending' }}
                     </span>
                   </td>
                   <td>
@@ -215,6 +194,32 @@
             ></button>
           </div>
           <div class="modal-body">
+            <!-- Error Alert -->
+            <div v-if="addTeacherError" class="alert alert-dismissible fade show mb-3" 
+                 :class="{
+                   'alert-danger': addTeacherErrorType === 'duplicate' || addTeacherErrorType === 'validation',
+                   'alert-warning': addTeacherErrorType === 'server' || addTeacherErrorType === 'network'
+                 }">
+              <div class="d-flex align-items-center">
+                <i class="fas me-2" 
+                   :class="{
+                     'fa-exclamation-triangle': addTeacherErrorType === 'duplicate' || addTeacherErrorType === 'validation',
+                     'fa-server': addTeacherErrorType === 'server',
+                     'fa-wifi': addTeacherErrorType === 'network'
+                   }"></i>
+                <div class="flex-grow-1">
+                  <strong v-if="addTeacherErrorType === 'duplicate'">Email Already Exists</strong>
+                  <strong v-else-if="addTeacherErrorType === 'validation'">Validation Error</strong>
+                  <strong v-else-if="addTeacherErrorType === 'server'">Server Error</strong>
+                  <strong v-else-if="addTeacherErrorType === 'network'">Connection Error</strong>
+                  <strong v-else>Error</strong>
+                  <br>
+                  <span>{{ addTeacherError }}</span>
+                </div>
+              </div>
+              <button type="button" class="btn-close" @click="clearAddTeacherError"></button>
+            </div>
+            
             <form @submit.prevent="addTeacher">
               <div class="row">
                 <div class="col-md-6">
@@ -249,7 +254,7 @@
                 <ul class="mb-0 mt-2">
                   <li>Temporary password will be set to: <code>teacher123</code></li>
                   <li>Teacher can update their profile and change password after first login</li>
-                  <li>Additional details (institution, department, etc.) can be added later</li>
+              
                 </ul>
               </div>
             </form>
@@ -539,6 +544,10 @@ export default {
         email: ''
       },
       
+      // Error handling
+      addTeacherError: null,
+      addTeacherErrorType: null, // 'duplicate', 'validation', 'server', 'network'
+      
       editTeacherData: {
         id: null,
         name: '',
@@ -575,7 +584,9 @@ export default {
   },
   
   methods: {
-    async loadTeachers() {
+    async loadTeachers(retryCount = 0) {
+      const maxRetries = 2;
+      
       try {
         this.loading = true;
         const response = await adminAPI.getTeachers(this.adminId);
@@ -587,7 +598,32 @@ export default {
         }
       } catch (error) {
         console.error('Error loading teachers:', error);
-        this.$toast?.error?.('Failed to load teachers');
+        
+        // Check if it's a timeout or network error and retry
+        if (retryCount < maxRetries && (
+          error.code === 'ECONNABORTED' || 
+          error.message.includes('timeout') ||
+          error.message.includes('Network Error') ||
+          error.response?.status >= 500
+        )) {
+          console.log(`Retrying teacher load... Attempt ${retryCount + 1}/${maxRetries}`);
+          setTimeout(() => {
+            this.loadTeachers(retryCount + 1);
+          }, 2000 * (retryCount + 1)); // Exponential backoff
+          return;
+        }
+        
+        // Show user-friendly error message
+        const errorMessage = error.response?.data?.message || 
+                           error.message.includes('timeout') ? 'Request timed out. Please try again.' :
+                           'Failed to load teachers. Please check your connection.';
+        
+        this.$toast?.error?.(errorMessage);
+        
+        // Set empty state to prevent UI issues
+        this.teachers = [];
+        this.filteredTeachers = [];
+        this.calculateStats();
       } finally {
         this.loading = false;
       }
@@ -632,6 +668,7 @@ export default {
     async addTeacher() {
       try {
         this.addingTeacher = true;
+        this.clearAddTeacherError(); // Clear any previous errors
         
         const teacherData = {
           ...this.newTeacher,
@@ -653,8 +690,50 @@ export default {
         }
       } catch (error) {
         console.error('Error adding teacher:', error);
-        const message = error.message || 'Failed to add teacher';
-        this.$toast?.error?.(message);
+        
+        // Parse error response to determine error type and message
+        let errorMessage = 'Failed to add teacher';
+        let errorType = 'server';
+        
+        if (error.response) {
+          const status = error.response.status;
+          const data = error.response.data;
+          
+          if (status === 409 && data.error === 'Teacher already exists') {
+            // Duplicate email error
+            errorType = 'duplicate';
+            errorMessage = 'A teacher with this email address already exists. Please use a different email address.';
+          } else if (status === 400 && data.error === 'Validation error') {
+            // Validation error
+            errorType = 'validation';
+            errorMessage = data.details ? data.details.join(', ') : 'Please check your input and try again.';
+          } else if (status >= 500) {
+            // Server error
+            errorType = 'server';
+            errorMessage = 'Server error occurred. Please try again in a few minutes.';
+          } else {
+            // Other API errors
+            errorMessage = data.message || 'An unexpected error occurred. Please try again.';
+          }
+        } else if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+          // Network timeout
+          errorType = 'network';
+          errorMessage = 'Request timed out. Please check your connection and try again.';
+        } else if (error.message.includes('Network Error')) {
+          // Network error
+          errorType = 'network';
+          errorMessage = 'Network error. Please check your internet connection and try again.';
+        } else {
+          // Generic error
+          errorMessage = error.message || 'An unexpected error occurred. Please try again.';
+        }
+        
+        // Set error state for UI display
+        this.addTeacherError = errorMessage;
+        this.addTeacherErrorType = errorType;
+        
+        // Also show toast for immediate feedback
+        this.$toast?.error?.(errorMessage);
       } finally {
         this.addingTeacher = false;
       }
@@ -665,6 +744,12 @@ export default {
         name: '',
         email: ''
       };
+      this.clearAddTeacherError();
+    },
+    
+    clearAddTeacherError() {
+      this.addTeacherError = null;
+      this.addTeacherErrorType = null;
     },
     
     closeAddTeacherModal() {

@@ -462,20 +462,46 @@
                   <div class="feedback-header">
                     <span class="feedback-author">{{ studentConsultation.teacherFeedback.teacherName }}</span>
                     <span class="feedback-date">{{ formatDate(studentConsultation.teacherFeedback.createdAt) }}</span>
+                    <span v-if="studentConsultation.teacherFeedback.score !== undefined" class="feedback-score">
+                      <i class="fas fa-star"></i>
+                      {{ studentConsultation.teacherFeedback.score }}/100
+                    </span>
                   </div>
                   <p class="feedback-content">{{ studentConsultation.teacherFeedback.content }}</p>
                 </div>
               </div>
               
               <div class="feedback-form">
-                <label for="feedbackText">{{ studentConsultation.teacherFeedback ? 'Update Feedback:' : 'Provide Feedback:' }}</label>
-                <textarea 
-                  id="feedbackText"
-                  v-model="feedbackText"
-                  placeholder="Enter your feedback for this consultation..."
-                  rows="4"
-                  class="feedback-textarea"
-                ></textarea>
+                <!-- Score Input Field -->
+                <div class="score-input-group">
+                  <label for="consultationScore">Consultation Score:</label>
+                  <div class="score-input-wrapper">
+                    <input 
+                      id="consultationScore"
+                      v-model.number="consultationScore"
+                      type="number"
+                      min="0"
+                      max="100"
+                      placeholder="0"
+                      class="score-input"
+                      @input="validateScore"
+                    />
+                    <span class="score-suffix">/100</span>
+                  </div>
+                  <small class="score-help-text">Enter a score between 0 and 100</small>
+                </div>
+
+                <!-- Feedback Text Area -->
+                <div class="feedback-text-group">
+                  <label for="feedbackText">{{ studentConsultation.teacherFeedback ? 'Update Feedback:' : 'Provide Feedback:' }}</label>
+                  <textarea 
+                    id="feedbackText"
+                    v-model="feedbackText"
+                    placeholder="Enter your feedback for this consultation..."
+                    rows="4"
+                    class="feedback-textarea"
+                  ></textarea>
+                </div>
               </div>
             </div>
           </div>
@@ -556,6 +582,7 @@ export default {
       isLoadingConsultation: false,
       consultationError: null,
       feedbackText: '',
+      consultationScore: null,
       isSendingFeedback: false,
       // Track students with submitted consultations for badge display
       studentsWithConsultations: new Set()
@@ -936,6 +963,9 @@ export default {
           await liveSessionService.endActivity(this.roomCode)
         }
         
+        // Store AI Patient results for each student who has consultation + feedback
+        await this.storeAIPatientResults()
+        
         // Simple redirect to teacher dashboard without complex activity completion logic
         this.showToast('Marked as done! Redirecting to dashboard...', 'success')
         
@@ -952,6 +982,88 @@ export default {
         setTimeout(() => {
           this.isCompletingActivity = false
         }, 2000)
+      }
+    },
+
+    // Store AI Patient results in typingResults database for typing history
+    async storeAIPatientResults() {
+      if (!this.isAIPatientRoom) return
+      
+      try {
+        console.log('📊 Storing AI Patient results for typing history...')
+        
+        // Get all students who have consultations with feedback
+        for (const student of this.activeStudents) {
+          try {
+            // Check if student has consultation
+            const consultationResponse = await api.get(`/consultations/student/${student.studentId}`)
+            
+            if (consultationResponse.data.success && consultationResponse.data.consultation) {
+              const consultation = consultationResponse.data.consultation
+              
+              // Only store if there's teacher feedback with score
+              if (consultation.teacherFeedback && consultation.teacherFeedback.score !== undefined) {
+                const aiPatientResult = {
+                  userId: student.studentId,
+                  sessionType: 'ai-patient',
+                  roomId: this.roomCode,
+                  
+                  // AI Patient specific data (using score as main metric)
+                  wpm: 0, // Not applicable for AI Patient
+                  accuracy: consultation.teacherFeedback.score || 0, // Use score as accuracy
+                  duration: 1, // Set to 1 to meet validation requirements (not tracked for AI Patient)
+                  wordsTyped: 0, // Not applicable
+                  errorsCount: 0, // Not applicable
+                  
+                  // Required keystroke data (set to minimal values)
+                  keystrokeData: {
+                    totalKeystrokes: 0,
+                    correctKeystrokes: 0,
+                    backspaces: 0,
+                    averageSpeed: 0
+                  },
+                  
+                  // Content information
+                  content: {
+                    topic: 'AI Patient Consultation',
+                    difficulty: this.roomData?.difficultyLevel || 'Medium',
+                    textLength: 1 // Set to 1 to meet validation requirements
+                  },
+                  
+                  // AI Patient specific additional data
+                  aiPatientData: {
+                    score: consultation.teacherFeedback.score,
+                    feedback: consultation.teacherFeedback.content,
+                    teacherName: consultation.teacherFeedback.teacherName,
+                    studentName: student.studentName, // Add student name for leaderboard display
+                    consultationId: consultation.id,
+                    patientName: consultation.patientName || 'Virtual Patient'
+                  }
+                }
+                
+                // Save to typingResults collection
+                const response = await api.post('/typing-results/save', aiPatientResult)
+                
+                if (response.data.success) {
+                  console.log(`✅ AI Patient result saved for student: ${student.studentName}`)
+                } else {
+                  console.error(`❌ Failed to save AI Patient result for student: ${student.studentName}`)
+                }
+              }
+            }
+          } catch (error) {
+            // 404 is expected when no consultation exists
+            if (error.response?.status !== 404) {
+              console.error(`Error processing AI Patient result for student ${student.studentId}:`, error)
+            }
+          }
+        }
+        
+        console.log('✅ AI Patient results storage completed')
+        
+      } catch (error) {
+        console.error('❌ Error storing AI Patient results:', error)
+        // Don't throw error to avoid breaking the mark as done flow
       }
     },
 
@@ -1355,11 +1467,20 @@ export default {
           }
         }
         
+        // Add score if provided
+        if (this.consultationScore !== null && this.consultationScore !== '') {
+          feedbackData.feedback.score = parseInt(this.consultationScore)
+        }
+        
         const response = await api.post('/consultations/feedback', feedbackData)
         
         if (response.data.success) {
           // Update the consultation data with the new feedback
           this.studentConsultation.teacherFeedback = feedbackData.feedback
+          
+          // Clear the form
+          this.feedbackText = ''
+          this.consultationScore = null
           
           this.showToast('Feedback sent successfully!', 'success')
           
@@ -2805,5 +2926,97 @@ export default {
 /* Hide QR code */
 .qr-code-container {
   display: none;
+}
+
+/* Score input styling */
+.score-input-group {
+  margin-bottom: 15px;
+}
+
+.score-input-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
+}
+
+.score-input-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 120px;
+}
+
+.score-input {
+  width: 100%;
+  padding: 8px 25px 8px 10px;
+  border: 2px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s ease;
+}
+
+.score-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.score-suffix {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6b7280;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.score-input.invalid {
+  border-color: #ef4444;
+}
+
+.score-error {
+  color: #ef4444;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* Score display in feedback */
+.feedback-score {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 10px;
+}
+
+.feedback-score i {
+  font-size: 10px;
+}
+
+/* Dark theme adjustments */
+[data-theme="dark"] .score-input-group label {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .score-input {
+  background: #374151;
+  border-color: #4b5563;
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .score-input:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+}
+
+[data-theme="dark"] .score-suffix {
+  color: #9ca3af;
 }
 </style>

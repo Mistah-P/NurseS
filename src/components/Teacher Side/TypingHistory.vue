@@ -140,12 +140,15 @@
                 >
                   <td class="activity-name">
                     <div class="activity-info">
-                      <div class="activity-icon">
-                        <i class="fas fa-keyboard"></i>
+                      <div class="activity-icon" :class="{ 'ai-patient-icon': activity.isAIPatient }">
+                        <i :class="activity.isAIPatient ? 'fas fa-user-md' : 'fas fa-keyboard'"></i>
                       </div>
                       <div class="activity-details">
                         <span class="name">{{ activity.name }}</span>
                         <span class="difficulty">{{ activity.difficulty }}</span>
+                        <span v-if="activity.isAIPatient && activity.aiPatientData" class="ai-score">
+                          Avg Score: {{ Math.round(activity.aiPatientData.averageScore) }}%
+                        </span>
                       </div>
                     </div>
                   </td>
@@ -339,7 +342,8 @@ export default {
     getGameModeClass(gameMode) {
       return {
         'timed-mode': gameMode === 'Timed',
-        'word-count-mode': gameMode === 'Word Count Challenge'
+        'word-count-mode': gameMode === 'Word Count Challenge',
+        'ai-patient-mode': gameMode === 'AI Patient'
       }
     },
     async logout() {
@@ -868,6 +872,25 @@ export default {
 .game-mode-badge.word-count-mode {
   background: rgba(72, 187, 120, 0.2);
   color: #48bb78;
+}
+
+.game-mode-badge.ai-patient-mode {
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  color: white;
+}
+
+/* AI Patient specific styles */
+.activity-icon.ai-patient-icon {
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  color: white;
+}
+
+.ai-score {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--accent-color);
+  font-weight: 500;
+  margin-top: 0.25rem;
 }
 
 .view-btn {
