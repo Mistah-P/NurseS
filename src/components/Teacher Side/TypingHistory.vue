@@ -102,12 +102,6 @@
         <div class="table-container">
           <div class="table-header">
             <h3>Activity Records</h3>
-            <div class="table-actions">
-              <button class="btn btn-secondary" @click="exportData">
-                <i class="fas fa-download"></i>
-                Export
-              </button>
-            </div>
           </div>
           
           <div class="table-wrapper">

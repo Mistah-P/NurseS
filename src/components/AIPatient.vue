@@ -245,10 +245,7 @@
                   <i class="fas fa-save"></i>
                   Save Form
                 </button>
-                <button class="submit-teacher-btn" @click="checkToTeacher" :disabled="!isFormValid">
-                  <i class="fas fa-user-check"></i>
-                  Check to Teacher
-                </button>
+
                 <button v-if="showStatusButton" class="status-btn" @click="showStatus">
                   <i class="fas fa-clipboard-check"></i>
                   Status

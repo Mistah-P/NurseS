@@ -101,8 +101,8 @@ export default {
         activityName: '',
         section: ''
       },
-      // Available sections for 3rd year students (same as typing test)
-      availableSections: ['BSN-3A', 'BSN-3B', 'BSN-3C', 'BSN-3D']
+      // Available sections for 2nd year students (same as typing test)
+      availableSections: ['BSN-2A', 'BSN-2B', 'BSN-2C', 'BSN-2D']
     }
   },
   computed: {
@@ -126,7 +126,7 @@ export default {
         const roomData = {
           activityName: this.formData.activityName,
           section: this.formData.section,
-          yearLevel: '3rd', // Default to 3rd year
+          yearLevel: '2nd', // Default to 3rd year
           roomType: 'AI Patient', // New field to distinguish room types
           mode: 'AI Patient', // Special mode for AI Patient rooms
           duration: null, // No duration for AI Patient rooms

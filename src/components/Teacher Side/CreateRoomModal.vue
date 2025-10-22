@@ -229,7 +229,7 @@ export default {
       errorMessage: '',
       formData: {
         activityName: '',
-        studentYear: '3rd', // Default to 3rd year since it's hidden
+        studentYear: '2nd', // Default to 3rd year since it's hidden
         section: '',
         gameMode: '',
         duration: '',
@@ -240,13 +240,13 @@ export default {
       years: [
      
         
-        { value: '3rd', label: '3rd Year' },
+        { value: '2nd', label: '2nd Year' },
         
       ],
       sections: {
       
         
-        '3rd': ['BSN-3A', 'BSN-3B', 'BSN-3C', 'BSN-3D'],
+        '2nd': ['BSN-2A', 'BSN-2B', 'BSN-2C', 'BSN-2D'],
        
       },
       durations: [
@@ -391,7 +391,7 @@ export default {
     resetForm() {
       this.formData = {
         activityName: '',
-        studentYear: '3rd', // Keep default value when resetting
+        studentYear: '2nd', // Keep default value when resetting
         section: '',
         gameMode: '',
         duration: '',

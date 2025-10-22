@@ -45,10 +45,6 @@
           <h1 class="page-title">Leaderboards</h1>
         </div>
         <div class="header-right">
-          <button class="btn btn-secondary" @click="exportData">
-            <i class="fas fa-download"></i>
-            Export Data
-          </button>
         </div>
       </header>
 
