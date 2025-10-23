@@ -245,14 +245,6 @@
 
       <!-- Modal Actions -->
       <div class="modal-actions">
-        <button @click="exportData" class="export-btn">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <polyline points="7,10 12,15 17,10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-          Export Results
-        </button>
         <button @click="closeModal" class="close-action-btn">Close</button>
       </div>
     </div>
@@ -420,10 +412,7 @@ export default {
        this.showFeedbackModal = false;
        this.selectedStudent = null;
        document.body.style.overflow = '';
-     },
-    exportData() {
-      // Export functionality
-    }
+     }
   }
 }
 </script>
@@ -774,26 +763,6 @@ export default {
   justify-content: flex-end;
   gap: 12px;
   background: var(--bg-tertiary);
-}
-
-.export-btn {
-  background: var(--accent-gradient);
-  color: var(--text-white);
-  border: none;
-  padding: 12px 20px;
-  border-radius: 8px;
-  font-family: 'DM Sans', sans-serif;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.3s ease;
-}
-
-.export-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-accent);
 }
 
 .close-action-btn {

@@ -24,7 +24,6 @@
         </div>
         <nav class="header-nav">
           <a href="#features" class="nav-link">Features</a>
-          <a href="#about" class="nav-link">About</a>
           <button class="login-btn" @click="goToLogin">
             <i class="fas fa-sign-in-alt"></i>
             Sign In

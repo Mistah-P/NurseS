@@ -19,7 +19,7 @@
         </router-link>
         <router-link to="/typing-history" class="nav-item" active-class="active">
           <i class="fas fa-history"></i>
-          <span>Typing History</span>
+          <span>Activity History</span>
         </router-link>
         <router-link to="/leaderboards" class="nav-item" active-class="active">
           <i class="fas fa-trophy"></i>
