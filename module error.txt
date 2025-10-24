@@ -71,23 +71,4 @@ app.a5306f88.js:1 ✅ Progress updated successfully
 app.a5306f88.js:1 📊 Updating server progress: {wpm: 0, accuracy: 100, progress: 0, currentPosition: 0, status: 'typing', …}
 app.a5306f88.js:1 📊 TypingTest received live session update: {wordCount: 0, roomId: '0babe4ac-510f-4433-b76f-6e8ba138fae8', settings: {…}, difficulty: 'Normal', roomCode: 'R2EZ9T', …}
 app.a5306f88.js:1 ✅ Progress updated successfully
-app.a5306f88.js:1 📊 Updating server progress: {wpm: 0, accuracy: 100, progress: 0, currentPosition: 0, status: 'typing', …}
-app.a5306f88.js:1 📊 TypingTest received live session update: {roomCode: 'R2EZ9T', startedAt: Fri Oct 17 2025 23:03:27 GMT+0800 (Taipei Standard Time), countdownStartedAt: Fri Oct 17 2025 23:03:17 GMT+0800 (Taipei Standard Time), leaderboard: Array(1), timeLimit: 60, …}
-app.a5306f88.js:1 📊 TypingTest received live session update: {difficulty: 'Normal', updatedAt: Fri Oct 17 2025 23:03:40 GMT+0800 (Taipei Standard Time), leaderboard: Array(1), roomCode: 'R2EZ9T', countdownDuration: 10, …}
-app.a5306f88.js:1 📊 TypingTest received live session update: {updatedAt: Fri Oct 17 2025 23:03:41 GMT+0800 (Taipei Standard Time), wordCount: 0, difficulty: 'Normal', status: 'active', createdAt: Fri Oct 17 2025 23:03:17 GMT+0800 (Taipei Standard Time), …}
-app.a5306f88.js:1 ✅ Progress updated successfully
-app.a5306f88.js:1 📊 Updating server progress: {wpm: 0, accuracy: 100, progress: 0, currentPosition: 0, status: 'typing', …}
-app.a5306f88.js:1 📊 TypingTest received live session update: {updatedAt: Fri Oct 17 2025 23:03:42 GMT+0800 (Taipei Standard Time), studentProgress: {…}, wordCount: 0, roomCode: 'R2EZ9T', startedAt: Fri Oct 17 2025 23:03:27 GMT+0800 (Taipei Standard Time), …}
-app.a5306f88.js:1 📊 TypingTest received live session update: {countdownDuration: 10, timeLimit: 60, roomCode: 'R2EZ9T', countdownStartedAt: Fri Oct 17 2025 23:03:17 GMT+0800 (Taipei Standard Time), updatedAt: Fri Oct 17 2025 23:03:42 GMT+0800 (Taipei Standard Time), …}
-app.a5306f88.js:1 ✅ Progress updated successfully
-app.a5306f88.js:1 📊 Updating server progress: {wpm: 0, accuracy: 100, progress: 0, currentPosition: 0, status: 'typing', …}
-app.a5306f88.js:1 📊 TypingTest received live session update: {leaderboard: Array(1), updatedAt: Fri Oct 17 2025 23:03:44 GMT+0800 (Taipei Standard Time), wordCount: 0, settings: {…}, status: 'active', …}
-app.a5306f88.js:1 ✅ Progress updated successfully
-app.a5306f88.js:1 📊 TypingTest received live session update: {countdownStartedAt: Fri Oct 17 2025 23:03:17 GMT+0800 (Taipei Standard Time), roomId: '0babe4ac-510f-4433-b76f-6e8ba138fae8', leaderboard: Array(1), settings: {…}, moduleContent: 'health-assessment-terminologies', …}
-app.a5306f88.js:1 📊 Updating server progress: {wpm: 0, accuracy: 100, progress: 0, currentPosition: 0, status: 'typing', …}
-app.a5306f88.js:1 📊 TypingTest received live session update: {roomCode: 'R2EZ9T', wordCount: 0, difficulty: 'Normal', updatedAt: Fri Oct 17 2025 23:03:46 GMT+0800 (Taipei Standard Time), settings: {…}, …}
-app.a5306f88.js:1 ✅ Progress updated successfully
-app.a5306f88.js:1 📊 TypingTest received live session update: {roomCode: 'R2EZ9T', startedAt: Fri Oct 17 2025 23:03:27 GMT+0800 (Taipei Standard Time), difficulty: 'Normal', leaderboard: Array(1), settings: {…}, …}
-app.a5306f88.js:1 📊 Updating server progress: {wpm: 0, accuracy: 100, progress: 0, currentPosition: 0, status: 'typing', …}
-app.a5306f88.js:1 📊 TypingTest received live session update: {wordCount: 0, settings: {…}, createdAt: Fri Oct 17 2025 23:03:17 GMT+0800 (Taipei Standard Time), roomId: '0babe4ac-510f-4433-b76f-6e8ba138fae8', updatedAt: Fri Oct 17 2025 23:03:48 GMT+0800 (Taipei Standard Time), …}
-app.a5306f88.js:1 ✅ Progress updated successfully
+app.a5306f88.
