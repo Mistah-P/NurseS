@@ -198,27 +198,95 @@
                 <h4 class="section-title"><i class="fas fa-notes-medical"></i> Findings</h4>
                 <div class="form-field">
                   <label>Chief Complaint:</label>
-                  <textarea v-model="consultationData.chiefComplaint" class="form-textarea" rows="3" placeholder="Primary reason for visit"></textarea>
+                  <textarea v-model="consultationData.chiefComplaint" class="form-textarea" rows="3" placeholder=""></textarea>
                 </div>
                 <div class="form-field">
                   <label>Present Illness:</label>
-                  <textarea v-model="consultationData.presentIllness" class="form-textarea" rows="4" placeholder="Current symptoms and timeline"></textarea>
+                  <textarea v-model="consultationData.presentIllness" class="form-textarea" rows="4" placeholder=""></textarea>
                 </div>
                 <div class="form-field">
                   <label>Past Illnesses:</label>
-                  <textarea v-model="consultationData.pastIllness" class="form-textarea" rows="3" placeholder="Previous medical conditions"></textarea>
+                  <textarea v-model="consultationData.pastIllness" class="form-textarea" rows="3" placeholder=""></textarea>
                 </div>
                 <div class="form-field">
                   <label>Allergies:</label>
-                  <textarea v-model="consultationData.allergies" class="form-textarea" rows="2" placeholder="Known allergies"></textarea>
+                  <div class="allergies-section">
+                    <div class="allergy-checkboxes">
+                      <div class="checkbox-group">
+                        <label class="checkbox-label">
+                          <input 
+                            type="checkbox" 
+                            v-model="consultationData.allergies.hasAllergies"
+                            @change="onAllergyStatusChange('hasAllergies')"
+                          >
+                          <span class="checkmark"></span>
+                          Patient has allergies
+                        </label>
+                      </div>
+                      <div class="checkbox-group">
+                        <label class="checkbox-label">
+                          <input 
+                            type="checkbox" 
+                            v-model="consultationData.allergies.hasNoKnownAllergies"
+                            @change="onAllergyStatusChange('hasNoKnownAllergies')"
+                          >
+                          <span class="checkmark"></span>
+                          Patient has NO known allergies (NKA)
+                        </label>
+                      </div>
+                    </div>
+                    
+                    <div v-if="consultationData.allergies.hasAllergies" class="allergy-types">
+                      <p class="allergy-types-label">Select all that apply:</p>
+                      <div class="allergy-type-checkboxes">
+                        <div class="checkbox-group">
+                          <label class="checkbox-label">
+                            <input type="checkbox" v-model="consultationData.allergies.types.food">
+                            <span class="checkmark"></span>
+                            Food
+                          </label>
+                        </div>
+                        <div class="checkbox-group">
+                          <label class="checkbox-label">
+                            <input type="checkbox" v-model="consultationData.allergies.types.medicine">
+                            <span class="checkmark"></span>
+                            Medicine
+                          </label>
+                        </div>
+                        <div class="checkbox-group">
+                          <label class="checkbox-label">
+                            <input type="checkbox" v-model="consultationData.allergies.types.latex">
+                            <span class="checkmark"></span>
+                            Latex
+                          </label>
+                        </div>
+                        <div class="checkbox-group">
+                          <label class="checkbox-label">
+                            <input type="checkbox" v-model="consultationData.allergies.types.environment">
+                            <span class="checkmark"></span>
+                            Environment
+                          </label>
+                        </div>
+                      </div>
+                      <div class="others-input">
+                        <label>Others:</label>
+                        <input 
+                          type="text" 
+                          v-model="consultationData.allergies.others"
+                          placeholder="Specify other allergies..."
+                          class="form-input"
+                        >
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <div class="form-field">
                   <label>Medications:</label>
-                  <textarea v-model="consultationData.medications" class="form-textarea" rows="3" placeholder="Current medications"></textarea>
+                  <textarea v-model="consultationData.medications" class="form-textarea" rows="3" placeholder=""></textarea>
                 </div>
                 <div class="form-field">
                   <label>Previous Surgeries:</label>
-                  <textarea v-model="consultationData.previousSurgeries" class="form-textarea" rows="3" placeholder="Surgical history"></textarea>
+                  <textarea v-model="consultationData.previousSurgeries" class="form-textarea" rows="3" placeholder=""></textarea>
                 </div>
               </div>
 
@@ -227,15 +295,15 @@
                 <h4 class="section-title"><i class="fas fa-lightbulb"></i> Recommendation</h4>
                 <div class="form-field full-width">
                   <label>Treatment Plan:</label>
-                  <textarea v-model="consultationData.treatmentPlan" placeholder="Recommended treatment plan" rows="3"></textarea>
+                  <textarea v-model="consultationData.treatmentPlan" placeholder="" rows="3"></textarea>
                 </div>
                 <div class="form-field full-width">
                   <label>Follow-up Instructions:</label>
-                  <textarea v-model="consultationData.followUpInstructions" placeholder="Follow-up care instructions" rows="2"></textarea>
+                  <textarea v-model="consultationData.followUpInstructions" placeholder="" rows="2"></textarea>
                 </div>
                 <div class="form-field full-width">
                   <label>Additional Notes:</label>
-                  <textarea v-model="consultationData.additionalNotes" placeholder="Any additional recommendations" rows="2"></textarea>
+                  <textarea v-model="consultationData.additionalNotes" placeholder="" rows="2"></textarea>
                 </div>
               </div>
 
@@ -602,7 +670,17 @@ export default {
         chiefComplaint: '',
         presentIllness: '',
         pastIllness: '',
-        allergies: '',
+        allergies: {
+          hasAllergies: false,
+          hasNoKnownAllergies: false,
+          types: {
+            food: false,
+            medicine: false,
+            latex: false,
+            environment: false
+          },
+          others: ''
+        },
         medications: '',
         previousSurgeries: '',
         treatmentPlan: '',
@@ -681,8 +759,7 @@ export default {
     this.initializeEmptyChat();
     // Set up user authentication
     this.setupAuthentication();
-    // Generate random patient profile
-    this.generateRandomPatientProfile();
+    // Removed auto-population to match AIPatientRoom behavior
     // Initialize speech synthesis voices
     this.initializeVoices();
   },
@@ -725,6 +802,23 @@ export default {
         } else {
           window.speechSynthesis.addEventListener('voiceschanged', loadVoices, { once: true });
         }
+      }
+    },
+
+    onAllergyStatusChange(changedField) {
+      // Ensure mutual exclusivity between hasAllergies and hasNoKnownAllergies
+      if (changedField === 'hasAllergies' && this.consultationData.allergies.hasAllergies) {
+        this.consultationData.allergies.hasNoKnownAllergies = false;
+      } else if (changedField === 'hasNoKnownAllergies' && this.consultationData.allergies.hasNoKnownAllergies) {
+        this.consultationData.allergies.hasAllergies = false;
+        // Clear all allergy types when NKA is selected
+        this.consultationData.allergies.types = {
+          food: false,
+          medicine: false,
+          latex: false,
+          environment: false
+        };
+        this.consultationData.allergies.others = '';
       }
     },
 
@@ -3189,5 +3283,78 @@ input:checked + .toggle-slider:before {
   background: linear-gradient(135deg, rgb(56, 161, 105), rgb(47, 133, 90));
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(72, 187, 120, 0.4);
+}
+
+/* Allergies Section Styles */
+.allergies-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.allergy-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.checkbox-group {
+  display: flex;
+  align-items: center;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  user-select: none;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent-success);
+  cursor: pointer;
+}
+
+.allergy-types {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--border-primary);
+}
+
+.allergy-types-label {
+  margin: 0 0 0.75rem 0;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.allergy-type-checkboxes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.others-input {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.others-input label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.others-input .form-input {
+  margin: 0;
 }
 </style>

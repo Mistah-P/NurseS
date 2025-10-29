@@ -4,7 +4,6 @@
  */
 
 import moduleStorageService from './moduleStorageService'
-import TextTransformer from '../utils/textTransformer'
 
 class ModuleService {
   constructor() {
@@ -16,27 +15,171 @@ class ModuleService {
   /**
    * Get module content with difficulty-based text transformation
    * @param {string} moduleValue - The module identifier
-   * @param {string} difficulty - Difficulty level ('easy', 'normal', 'hard' or 'Beginner', 'Intermediate', 'Advanced')
+   * @param {string} difficulty - Difficulty level ('easy', 'normal', 'hard' or 'Easy', 'Normal', 'Hard')
    * @returns {Promise<string>} The transformed module content
    */
   async getModuleContentWithDifficulty(moduleValue, difficulty) {
     try {
-      // Get the original module content
-      const originalContent = await this.getModuleContent(moduleValue);
-      
+      // Find the module by value or ID
+      const module = this.modules.find(m => 
+        m.value === moduleValue || 
+        m.id === moduleValue ||
+        m.label.toLowerCase().replace(/\s+/g, '-') === moduleValue
+      );
+
+      if (!module) {
+        throw new Error(`Module not found: ${moduleValue}`);
+      }
+
       // If no difficulty specified, return original content
       if (!difficulty) {
-        return originalContent;
+        return await this.getModuleContent(moduleValue);
+      }
+
+      // Normalize difficulty level
+      const normalizedDifficulty = difficulty.toLowerCase();
+      let difficultyFile = '';
+      
+      switch (normalizedDifficulty) {
+        case 'easy':
+          difficultyFile = 'Easy.txt';
+          break;
+        case 'normal':
+          difficultyFile = 'Normal.txt';
+          break;
+        case 'hard':
+          difficultyFile = 'Hard.txt';
+          break;
+        default:
+          // Fallback to original content if difficulty not recognized
+          return await this.getModuleContent(moduleValue);
+      }
+
+      // Load content from the new module directory
+      const response = await fetch(`/new module/${difficultyFile}`);
+      
+      if (!response.ok) {
+        throw new Error(`Difficulty file not found: ${difficultyFile}. Please ensure the file exists in the public/new module directory.`);
       }
       
-      // Transform content based on difficulty level
-      const transformedContent = TextTransformer.transformText(originalContent, difficulty);
+      const fullContent = await response.text();
       
-      return transformedContent;
+      if (!fullContent || fullContent.trim().length === 0) {
+        throw new Error(`Difficulty file ${difficultyFile} is empty or contains no valid content.`);
+      }
+
+      // Extract the specific module content from the difficulty file
+      console.log(`🔍 About to extract module "${module.label}" from ${difficultyFile}`);
+      console.log(`📄 File content length: ${fullContent.length} characters`);
+      console.log(`📄 First 500 characters of content:`, fullContent.substring(0, 500));
+      
+      const moduleContent = this.extractModuleFromDifficultyFile(fullContent, module.label);
+      
+      if (!moduleContent) {
+        throw new Error(`Module "${module.label}" not found in ${difficultyFile}`);
+      }
+
+      return moduleContent.trim();
+      
     } catch (error) {
       console.error(`❌ Error getting module content with difficulty for ${moduleValue}:`, error.message);
       throw error;
     }
+  }
+
+  /**
+   * Extract specific module content from difficulty file
+   * @param {string} fullContent - The full content of the difficulty file
+   * @param {string} moduleLabel - The module label to extract
+   * @returns {string|null} The extracted module content or null if not found
+   */
+  extractModuleFromDifficultyFile(fullContent, moduleLabel) {
+    const lines = fullContent.split('\n');
+    let moduleStartIndex = -1;
+    let moduleEndIndex = -1;
+    
+    console.log(`🔍 Looking for module: "${moduleLabel}"`);
+    console.log(`📄 File has ${lines.length} lines`);
+    
+    // Find the start of the target module
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      
+      // Debug: Log lines that might be module headers
+      if (line.length > 10 && /^[A-Z]/.test(line) && !line.includes('.')) {
+        console.log(`🔍 Checking line ${i}: "${line}"`);
+      }
+      
+      // Check if this line matches our module header
+      if (line.toLowerCase() === moduleLabel.toLowerCase() || 
+          (line.length > 0 && line.toLowerCase().includes(moduleLabel.toLowerCase())) ||
+          (moduleLabel.toLowerCase().includes(line.toLowerCase()) && line.length > 5)) {
+        console.log(`✅ Found module header at line ${i}: "${line}"`);
+        moduleStartIndex = i;
+        break;
+      }
+    }
+    
+    if (moduleStartIndex === -1) {
+      console.log(`❌ Module header "${moduleLabel}" not found in content`);
+      console.log(`📋 Available module-like headers found:`);
+      for (let i = 0; i < Math.min(lines.length, 200); i++) {
+        const line = lines[i].trim();
+        if (line.length > 10 && /^[A-Z]/.test(line) && !line.includes('.') && !line.includes(',')) {
+          console.log(`  - Line ${i}: "${line}"`);
+        }
+      }
+      return null;
+    }
+    
+    // Find the end of this module (start of next module or end of file)
+    moduleEndIndex = lines.length; // Default to end of file
+    
+    for (let i = moduleStartIndex + 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      
+      // Check if this line looks like a module header (not empty, not a difficulty level, and substantial content)
+      if (line.length > 0 && 
+          !['Easy', 'Normal', 'Hard', 'Medium'].includes(line) &&
+          line.length > 10 && // Module names are typically longer
+          /^[A-Z]/.test(line) && // Starts with capital letter
+          !line.includes('.') && // Not a sentence
+          !line.includes(',') && // Not a sentence
+          line.split(' ').length <= 6) { // Module names are typically short phrases
+        
+        // This looks like another module header
+        moduleEndIndex = i;
+        break;
+      }
+    }
+    
+    // Extract the content between start and end
+    let contentLines = lines.slice(moduleStartIndex, moduleEndIndex);
+    
+    // Remove the module header (first line)
+    contentLines = contentLines.slice(1);
+    
+    // Remove difficulty level if it's the first line after header
+    if (contentLines.length > 0) {
+      const firstLine = contentLines[0].trim();
+      if (['Easy', 'Normal', 'Hard', 'Medium'].includes(firstLine)) {
+        contentLines = contentLines.slice(1);
+      }
+    }
+    
+    // Remove empty lines at the beginning
+    while (contentLines.length > 0 && contentLines[0].trim() === '') {
+      contentLines = contentLines.slice(1);
+    }
+    
+    // Remove empty lines at the end
+    while (contentLines.length > 0 && contentLines[contentLines.length - 1].trim() === '') {
+      contentLines = contentLines.slice(0, -1);
+    }
+    
+    const result = contentLines.join('\n').trim();
+    console.log(`✅ Successfully extracted module "${moduleLabel}" with ${result.length} characters`);
+    return result;
   }
 
   /**
@@ -61,6 +204,25 @@ class ModuleService {
       console.error('❌ Error force re-uploading modules:', error)
       throw error
     }
+  }
+
+  /**
+   * Force refresh modules - clear cache and reinitialize
+   */
+  forceRefresh() {
+    // Reset initialization state
+    this.initialized = false
+    this.modules = []
+    
+    // Force file-based modules
+    this.useDatabase = false
+    
+    // Reinitialize with file-based modules
+    this.initializeFileBasedModules()
+    this.initialized = true
+    
+    console.log('🔄 Modules force refreshed - now using file-based modules:', this.modules.length)
+    return this.modules
   }
 
   /**
@@ -100,26 +262,26 @@ class ModuleService {
    * Initialize file-based modules (original implementation)
    */
   initializeFileBasedModules() {
-    // Define all available modules based on actual files in src/module
+    // Define all available modules based on the new 15 nursing modules
     const moduleFiles = [
+      'Fundamentals of Nursing Practice.txt',
+      'Health Assessment terminologies.txt',
+      'Health Education.txt',
+      'Theoretical Foundations in Nursing.txt',
       'Community Health Nursing.txt',
-      'Critical Care Nursing.txt', 
+      'Nutrition and Dietetics.txt',
+      'Maternal and Child Nursing.txt',
+      'Nursing Ethics.txt',
+      'Medical and Surgical Nursing.txt',
+      'Psychiatric Nursing.txt',
+      'Nursing Research.txt',
+      'Critical Care Nursing.txt',
       'Disaster Nursing.txt',
       'Emergency Nursing.txt',
-      'Fundamentals of Nursing Practice.TXT',
-      'Gerontologic Nursing.txt',
-      'Health Assessment Terminologies.txt',
-      'Health Education.txt',
-      'Maternal and Child Nursing.txt',
-      'Medical and Surgical Nursing.txt',
-      'Mental Health and Psychiatric Nursing.txt',
-      'Nursing Ethics.txt',
-      'Nursing Leadership and Management.txt',
-      'Nursing Research.txt',
-      'Nutrition and Dietetics.txt',
-      'Psychiatric Nursing.txt',
-      'Theoretical Foundations in Nursing.txt'
+      'Nursing Leadership and Management.txt'
     ];
+
+    console.log('🔧 Initializing file-based modules with', moduleFiles.length, 'modules');
 
     // Create module objects with proper formatting
     this.modules = moduleFiles.map((filename, index) => {
@@ -135,6 +297,7 @@ class ModuleService {
       };
     });
 
+    console.log('✅ File-based modules initialized:', this.modules.map(m => m.label));
   }
 
   /**
@@ -177,6 +340,7 @@ class ModuleService {
       console.warn('ModuleService not initialized. Call initialize() first.');
       return [];
     }
+    console.log('📋 getModules() called - returning', this.modules.length, 'modules:', this.modules.map(m => m.label));
     return this.modules;
   }
 

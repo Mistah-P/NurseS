@@ -23,14 +23,7 @@
                 </div>
               </div>
               <div class="chat-controls">
-                <!-- Back to Dashboard button - always visible for students -->
-                <button 
-                  class="back-to-dashboard-btn" 
-                  @click="backToDashboard"
-                >
-                  <i class="fas fa-arrow-left"></i>
-                  Back to Dashboard
-                </button>
+                <!-- Back to Dashboard button - hidden as requested by user -->
                 <button 
                   v-if="!sessionStarted" 
                   class="start-session-btn" 
@@ -143,6 +136,14 @@
             </div>
             
             <div class="consultation-form">
+              <!-- Session Notice -->
+              <div v-if="!sessionStarted" class="session-notice">
+                <div class="notice-content">
+                  <i class="fas fa-info-circle"></i>
+                  <span>Start your session first to begin filling out the consultation form</span>
+                </div>
+              </div>
+              
               <!-- Patient Information Section -->
               <div class="form-section">
                 <h3 class="section-title">
@@ -157,6 +158,7 @@
                       v-model="consultationData.patientName"
                       placeholder="Patient name"
                       class="form-input"
+                      :disabled="!sessionStarted"
                     >
                   </div>
                   <div class="form-group">
@@ -165,11 +167,12 @@
                       type="date" 
                       v-model="consultationData.dateOfBirth"
                       class="form-input"
+                      :disabled="!sessionStarted"
                     >
                   </div>
                   <div class="form-group">
                     <label>Gender:</label>
-                    <select v-model="consultationData.gender" class="form-select">
+                    <select v-model="consultationData.gender" class="form-select" :disabled="!sessionStarted">
                       <option value="">Select gender</option>
                       <option value="male">Male</option>
                       <option value="female">Female</option>
@@ -183,6 +186,7 @@
                       v-model="consultationData.occupation"
                       placeholder="Patient occupation"
                       class="form-input"
+                      :disabled="!sessionStarted"
                     >
                   </div>
                 </div>
@@ -193,6 +197,7 @@
                     placeholder="Patient address"
                     class="form-textarea"
                     rows="2"
+                    :disabled="!sessionStarted"
                   ></textarea>
                 </div>
               </div>
@@ -207,54 +212,125 @@
                   <label>Chief Complaint:</label>
                   <textarea 
                     v-model="consultationData.chiefComplaint"
-                    placeholder="Primary reason for visit"
+                    placeholder=""
                     class="form-textarea"
                     rows="3"
+                    :disabled="!sessionStarted"
                   ></textarea>
                 </div>
                 <div class="form-group">
                   <label>Present Illness:</label>
                   <textarea 
                     v-model="consultationData.presentIllness"
-                    placeholder="Current symptoms and timeline"
+                    placeholder=""
                     class="form-textarea"
                     rows="4"
+                    :disabled="!sessionStarted"
                   ></textarea>
                 </div>
                 <div class="form-group">
                   <label>Past Illnesses:</label>
                   <textarea 
                     v-model="consultationData.pastIllness"
-                    placeholder="Previous medical conditions"
+                    placeholder=""
                     class="form-textarea"
                     rows="3"
+                    :disabled="!sessionStarted"
                   ></textarea>
                 </div>
                 <div class="form-group">
                   <label>Allergies:</label>
-                  <textarea 
-                    v-model="consultationData.allergies"
-                    placeholder="Known allergies"
-                    class="form-textarea"
-                    rows="2"
-                  ></textarea>
+                  <div class="allergies-section">
+                    <div class="allergy-checkboxes">
+                      <div class="checkbox-group">
+                        <label class="checkbox-label">
+                          <input 
+                            type="checkbox" 
+                            v-model="consultationData.allergies.hasAllergies"
+                            @change="onAllergyStatusChange('hasAllergies')"
+                            :disabled="!sessionStarted"
+                          >
+                          <span class="checkmark"></span>
+                          Patient has allergies
+                        </label>
+                      </div>
+                      <div class="checkbox-group">
+                        <label class="checkbox-label">
+                          <input 
+                            type="checkbox" 
+                            v-model="consultationData.allergies.hasNoKnownAllergies"
+                            @change="onAllergyStatusChange('hasNoKnownAllergies')"
+                            :disabled="!sessionStarted"
+                          >
+                          <span class="checkmark"></span>
+                          Patient has NO known allergies (NKA)
+                        </label>
+                      </div>
+                    </div>
+                    
+                    <div v-if="consultationData.allergies.hasAllergies" class="allergy-types">
+                      <p class="allergy-types-label">Select all that apply:</p>
+                      <div class="allergy-type-checkboxes">
+                        <div class="checkbox-group">
+                          <label class="checkbox-label">
+                            <input type="checkbox" v-model="consultationData.allergies.types.food" :disabled="!sessionStarted">
+                            <span class="checkmark"></span>
+                            Food
+                          </label>
+                        </div>
+                        <div class="checkbox-group">
+                          <label class="checkbox-label">
+                            <input type="checkbox" v-model="consultationData.allergies.types.medicine" :disabled="!sessionStarted">
+                            <span class="checkmark"></span>
+                            Medicine
+                          </label>
+                        </div>
+                        <div class="checkbox-group">
+                          <label class="checkbox-label">
+                            <input type="checkbox" v-model="consultationData.allergies.types.latex" :disabled="!sessionStarted">
+                            <span class="checkmark"></span>
+                            Latex
+                          </label>
+                        </div>
+                        <div class="checkbox-group">
+                          <label class="checkbox-label">
+                            <input type="checkbox" v-model="consultationData.allergies.types.environment" :disabled="!sessionStarted">
+                            <span class="checkmark"></span>
+                            Environment
+                          </label>
+                        </div>
+                      </div>
+                      <div class="others-input">
+                        <label>Others:</label>
+                        <input 
+                          type="text" 
+                          v-model="consultationData.allergies.others"
+                          placeholder="Specify other allergies..."
+                          class="form-input"
+                          :disabled="!sessionStarted"
+                        >
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <div class="form-group">
                   <label>Medications:</label>
                   <textarea 
                     v-model="consultationData.medications"
-                    placeholder="Current medications"
+                    placeholder=""
                     class="form-textarea"
                     rows="3"
+                    :disabled="!sessionStarted"
                   ></textarea>
                 </div>
                 <div class="form-group">
                   <label>Previous Surgeries:</label>
                   <textarea 
                     v-model="consultationData.previousSurgeries"
-                    placeholder="Previous surgical procedures"
+                    placeholder=""
                     class="form-textarea"
                     rows="2"
+                    :disabled="!sessionStarted"
                   ></textarea>
                 </div>
               </div>
@@ -269,27 +345,30 @@
                   <label>Treatment Plan:</label>
                   <textarea 
                     v-model="consultationData.treatmentPlan"
-                    placeholder="Recommended treatment approach"
+                    placeholder=""
                     class="form-textarea"
                     rows="4"
+                    :disabled="!sessionStarted"
                   ></textarea>
                 </div>
                 <div class="form-group">
                   <label>Follow-up Instructions:</label>
                   <textarea 
                     v-model="consultationData.followUpInstructions"
-                    placeholder="Follow-up care instructions"
+                    placeholder=""
                     class="form-textarea"
                     rows="3"
+                    :disabled="!sessionStarted"
                   ></textarea>
                 </div>
                 <div class="form-group">
                   <label>Additional Notes:</label>
                   <textarea 
                     v-model="consultationData.additionalNotes"
-                    placeholder="Any additional observations or notes"
+                    placeholder=""
                     class="form-textarea"
                     rows="3"
+                    :disabled="!sessionStarted"
                   ></textarea>
                 </div>
               </div>
@@ -300,7 +379,8 @@
                 <button 
                   @click="submitToTeacher" 
                   class="btn btn-primary"
-                  :disabled="!isFormValid || isSubmitting"
+                  :disabled="!sessionStarted || !isFormValid || isSubmitting"
+                  :title="!sessionStarted ? 'Please start the session first' : (isFormSubmitted ? 'Form has already been submitted' : (!isFormValid ? 'Please fill in all required fields' : ''))"
                 >
                   <i v-if="isSubmitting" class="fas fa-spinner fa-spin me-2"></i>
                   <i v-else class="fas fa-paper-plane me-2"></i>
@@ -309,7 +389,7 @@
                 <button 
                   @click="showFeedback" 
                   class="btn btn-secondary ms-2"
-                  :disabled="isLoadingFeedback"
+                  :disabled="!sessionStarted || isLoadingFeedback"
                 >
                   <i v-if="isLoadingFeedback" class="fas fa-spinner fa-spin me-2"></i>
                   <i v-else class="fas fa-comment-dots me-2"></i>
@@ -365,11 +445,23 @@
           
           <div v-else class="no-feedback">
             <i class="fas fa-info-circle me-2"></i>
-            No feedback available yet. Your teacher hasn't provided feedback for this consultation.
+            <div class="no-feedback-message">
+              <p><strong>No feedback available yet.</strong></p>
+              <p>Your consultation has been successfully submitted to your teacher. Once your teacher reviews your work, you'll see:</p>
+              <ul>
+                <li><i class="fas fa-comment me-1"></i> Detailed feedback on your consultation</li>
+                <li><i class="fas fa-star me-1"></i> Your score out of 100</li>
+              </ul>
+              <p class="check-back">Please check back later for your results.</p>
+            </div>
           </div>
         </div>
         
         <div class="modal-footer">
+          <button class="btn btn-primary me-2" @click="refreshFeedback" :disabled="isLoadingFeedback">
+            <i class="fas fa-sync-alt me-2" :class="{ 'fa-spin': isLoadingFeedback }"></i>
+            {{ isLoadingFeedback ? 'Refreshing...' : 'Refresh' }}
+          </button>
           <button class="btn btn-secondary" @click="closeFeedbackModal">
             <i class="fas fa-times me-2"></i>
             Close
@@ -417,6 +509,133 @@
         <button class="btn btn-primary" @click="confirmBackToDashboard">
           <i class="fas fa-arrow-left me-2"></i>
           Yes, Go to Dashboard
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Submission Confirmation Modal -->
+  <div v-if="showSubmissionConfirmationModal" class="modal-overlay submission-confirmation-overlay">
+    <div class="modal-container submission-confirmation-modal">
+      <div class="modal-header submission-header">
+        <div class="submission-icon">
+          <i class="fas fa-paper-plane"></i>
+        </div>
+        <h3 class="modal-title">Consultation Submitted Successfully!</h3>
+      </div>
+      
+      <div class="modal-body submission-body">
+        <div class="submission-message">
+          <div class="submission-text">
+            <p><strong>Your consultation has been successfully submitted to your teacher!</strong></p>
+            <p>Your teacher will review your work and provide feedback with a score.</p>
+          </div>
+          
+          <div class="submission-details">
+            <div class="detail-item">
+              <i class="fas fa-user me-2"></i>
+              <span>Student: {{ currentUserName }}</span>
+            </div>
+            <div class="detail-item">
+              <i class="fas fa-calendar me-2"></i>
+              <span>Submitted: {{ new Date().toLocaleString() }}</span>
+            </div>
+            <div class="detail-item">
+              <i class="fas fa-clipboard-check me-2"></i>
+              <span>Status: Awaiting Teacher Review</span>
+            </div>
+          </div>
+          
+          <div class="next-steps">
+            <h4><i class="fas fa-info-circle me-2"></i>What's Next?</h4>
+            <ul>
+              <li>Your teacher will review your consultation</li>
+              <li>You'll receive feedback and a score</li>
+              <li>Check the "View Feedback" button to see your results</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer submission-footer">
+        <button class="btn btn-primary" @click="closeSubmissionConfirmationModal">
+          <i class="fas fa-check me-2"></i>
+          Got It!
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Activity Completion Modal -->
+  <div v-if="showActivityCompletionModal" class="modal-overlay activity-completion-overlay">
+    <div class="modal-container activity-completion-modal">
+      <div class="modal-header completion-header">
+        <div class="completion-icon">
+          <i class="fas fa-check-circle"></i>
+        </div>
+        <h3 class="modal-title">Activity Completed!</h3>
+      </div>
+      
+      <div class="modal-body completion-body">
+        <div class="completion-message">
+          <div class="completion-text">
+            <p><strong>Congratulations! Your AI Patient simulation has been completed.</strong></p>
+            <p>
+              Your teacher has marked this activity as done. Your consultation data and performance have been automatically saved.
+            </p>
+            <div class="completion-details">
+              <div class="detail-item">
+                <i class="fas fa-user-md"></i>
+                <span>Consultation form submitted</span>
+              </div>
+              <div class="detail-item">
+                <i class="fas fa-comments"></i>
+                <span>Chat history saved</span>
+              </div>
+              <div class="detail-item">
+                <i class="fas fa-chart-line"></i>
+                <span>Performance data recorded</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="modal-footer completion-footer">
+        <button class="btn btn-primary completion-btn" @click="goToDashboardFromCompletion">
+          <i class="fas fa-home me-2"></i>
+          Return to Dashboard
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Submission Confirmation Dialog -->
+  <div v-if="showSubmissionConfirmDialog" class="modal-overlay confirmation-dialog-overlay">
+    <div class="modal-container confirmation-dialog">
+      <div class="modal-header confirmation-dialog-header">
+        <h3 class="modal-title">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          Confirm Submission
+        </h3>
+      </div>
+      
+      <div class="modal-body confirmation-dialog-body">
+        <p><strong>Are you sure you want to submit this consultation to your teacher?</strong></p>
+        <p class="warning-text">
+          <i class="fas fa-warning me-1"></i>
+          You cannot edit anything after submitting.
+        </p>
+      </div>
+      
+      <div class="modal-footer confirmation-dialog-footer">
+        <button class="btn btn-secondary cancel-btn" @click="cancelSubmission">
+          <i class="fas fa-times me-2"></i>
+          No, Cancel
+        </button>
+        <button class="btn btn-primary confirm-btn" @click="confirmSubmission">
+          <i class="fas fa-check me-2"></i>
+          Yes, Submit
         </button>
       </div>
     </div>
@@ -476,7 +695,17 @@ export default {
         chiefComplaint: '',
         presentIllness: '',
         pastIllness: '',
-        allergies: '',
+        allergies: {
+          hasAllergies: false,
+          hasNoKnownAllergies: false,
+          types: {
+            food: false,
+            medicine: false,
+            latex: false,
+            environment: false
+          },
+          others: ''
+        },
         medications: '',
         previousSurgeries: '',
         treatmentPlan: '',
@@ -497,6 +726,18 @@ export default {
       // Back to Dashboard modal state
       showBackToDashboardModal: false,
       
+      // Activity completion modal state
+      showActivityCompletionModal: false,
+      
+      // Submission confirmation modal state
+      showSubmissionConfirmationModal: false,
+      
+      // Submission confirmation dialog state
+      showSubmissionConfirmDialog: false,
+      
+      // Track if form has been permanently submitted
+      isFormSubmitted: false,
+      
       // Room status tracking
       roomData: null,
       roomStatus: 'waiting', // waiting, active, completed
@@ -506,7 +747,9 @@ export default {
   },
   computed: {
     isFormValid() {
-      return this.consultationData.patientName.trim() !== '' &&
+      return this.sessionStarted &&
+             !this.isFormSubmitted &&
+             this.consultationData.patientName.trim() !== '' &&
              this.consultationData.chiefComplaint.trim() !== '' &&
              this.consultationData.presentIllness.trim() !== '';
     },
@@ -599,8 +842,8 @@ export default {
             condition: 'To be discovered'
           };
           
-          // Keep consultation form completely empty - students must fill manually
-          // No auto-population of any fields
+          // Auto-populate consultation form with random patient data (matching AIPatient behavior)
+          // this.generateRandomPatientProfile(); // Commented out - students should ask AI for patient info manually
         } else {
           throw new Error('Failed to initialize AI Patient room');
         }
@@ -621,8 +864,73 @@ export default {
           condition: 'To be discovered'
         };
         
-        // Keep consultation form empty - no fallback data
+        // Auto-populate consultation form even on error
+        // this.generateRandomPatientProfile(); // Commented out - students should ask AI for patient info manually
       }
+    },
+
+    onAllergyStatusChange(changedField) {
+      // Ensure mutual exclusivity between hasAllergies and hasNoKnownAllergies
+      if (changedField === 'hasAllergies' && this.consultationData.allergies.hasAllergies) {
+        this.consultationData.allergies.hasNoKnownAllergies = false;
+      } else if (changedField === 'hasNoKnownAllergies' && this.consultationData.allergies.hasNoKnownAllergies) {
+        this.consultationData.allergies.hasAllergies = false;
+        // Clear all allergy types when NKA is selected
+        this.consultationData.allergies.types = {
+          food: false,
+          medicine: false,
+          latex: false,
+          environment: false
+        };
+        this.consultationData.allergies.others = '';
+      }
+    },
+
+    generateRandomPatientProfile() {
+      const maleNames = [
+        'James', 'Michael', 'Robert', 'John', 'David', 'William', 'Richard', 'Thomas', 'Christopher', 'Daniel',
+        'Matthew', 'Anthony', 'Mark', 'Donald', 'Steven', 'Paul', 'Andrew', 'Joshua', 'Kenneth', 'Kevin'
+      ];
+      
+      const femaleNames = [
+        'Mary', 'Patricia', 'Jennifer', 'Linda', 'Elizabeth', 'Barbara', 'Susan', 'Jessica', 'Sarah', 'Karen',
+        'Nancy', 'Lisa', 'Betty', 'Helen', 'Sandra', 'Donna', 'Carol', 'Ruth', 'Sharon', 'Michelle'
+      ];
+      
+      const lastNames = [
+        'Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez',
+        'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson', 'Thomas', 'Taylor', 'Moore', 'Jackson', 'Martin'
+      ];
+      
+      const occupations = [
+        'Teacher', 'Engineer', 'Nurse', 'Accountant', 'Sales Representative', 'Manager', 'Technician', 'Clerk',
+        'Construction Worker', 'Chef', 'Driver', 'Mechanic', 'Artist', 'Writer', 'Consultant', 'Analyst',
+        'Pharmacist', 'Therapist', 'Electrician', 'Plumber', 'Carpenter', 'Retail Worker', 'Security Guard',
+        'Janitor', 'Waiter', 'Barista', 'Cashier', 'Receptionist', 'Administrator', 'Coordinator'
+      ];
+      
+      // Randomly choose gender
+      const gender = Math.random() < 0.5 ? 'male' : 'female';
+      const names = gender === 'male' ? maleNames : femaleNames;
+      
+      // Generate random details
+      const firstName = names[Math.floor(Math.random() * names.length)];
+      const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+      const age = Math.floor(Math.random() * (80 - 18 + 1)) + 18; // Age between 18-80
+      const occupation = occupations[Math.floor(Math.random() * occupations.length)];
+      
+      // Generate random birth date based on age
+      const currentYear = new Date().getFullYear();
+      const birthYear = currentYear - age;
+      const birthMonth = Math.floor(Math.random() * 12) + 1;
+      const birthDay = Math.floor(Math.random() * 28) + 1; // Use 28 to avoid month-specific issues
+      const dateOfBirth = `${birthYear}-${birthMonth.toString().padStart(2, '0')}-${birthDay.toString().padStart(2, '0')}`;
+      
+      // Update consultation data with random profile
+      this.consultationData.patientName = `${firstName} ${lastName}`;
+      this.consultationData.dateOfBirth = dateOfBirth;
+      this.consultationData.gender = gender;
+      this.consultationData.occupation = occupation;
     },
     
     startSession() {
@@ -816,6 +1124,12 @@ export default {
     async submitToTeacher() {
       if (!this.isFormValid || this.isSubmitting) return;
       
+      // Show confirmation dialog first
+      this.showSubmissionConfirmDialog = true;
+    },
+    
+    async confirmSubmission() {
+      this.showSubmissionConfirmDialog = false;
       this.isSubmitting = true;
       
       try {
@@ -833,7 +1147,10 @@ export default {
 
         if (response.data.success) {
           this.submissionStatus = 'Submitted successfully';
-          alert('Assessment submitted successfully to your teacher!');
+          this.isFormSubmitted = true; // Permanently disable further submissions
+          
+          // Show submission confirmation modal
+          this.showSubmissionConfirmationModal = true;
         }
       } catch (error) {
         console.error('Error submitting assessment:', error);
@@ -841,6 +1158,10 @@ export default {
       } finally {
         this.isSubmitting = false;
       }
+    },
+    
+    cancelSubmission() {
+      this.showSubmissionConfirmDialog = false;
     },
     
     // Voice and UI helper methods
@@ -1315,25 +1636,49 @@ export default {
     // Feedback methods
     async showFeedback() {
       this.showFeedbackModal = true;
+      await this.loadFeedbackData();
+    },
+
+    async refreshFeedback() {
+      await this.loadFeedbackData();
+    },
+
+    async loadFeedbackData() {
       this.isLoadingFeedback = true;
       this.feedbackError = null;
       this.consultationFeedback = null;
       
       try {
+        console.log('🔍 Loading feedback for student:', this.currentUserId);
+        
         // Fetch the student's consultation data to get feedback
         const response = await axios.get(`${API_BASE_URL}/consultations/student/${this.currentUserId}`);
         
+        console.log('📊 Feedback response:', response.data);
+        
         if (response.data.success && response.data.consultation) {
+          console.log('📋 Consultation data:', response.data.consultation);
+          
           if (response.data.consultation.teacherFeedback) {
             this.consultationFeedback = response.data.consultation.teacherFeedback;
+            console.log('✅ Teacher feedback found:', this.consultationFeedback);
+            console.log('🎯 Score:', this.consultationFeedback.score);
           } else {
             this.consultationFeedback = null; // No feedback yet
+            console.log('⚠️ No teacher feedback found in consultation');
           }
         } else {
           this.feedbackError = 'No consultation found. Please submit your consultation first.';
+          console.log('❌ No consultation found or API call failed');
         }
       } catch (error) {
-        console.error('Error fetching feedback:', error);
+        console.error('❌ Error fetching feedback:', error);
+        console.error('Error details:', {
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data
+        });
+        
         if (error.response?.status === 404) {
           this.feedbackError = 'No consultation found. Please submit your consultation first.';
         } else {
@@ -1348,6 +1693,10 @@ export default {
       this.showFeedbackModal = false;
       this.consultationFeedback = null;
       this.feedbackError = null;
+    },
+    
+    closeSubmissionConfirmationModal() {
+      this.showSubmissionConfirmationModal = false;
     },
     
     formatDate(dateString) {
@@ -1380,17 +1729,49 @@ export default {
     },
 
     async loadRoomStatus() {
-      if (!this.roomCode) return;
+      if (!this.roomCode) {
+        console.log('❌ No room code available for status check');
+        return;
+      }
       
       try {
         this.isLoadingRoomStatus = true;
-        const response = await this.$http.get(`/api/rooms/${this.roomCode}`);
-        if (response.data && response.data.room) {
-          this.roomData = response.data.room;
-          this.roomStatus = response.data.room.status || 'waiting';
+        console.log(`🔍 Checking room status for: ${this.roomCode}`);
+        console.log(`📡 API URL: ${API_BASE_URL}/rooms/${this.roomCode}`);
+        
+        const response = await axios.get(`${API_BASE_URL}/rooms/${this.roomCode}`);
+        console.log('📊 Room status response:', response.data);
+        
+        // The backend returns room data in response.data.data, not response.data.room
+        if (response.data && response.data.success && response.data.data) {
+          const roomData = response.data.data;
+          const newStatus = roomData.status || 'waiting';
+          const previousStatus = this.roomStatus;
+          
+          console.log(`📈 Status transition: ${previousStatus} → ${newStatus}`);
+          console.log('🏠 Room data:', roomData);
+          
+          this.roomData = roomData;
+          this.roomStatus = newStatus;
+          
+          // Check if room just became completed
+          if (previousStatus !== 'completed' && newStatus === 'completed') {
+            console.log('🎉 Room marked as completed by teacher - showing completion modal');
+            this.showActivityCompletionModal = true;
+            // Stop monitoring since activity is done
+            this.stopRoomStatusMonitoring();
+          }
+        } else {
+          console.log('⚠️ No room data in response or API call failed');
+          console.log('Response structure:', response.data);
         }
       } catch (error) {
-        console.error('Error loading room status:', error);
+        console.error('❌ Error loading room status:', error);
+        console.error('Error details:', {
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data
+        });
       } finally {
         this.isLoadingRoomStatus = false;
       }
@@ -1422,6 +1803,13 @@ export default {
     confirmBackToDashboard() {
       // Close modal and navigate to student dashboard
       this.showBackToDashboardModal = false;
+      this.$router.push('/user');
+    },
+
+    goToDashboardFromCompletion() {
+      // Navigate to student dashboard from completion modal
+      console.log('🏠 Navigating to dashboard from completion modal');
+      this.showActivityCompletionModal = false;
       this.$router.push('/user');
     }
   }
@@ -1870,6 +2258,39 @@ input:checked + .toggle-slider:before {
   flex: 1;
 }
 
+.session-notice {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #f59e0b;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+  animation: noticeSlideIn 0.3s ease-out;
+}
+
+@keyframes noticeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.notice-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #92400e;
+  font-weight: 500;
+}
+
+.notice-content i {
+  font-size: 1.2rem;
+  color: #f59e0b;
+}
+
 .form-section {
   margin-bottom: 30px;
 }
@@ -2077,7 +2498,7 @@ input:checked + .toggle-slider:before {
 
 .feedback-author {
   font-weight: 600;
-  color: #333;
+  color: #686c73;
 }
 
 .feedback-date {
@@ -2098,6 +2519,31 @@ input:checked + .toggle-slider:before {
   background: #f8f9fa;
   border-radius: 8px;
   border: 2px dashed #ddd;
+}
+
+.no-feedback-message {
+  text-align: left;
+}
+
+.no-feedback-message p {
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.no-feedback-message ul {
+  margin: 15px 0;
+  padding-left: 20px;
+}
+
+.no-feedback-message li {
+  margin-bottom: 8px;
+  color: #555;
+}
+
+.no-feedback-message .check-back {
+  margin-top: 15px;
+  font-style: italic;
+  color: #888;
 }
 
 .error-message {
@@ -2306,5 +2752,561 @@ input:checked + .toggle-slider:before {
 [data-theme="dark"] .feedback-author i,
 [data-theme="dark"] .feedback-date i {
   color: #9ca3af;
+}
+
+/* Submission Confirmation Modal Styles */
+.submission-confirmation-overlay {
+  background-color: rgba(0, 0, 0, 0.8);
+  z-index: 9999;
+}
+
+.submission-confirmation-modal {
+  max-width: 550px;
+  width: 90%;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  animation: submissionSlideIn 0.5s ease-out;
+}
+
+@keyframes submissionSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.submission-header {
+  background: rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 30px 30px 20px;
+  text-align: center;
+  color: white;
+}
+
+.submission-icon {
+  font-size: 3rem;
+  margin-bottom: 15px;
+  color: #fbbf24;
+  animation: submissionPulse 2s infinite;
+}
+
+@keyframes submissionPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.submission-body {
+  padding: 30px;
+  background: white;
+  color: #374151;
+}
+
+.submission-text {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.submission-text p {
+  margin: 0 0 10px 0;
+  line-height: 1.6;
+}
+
+.submission-text p:first-child {
+  font-size: 1.1rem;
+  color: #1f2937;
+  margin-bottom: 15px;
+}
+
+.submission-details {
+  background: #f8fafc;
+  border-left: 4px solid #4f46e5;
+  padding: 20px;
+  margin: 20px 0;
+  border-radius: 8px;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  color: #4b5563;
+  font-size: 0.95rem;
+}
+
+.detail-item:last-child {
+  margin-bottom: 0;
+}
+
+.detail-item i {
+  color: #4f46e5;
+  width: 20px;
+}
+
+.next-steps {
+  margin-top: 25px;
+}
+
+.next-steps h4 {
+  color: #1f2937;
+  margin-bottom: 15px;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.next-steps h4 i {
+  color: #4f46e5;
+}
+
+.next-steps ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.next-steps li {
+  margin-bottom: 8px;
+  color: #4b5563;
+  line-height: 1.5;
+}
+
+.submission-footer {
+  background: #f8fafc;
+  border-top: 1px solid #e5e7eb;
+  padding: 20px 30px;
+  text-align: center;
+}
+
+.submission-footer .btn {
+  padding: 12px 30px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.submission-footer .btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
+}
+
+.submission-footer .btn:active {
+  transform: translateY(0);
+}
+
+/* Dark theme adjustments for submission modal */
+[data-theme="dark"] .submission-body {
+  background: #1f2937;
+  color: #e5e7eb;
+}
+
+[data-theme="dark"] .submission-text p:first-child {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .submission-details {
+  background: #374151;
+  border-left-color: #6366f1;
+}
+
+[data-theme="dark"] .detail-item {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .next-steps h4 {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .next-steps li {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .submission-footer {
+  background: #1f2937;
+}
+
+/* Activity Completion Modal Styles */
+.activity-completion-overlay {
+  background-color: rgba(0, 0, 0, 0.8);
+  z-index: 9999;
+}
+
+.activity-completion-modal {
+  max-width: 500px;
+  width: 90%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  animation: completionSlideIn 0.5s ease-out;
+}
+
+@keyframes completionSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-50px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.completion-header {
+  background: rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 30px 30px 20px;
+  text-align: center;
+  color: white;
+}
+
+.completion-icon {
+  margin-bottom: 15px;
+}
+
+.completion-icon i {
+  font-size: 60px;
+  color: #4ade80;
+  text-shadow: 0 0 20px rgba(74, 222, 128, 0.5);
+  animation: completionPulse 2s infinite;
+}
+
+@keyframes completionPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.completion-header .modal-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.completion-body {
+  padding: 30px;
+  background: white;
+  color: #374151;
+}
+
+.completion-message {
+  text-align: center;
+}
+
+.completion-text p {
+  font-size: 16px;
+  line-height: 1.6;
+  margin-bottom: 15px;
+}
+
+.completion-text p:first-child {
+  font-size: 18px;
+  color: #1f2937;
+}
+
+.completion-details {
+  margin-top: 25px;
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border-left: 4px solid #4ade80;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 15px;
+  color: #4b5563;
+}
+
+.detail-item:last-child {
+  margin-bottom: 0;
+}
+
+.detail-item i {
+  color: #4ade80;
+  margin-right: 12px;
+  width: 20px;
+  text-align: center;
+}
+
+.completion-footer {
+  padding: 20px 30px 30px;
+  background: white;
+  text-align: center;
+}
+
+.completion-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  padding: 15px 30px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 50px;
+  color: white;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.completion-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+}
+
+.completion-btn:active {
+  transform: translateY(0);
+}
+
+/* Dark theme adjustments for session notice */
+[data-theme="dark"] .session-notice {
+  background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
+  border-color: #f59e0b;
+}
+
+[data-theme="dark"] .notice-content {
+  color: #fbbf24;
+}
+
+[data-theme="dark"] .notice-content i {
+  color: #f59e0b;
+}
+
+/* Dark theme adjustments for completion modal */
+[data-theme="dark"] .completion-body {
+  background: #1f2937;
+  color: #e5e7eb;
+}
+
+[data-theme="dark"] .completion-text p:first-child {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .completion-details {
+  background: #374151;
+  border-left-color: #4ade80;
+}
+
+/* Confirmation Dialog Styles */
+.confirmation-dialog-overlay {
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+}
+
+.confirmation-dialog {
+  max-width: 500px;
+  width: 90%;
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  animation: confirmationSlideIn 0.3s ease-out;
+}
+
+.confirmation-dialog-header {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  padding: 20px;
+  border-radius: 15px 15px 0 0;
+  text-align: center;
+}
+
+.confirmation-dialog-header .modal-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.confirmation-dialog-body {
+  padding: 30px;
+  text-align: center;
+}
+
+.confirmation-dialog-body p {
+  margin: 0 0 15px 0;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.confirmation-dialog-body .warning-text {
+  color: #dc2626;
+  font-weight: 500;
+  background: #fef2f2;
+  padding: 10px;
+  border-radius: 8px;
+  border-left: 4px solid #dc2626;
+}
+
+.confirmation-dialog-footer {
+  padding: 20px 30px;
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  border-top: 1px solid #e5e7eb;
+}
+
+.confirmation-dialog-footer .btn {
+  padding: 12px 25px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.confirmation-dialog-footer .cancel-btn {
+  background: #6b7280;
+  color: white;
+}
+
+.confirmation-dialog-footer .cancel-btn:hover {
+  background: #4b5563;
+  transform: translateY(-1px);
+}
+
+.confirmation-dialog-footer .confirm-btn {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  color: white;
+}
+
+.confirmation-dialog-footer .confirm-btn:hover {
+  background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+  transform: translateY(-1px);
+}
+
+@keyframes confirmationSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Dark theme for confirmation dialog */
+[data-theme="dark"] .confirmation-dialog {
+  background: #1f2937;
+  color: #e5e7eb;
+}
+
+[data-theme="dark"] .confirmation-dialog-body .warning-text {
+  background: #451a03;
+  color: #fbbf24;
+  border-left-color: #f59e0b;
+}
+
+[data-theme="dark"] .confirmation-dialog-footer {
+  border-top-color: #374151;
+}
+
+[data-theme="dark"] .detail-item {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .completion-footer {
+  background: #1f2937;
+}
+
+/* Allergies Section Styles */
+.allergies-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.allergy-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.checkbox-group {
+  display: flex;
+  align-items: center;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #374151;
+  user-select: none;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #48bb78;
+  cursor: pointer;
+}
+
+.allergy-types {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.allergy-types-label {
+  margin: 0 0 0.75rem 0;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.9rem;
+}
+
+.allergy-type-checkboxes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.others-input {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.others-input label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #374151;
+}
+
+.others-input .form-input {
+  margin: 0;
+}
+
+/* Dark theme support for allergies section */
+[data-theme="dark"] .checkbox-label {
+  color: #e5e7eb;
+}
+
+[data-theme="dark"] .allergy-types {
+  background: #374151;
+  border-color: #4b5563;
+}
+
+[data-theme="dark"] .allergy-types-label {
+  color: #e5e7eb;
+}
+
+[data-theme="dark"] .others-input label {
+  color: #e5e7eb;
 }
 </style>

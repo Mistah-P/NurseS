@@ -416,7 +416,7 @@
                 </div>
                 <div class="finding-item">
                   <label>Allergies:</label>
-                  <p>{{ studentConsultation.findings?.allergies || 'Not specified' }}</p>
+                  <p>{{ formatAllergies(studentConsultation.findings?.allergies) }}</p>
                 </div>
                 <div class="finding-item">
                   <label>Medications:</label>
@@ -451,6 +451,37 @@
               </div>
             </div>
 
+            <!-- AI Patient Conversation Section -->
+            <div v-if="studentConsultation.conversationHistory && studentConsultation.conversationHistory.length > 0" class="consultation-section conversation-section">
+              <h4 class="section-title">
+                <i class="fas fa-comments"></i>
+                AI Patient Conversation
+              </h4>
+              <div class="conversation-content">
+                <div class="conversation-messages">
+                  <div 
+                    v-for="(message, index) in studentConsultation.conversationHistory" 
+                    :key="index"
+                    class="conversation-message"
+                    :class="{ 'student-message': message.sender === 'student', 'ai-message': message.sender === 'patient' }"
+                  >
+                    <div class="message-header">
+                      <span class="message-sender">
+                        <i :class="message.sender === 'student' ? 'fas fa-user-graduate' : 'fas fa-robot'"></i>
+                        {{ message.sender === 'student' ? 'Student' : 'AI Patient' }}
+                      </span>
+                      <span v-if="message.time" class="message-time">
+                        {{ message.time }}
+                      </span>
+                    </div>
+                    <div class="message-content">
+                      {{ message.text }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Teacher Feedback Section -->
             <div class="consultation-section feedback-section">
               <h4 class="section-title">
@@ -480,15 +511,16 @@
                       id="consultationScore"
                       v-model.number="consultationScore"
                       type="number"
-                      min="0"
+                      min="1"
                       max="100"
-                      placeholder="0"
+                      step="1"
+                      placeholder="Enter score (1-100)"
                       class="score-input"
                       @input="validateScore"
                     />
                     <span class="score-suffix">/100</span>
                   </div>
-                  <small class="score-help-text">Enter a score between 0 and 100</small>
+                  <small class="score-help-text">Enter a score between 1 and 100 only</small>
                 </div>
 
                 <!-- Feedback Text Area -->
@@ -521,6 +553,33 @@
             <i class="fas fa-paper-plane"></i>
             {{ isSendingFeedback ? 'Sending...' : (studentConsultation.teacherFeedback ? 'Update Feedback' : 'Send Feedback') }}
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mark as Done Loading Modal -->
+    <div v-if="showMarkAsDoneModal" class="modal-overlay">
+      <div class="loading-modal" @click.stop>
+        <div class="loading-content">
+          <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+          </div>
+          <h3>Marking Activity as Done</h3>
+          <p>Please wait while we finalize the activity...</p>
+          <div class="loading-steps">
+            <div class="step" :class="{ active: markingStep >= 1 }">
+              <i class="fas fa-check-circle"></i>
+              <span>Ending live session</span>
+            </div>
+            <div class="step" :class="{ active: markingStep >= 2 }">
+              <i class="fas fa-save"></i>
+              <span>Storing student results</span>
+            </div>
+            <div class="step" :class="{ active: markingStep >= 3 }">
+              <i class="fas fa-arrow-right"></i>
+              <span>Redirecting to dashboard</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -585,7 +644,10 @@ export default {
       consultationScore: null,
       isSendingFeedback: false,
       // Track students with submitted consultations for badge display
-      studentsWithConsultations: new Set()
+      studentsWithConsultations: new Set(),
+      // Mark as Done loading modal
+      showMarkAsDoneModal: false,
+      markingStep: 0
     }
   },
   computed: {
@@ -875,15 +937,21 @@ export default {
         
         // Redirect to teacher dashboard after a short delay
         setTimeout(() => {
+          this.showEndRoomModal = false
+          this.isEndingRoom = false
           this.$router.push('/teacher-dashboard')
         }, 1500)
         
       } catch (error) {
         console.error('❌ Error ending room:', error)
         this.showToast('Failed to end room', 'error')
-      } finally {
+        
+        // Hide modal and reset state for error cases
         this.isEndingRoom = false
         this.showEndRoomModal = false
+      } finally {
+        // Don't hide modal here for success case - it's handled in setTimeout
+        // Only hide for error cases (handled in catch block)
       }
     },
 
@@ -917,6 +985,8 @@ export default {
           
           // Redirect to teacher dashboard after a short delay to show success message
           setTimeout(() => {
+            this.showCompleteActivityModal = false
+            this.isCompletingActivity = false
             this.$router.push('/teacher-dashboard')
           }, 2000)
         } else {
@@ -947,41 +1017,57 @@ export default {
           `${errorMessage}\n\nPlease try again or contact support if the problem persists.`
         )
         
-      } finally {
+        // Hide modal and reset state for error cases
         this.isCompletingActivity = false
         this.showCompleteActivityModal = false
-      }
+        
+      } finally {
+          // Don't hide modal here for success case - it's handled in setTimeout
+          // Only hide for error cases (when no setTimeout was triggered)
+        }
     },
 
     // Simple Mark as Done method for AI Patient rooms
     async markAsDone() {
       try {
         this.isCompletingActivity = true
+        this.showMarkAsDoneModal = true
+        this.markingStep = 0
         
-        // End the live session to notify students
+        // Step 1: End the live session to notify students
+        this.markingStep = 1
         if (this.liveSessionData && this.liveSessionData.status !== 'completed') {
           await liveSessionService.endActivity(this.roomCode)
         }
         
-        // Store AI Patient results for each student who has consultation + feedback
+        // Small delay to show step completion
+        await new Promise(resolve => setTimeout(resolve, 800))
+        
+        // Step 2: Store AI Patient results for each student who has consultation + feedback
+        this.markingStep = 2
         await this.storeAIPatientResults()
         
-        // Simple redirect to teacher dashboard without complex activity completion logic
-        this.showToast('Marked as done! Redirecting to dashboard...', 'success')
+        // Small delay to show step completion
+        await new Promise(resolve => setTimeout(resolve, 800))
         
-        // Redirect to teacher dashboard after a short delay
-        setTimeout(() => {
-          this.$router.push('/teacher-dashboard')
-        }, 1500)
+        // Step 3: Redirect to teacher dashboard
+        this.markingStep = 3
+        
+        // Small delay before redirect
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        
+        // Hide modal and redirect
+        this.showMarkAsDoneModal = false
+        this.$router.push('/teacher-dashboard')
         
       } catch (error) {
         console.error('❌ Error marking as done:', error)
+        this.showMarkAsDoneModal = false
         this.showToast('Failed to mark as done', 'error')
       } finally {
-        // Reset loading state after redirect delay
-        setTimeout(() => {
-          this.isCompletingActivity = false
-        }, 2000)
+        // Reset loading state
+        this.isCompletingActivity = false
+        this.markingStep = 0
       }
     },
 
@@ -1498,6 +1584,56 @@ export default {
       }
     },
 
+    validateScore(event) {
+      const value = event.target.value
+      
+      // Allow empty value (user can clear the field)
+      if (value === '' || value === null) {
+        this.consultationScore = null
+        event.target.classList.remove('invalid')
+        return
+      }
+      
+      const numericValue = parseInt(value)
+      
+      // Check if it's a valid number
+      if (isNaN(numericValue)) {
+        event.target.value = ''
+        this.consultationScore = null
+        event.target.classList.add('invalid')
+        this.showToast('Please enter a valid number for the score', 'error')
+        return
+      }
+      
+      // Enforce range 1-100
+      if (numericValue < 1 || numericValue > 100) {
+        // If less than 1, set to 1
+        if (numericValue < 1) {
+          event.target.value = 1
+          this.consultationScore = 1
+        }
+        // If greater than 100, set to 100
+        else if (numericValue > 100) {
+          event.target.value = 100
+          this.consultationScore = 100
+        }
+        
+        event.target.classList.add('invalid')
+        this.showToast('Score must be between 1 and 100', 'error')
+        
+        // Remove invalid class after a short delay
+        setTimeout(() => {
+          event.target.classList.remove('invalid')
+        }, 2000)
+        
+        return
+      }
+      
+      // Valid score
+      this.consultationScore = numericValue
+      event.target.classList.remove('invalid')
+    },
+
     formatDate(dateString) {
       if (!dateString) return 'Unknown date'
       
@@ -1510,6 +1646,59 @@ export default {
       } catch (error) {
         return 'Invalid date'
       }
+    },
+
+    formatMessageTime(timestamp) {
+      if (!timestamp) return ''
+      
+      try {
+        const date = new Date(timestamp)
+        return date.toLocaleTimeString([], { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        })
+      } catch (error) {
+        return ''
+      }
+    },
+
+    formatAllergies(allergies) {
+      if (!allergies) return 'Not specified'
+      
+      // Handle string format (legacy)
+      if (typeof allergies === 'string') {
+        return allergies || 'Not specified'
+      }
+      
+      // Handle object format (new checkbox system)
+      if (typeof allergies === 'object') {
+        if (allergies.hasNoKnownAllergies) {
+          return 'No known allergies'
+        }
+        
+        if (allergies.hasAllergies && allergies.types) {
+          const selectedTypes = []
+          
+          // Check each allergy type
+          if (allergies.types.food) selectedTypes.push('Food')
+          if (allergies.types.medicine) selectedTypes.push('Medicine')
+          if (allergies.types.latex) selectedTypes.push('Latex')
+          if (allergies.types.environment) selectedTypes.push('Environment')
+          
+          // Add others if specified
+          if (allergies.others && allergies.others.trim()) {
+            selectedTypes.push(`Others: ${allergies.others.trim()}`)
+          }
+          
+          if (selectedTypes.length > 0) {
+            return selectedTypes.join(', ')
+          }
+        }
+        
+        return 'Has allergies (not specified)'
+      }
+      
+      return 'Not specified'
     },
 
     // Check if student has submitted consultation (for notification badge)
@@ -2596,6 +2785,87 @@ export default {
   min-height: 20px;
 }
 
+/* Conversation Section */
+.conversation-section {
+  background: var(--bg-secondary);
+  border-color: var(--accent-secondary);
+}
+
+.conversation-content {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  background: var(--bg-primary);
+}
+
+.conversation-messages {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.conversation-message {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-primary);
+}
+
+.conversation-message.student-message {
+  background: var(--bg-tertiary);
+  border-color: var(--accent-primary);
+  margin-left: 20px;
+}
+
+.conversation-message.ai-message {
+  background: var(--bg-secondary);
+  border-color: var(--border-secondary);
+  margin-right: 20px;
+}
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.message-sender {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.message-sender i {
+  font-size: 14px;
+}
+
+.student-message .message-sender {
+  color: var(--accent-primary);
+}
+
+.ai-message .message-sender {
+  color: var(--text-secondary);
+}
+
+.message-time {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.message-content {
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.5;
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
 /* Feedback Section */
 .existing-feedback {
   margin-bottom: 16px;
@@ -3018,5 +3288,124 @@ export default {
 
 [data-theme="dark"] .score-suffix {
   color: #9ca3af;
+}
+
+/* Mark as Done Loading Modal */
+.loading-modal {
+  background: white;
+  border-radius: 16px;
+  padding: 40px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  text-align: center;
+}
+
+.loading-content h3 {
+  margin: 20px 0 10px 0;
+  color: #1f2937;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.loading-content p {
+  color: #6b7280;
+  margin-bottom: 30px;
+  font-size: 16px;
+}
+
+.loading-spinner {
+  margin-bottom: 20px;
+}
+
+.loading-spinner i {
+  font-size: 48px;
+  color: #3b82f6;
+}
+
+.loading-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  text-align: left;
+}
+
+.loading-steps .step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  transition: all 0.3s ease;
+  opacity: 0.5;
+}
+
+.loading-steps .step.active {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  opacity: 1;
+}
+
+.loading-steps .step i {
+  color: #9ca3af;
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+  transition: color 0.3s ease;
+}
+
+.loading-steps .step.active i {
+  color: #3b82f6;
+}
+
+.loading-steps .step span {
+  color: #6b7280;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.loading-steps .step.active span {
+  color: #1f2937;
+}
+
+/* Dark theme for loading modal */
+[data-theme="dark"] .loading-modal {
+  background: #1f2937;
+}
+
+[data-theme="dark"] .loading-content h3 {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .loading-content p {
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .loading-steps .step {
+  background: #374151;
+  border-color: #4b5563;
+}
+
+[data-theme="dark"] .loading-steps .step.active {
+  background: #1e3a8a;
+  border-color: #60a5fa;
+}
+
+[data-theme="dark"] .loading-steps .step i {
+  color: #6b7280;
+}
+
+[data-theme="dark"] .loading-steps .step.active i {
+  color: #60a5fa;
+}
+
+[data-theme="dark"] .loading-steps .step span {
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .loading-steps .step.active span {
+  color: #f9fafb;
 }
 </style>

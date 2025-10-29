@@ -214,8 +214,8 @@ export default {
   },
   async mounted() {
     try {
-      // Force re-upload modules to fix database issue
-      await moduleService.forceReuploadModules()
+      // Force refresh to use file-based modules (15 modules)
+      moduleService.forceRefresh()
       
       this.modules = moduleService.getModules()
       

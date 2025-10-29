@@ -567,11 +567,11 @@ export default {
           // Fallback - assume it's already a timestamp number
           countdownStart = this.liveSessionData.countdownStartedAt;
         }
-        const countdownDuration = this.liveSessionData.countdownDuration * 1000; // Use dynamic duration from backend
-        const elapsed = now - countdownStart;
+        const countdownDuration = this.liveSessionData.countdownDuration; // Duration in seconds from backend
+        const elapsed = Math.floor((now - countdownStart) / 1000); // Convert elapsed time to seconds
         const remaining = Math.max(0, countdownDuration - elapsed);
 
-        this.countdownRemaining = Math.ceil(remaining / 1000);
+        this.countdownRemaining = remaining;
 
         if (remaining <= 0) {
           this.stopCountdownTimer();

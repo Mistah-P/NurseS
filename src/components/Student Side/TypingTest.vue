@@ -109,7 +109,7 @@
               <div class="final-stat-value">{{ finalErrors }}</div>
               <div class="final-stat-label">Errors</div>
             </div>
-            <div class="final-stat">
+            <div class="final-stat" v-if="gameMode !== 'timed'">
               <div class="final-stat-value">{{ formatTime(timeTaken) }}</div>
               <div class="final-stat-label">Time Taken</div>
             </div>
@@ -642,9 +642,17 @@ export default {
       // Add current sentence stats
       let currentCorrectChars = 0
       let currentErrorChars = 0
+      
+      // Helper function to normalize separators: treat space and line break as equivalent
+      const normalizeChar = (char) => (char === ' ' || char === '\n') ? ' ' : char
+      
       for (let i = 0; i < this.userInput.length; i++) {
         if (i < this.displayedText.length) {
-          if (this.userInput[i] === this.displayedText[i]) {
+          // Normalize both user input and expected character for comparison
+          const userChar = normalizeChar(this.userInput[i])
+          const expectedChar = normalizeChar(this.displayedText[i])
+          
+          if (userChar === expectedChar) {
             currentCorrectChars++
           } else {
             // Only count as error if character is actually typed incorrectly (red character)
@@ -1062,7 +1070,13 @@ export default {
     getCharClass(index) {
       if (index < this.userInput.length) {
         // Character has been typed
-        if (this.userInput[index] === this.displayedText[index]) {
+        // Helper function to normalize separators: treat space and line break as equivalent
+        const normalizeChar = (char) => (char === ' ' || char === '\n') ? ' ' : char
+        
+        const userChar = normalizeChar(this.userInput[index])
+        const expectedChar = normalizeChar(this.displayedText[index])
+        
+        if (userChar === expectedChar) {
           return 'correct'
         } else {
           return 'incorrect'
