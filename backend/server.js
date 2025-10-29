@@ -11,6 +11,7 @@ const allowedOrigins = [
   'http://localhost:8080',
   'http://localhost:3000',
   'https://nurse-s.vercel.app',
+  'https://nursescript.uic.edu.ph',
   process.env.FRONTEND_URL
 ].filter(Boolean);
 
