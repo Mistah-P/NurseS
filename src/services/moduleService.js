@@ -57,7 +57,6 @@ class ModuleService {
 
       // Load content from the new module directory with fallback mechanism
       let fullContent = '';
-      let fetchError = null;
       
       try {
         const response = await fetch(`/new module/${difficultyFile}`);
@@ -69,7 +68,7 @@ class ModuleService {
         fullContent = await response.text();
         
         // Check if we got HTML instead of text content (common in production)
-        if (fullContent.includes('<!doctype html') || fullContent.includes('<html')) {
+        if (fullContent.includes('<!doctype html') || fullContent.includes('<html>')) {
           throw new Error('Received HTML content instead of text file - likely a routing issue in production');
         }
         
@@ -77,7 +76,6 @@ class ModuleService {
           throw new Error(`Difficulty file ${difficultyFile} is empty or contains no valid content.`);
         }
       } catch (error) {
-        fetchError = error;
         console.warn(`⚠️ Failed to fetch ${difficultyFile}:`, error.message);
         
         // Fallback: Try to get content from the original module files
@@ -447,8 +445,8 @@ class ModuleService {
           const content = await response.text()
           
           // Check if we got HTML instead of text content (common in production)
-          if (content.includes('<!doctype html') || content.includes('<html')) {
-            throw new Error('Received HTML content instead of text file - likely a routing issue in production')
+          if (content.includes('<!doctype html') || content.includes('<html>')) {
+            throw new Error('Received HTML content instead of text file - likely a routing issue in production');
           }
           
           if (!content || content.trim().length === 0) {
