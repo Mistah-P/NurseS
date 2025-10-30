@@ -52,6 +52,76 @@ router.post('/join-room', async (req, res) => {
       });
     }
 
+    // Check if student is authorized to join this room (teacher's student list)
+    if (roomData.teacherId) {
+      try {
+        const teacherDoc = await db.collection('teachers').doc(roomData.teacherId).get();
+        
+        if (teacherDoc.exists) {
+          const teacherData = teacherDoc.data();
+          const authorizedStudents = teacherData.students || [];
+          
+          // Check if student is in teacher's authorized list
+          // The teacher's students array contains Firebase User IDs, but the join request
+          // uses a generated studentId. We need to check multiple authorization methods:
+          // 1. Direct studentId match (for consistency)
+          // 2. Check if any user in the teacher's students list has matching name/email
+          let isAuthorized = false;
+          
+          // Method 1: Direct ID match (existing logic)
+          if (authorizedStudents.includes(studentId)) {
+            isAuthorized = true;
+          }
+          
+          // Method 2: Check by student name and email against actual user documents
+          if (!isAuthorized && (studentName || email)) {
+            try {
+              // Get all user documents for students in teacher's list
+              const userPromises = authorizedStudents.map(userId => 
+                db.collection('users').doc(userId).get()
+              );
+              const userDocs = await Promise.all(userPromises);
+              
+              // Check if any authorized student matches by name or email
+              for (const userDoc of userDocs) {
+                if (userDoc.exists) {
+                  const userData = userDoc.data();
+                  const nameMatch = userData.name && studentName && 
+                    userData.name.toLowerCase().trim() === studentName.toLowerCase().trim();
+                  const emailMatch = userData.email && email && 
+                    userData.email.toLowerCase().trim() === email.toLowerCase().trim();
+                  
+                  if (nameMatch || emailMatch) {
+                    isAuthorized = true;
+                    break;
+                  }
+                }
+              }
+            } catch (authCheckError) {
+              console.warn('Error checking user authorization:', authCheckError);
+              // Continue with existing authorization result
+            }
+          }
+          
+          if (!isAuthorized) {
+            console.log(`🚫 Unauthorized student ${studentName} (${studentId}) attempted to join room ${roomCode}`);
+            return res.status(403).json({
+              error: 'Access denied',
+              message: 'You are not authorized to join this room. Please contact your teacher to be added to their class.'
+            });
+          }
+          
+          console.log(`✅ Authorized student ${studentName} joining room ${roomCode}`);
+        } else {
+          console.warn(`⚠️ Teacher document not found for room ${roomCode}, allowing student to join`);
+        }
+      } catch (authError) {
+        console.error('Error checking student authorization:', authError);
+        // Continue with room joining if authorization check fails to avoid blocking legitimate access
+        console.warn(`⚠️ Authorization check failed for student ${studentName}, allowing join as fallback`);
+      }
+    }
+
     // Check if there's an active live session and validate it's not expired
     if (roomData.status === 'active' && roomData.liveActivity?.isActive) {
       try {

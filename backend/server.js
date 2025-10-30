@@ -87,6 +87,7 @@ const liveSessionRouter = require('./routes/liveSession');
 const typingResultsRouter = require('./routes/typingResults');
 const consultationsRouter = require('./routes/consultations');
 const aiRouter = require('./routes/ai');
+const teachersRouter = require('./routes/teachers');
 
 app.use('/api/rooms', roomsRouter);
 app.use('/api/students', studentsRouter);
@@ -95,6 +96,7 @@ app.use('/api/live-sessions', liveSessionRouter);
 app.use('/api/typing-results', typingResultsRouter);
 app.use('/api/consultations', consultationsRouter);
 app.use('/api/ai', aiRouter);
+app.use('/api/teachers', teachersRouter);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

@@ -89,7 +89,7 @@
         <div class="selection-card topic-selection" v-if="selectedMode && selectedDuration">
           <h3 class="card-title">
             <i class="fas fa-book-medical"></i>
-            Select Topic
+            Select Module
           </h3>
           <div class="topic-options">
             <div 
@@ -207,6 +207,7 @@
 
 <script>
 import typingResultsService from '../services/typingResultsService'
+import moduleService from '../services/moduleService'
 
 export default {
   name: 'PracticeMode',
@@ -248,65 +249,44 @@ export default {
       ],
       customTimeValue: 60,
       customWordValue: 50,
-      topics: [], // Will be populated with dummy nursing topics
-      sampleTexts: {} // Will be populated with dummy nursing content
+      topics: [], // Will be populated with real nursing modules
+      sampleTexts: {}, // Will be populated dynamically
+      selectedDifficulty: null // Will store randomly selected difficulty
     }
   },
   async mounted() {
-    // Create dummy nursing topics (separate from main modules)
-    this.topics = [
-      {
-        id: 'vital-signs',
-        name: 'Vital Signs',
-        description: 'Practice typing vital signs terminology and procedures',
-        icon: 'fas fa-heartbeat'
-      },
-      {
-        id: 'medication-admin',
-        name: 'Medication Administration',
-        description: 'Practice typing medication names and administration procedures',
-        icon: 'fas fa-pills'
-      },
-      {
-        id: 'patient-assessment',
-        name: 'Patient Assessment',
-        description: 'Practice typing patient assessment terminology',
-        icon: 'fas fa-stethoscope'
-      },
-      {
-        id: 'wound-care',
-        name: 'Wound Care',
-        description: 'Practice typing wound care procedures and terminology',
-        icon: 'fas fa-band-aid'
-      },
-      {
-        id: 'infection-control',
-        name: 'Infection Control',
-        description: 'Practice typing infection control protocols',
-        icon: 'fas fa-shield-virus'
-      },
-      {
-        id: 'emergency-procedures',
-        name: 'Emergency Procedures',
-        description: 'Practice typing emergency response procedures',
-        icon: 'fas fa-ambulance'
-      }
-    ];
-    
-    // Create dummy nursing content for each topic
-    this.sampleTexts = {
-      'vital-signs': 'Blood pressure measurement requires proper cuff size selection and patient positioning. Normal adult blood pressure ranges from 90/60 to 120/80 mmHg. Temperature can be measured orally, rectally, axillary, or tympanically. Normal oral temperature is 98.6°F or 37°C. Pulse rate for adults ranges from 60 to 100 beats per minute. Respiratory rate for adults is typically 12 to 20 breaths per minute. Oxygen saturation should be above 95% in healthy individuals.',
+    // Load real nursing modules from module service
+    try {
+      await moduleService.initialize();
+      const modules = moduleService.getModules();
       
-      'medication-admin': 'The five rights of medication administration include right patient, right medication, right dose, right route, and right time. Always verify patient identity using two identifiers before administering medications. Check medication labels three times: when removing from storage, when preparing, and before administration. Document medication administration immediately after giving the medication. Monitor for adverse reactions and therapeutic effects. Never leave medications unattended at the bedside.',
+      // Convert modules to topics format for the UI
+      this.topics = modules.map(module => ({
+        id: module.value,
+        name: module.label,
+        description: `Practice typing ${module.label.toLowerCase()} terminology and procedures`,
+        icon: this.getModuleIcon(module.category || module.label)
+      }));
       
-      'patient-assessment': 'Head-to-toe assessment begins with general appearance and vital signs. Inspect the head for symmetry, lesions, and hair distribution. Examine eyes for pupil response, visual acuity, and conjunctival color. Assess ears for hearing, discharge, and cerumen. Inspect mouth and throat for lesions, dental hygiene, and swallowing ability. Palpate neck for lymph nodes, thyroid, and carotid pulses. Auscultate heart sounds and lung sounds systematically.',
-      
-      'wound-care': 'Wound assessment includes measuring length, width, and depth. Document wound appearance, drainage characteristics, and surrounding skin condition. Clean wounds using sterile technique from clean to dirty areas. Apply appropriate dressings based on wound type and drainage amount. Monitor for signs of infection including increased pain, redness, warmth, swelling, and purulent drainage. Change dressings according to physician orders and facility protocols.',
-      
-      'infection-control': 'Hand hygiene is the most important measure to prevent healthcare-associated infections. Use alcohol-based hand sanitizer or soap and water for at least 20 seconds. Wear personal protective equipment including gloves, gowns, masks, and eye protection as indicated. Follow standard precautions for all patients regardless of diagnosis. Implement transmission-based precautions for contact, droplet, or airborne infections. Properly dispose of contaminated materials in appropriate containers.',
-      
-      'emergency-procedures': 'Cardiopulmonary resuscitation begins with checking responsiveness and breathing. Call for help and activate emergency response system immediately. Position patient on firm surface and begin chest compressions at least 2 inches deep at 100-120 compressions per minute. Provide rescue breaths using bag-mask ventilation if trained. Continue CPR until advanced life support arrives or patient regains pulse. Document all interventions and patient responses during emergency situations.'
-    };
+      console.log('✅ Loaded', this.topics.length, 'nursing modules for practice mode');
+    } catch (error) {
+      console.error('❌ Error loading modules:', error);
+      // Fallback to a few basic modules if loading fails
+      this.topics = [
+        {
+          id: 'fundamentals-of-nursing-practice',
+          name: 'Fundamentals of Nursing Practice',
+          description: 'Practice typing fundamental nursing concepts',
+          icon: 'fas fa-user-nurse'
+        },
+        {
+          id: 'health-assessment-terminologies',
+          name: 'Health Assessment Terminologies',
+          description: 'Practice typing health assessment terms',
+          icon: 'fas fa-stethoscope'
+        }
+      ];
+    }
   },
   computed: {
     currentOptions() {
@@ -341,10 +321,64 @@ export default {
     selectTopic(topic) {
       this.selectedTopic = topic;
     },
-    startPractice() {
+    getModuleIcon(category) {
+      // Map module categories to appropriate icons
+      const iconMap = {
+        'fundamentals': 'fas fa-user-nurse',
+        'assessment': 'fas fa-stethoscope',
+        'medication': 'fas fa-pills',
+        'procedures': 'fas fa-procedures',
+        'emergency': 'fas fa-ambulance',
+        'research': 'fas fa-microscope',
+        'ethics': 'fas fa-balance-scale',
+        'leadership': 'fas fa-users',
+        'community': 'fas fa-home',
+        'pediatric': 'fas fa-baby',
+        'geriatric': 'fas fa-wheelchair',
+        'mental': 'fas fa-brain',
+        'surgical': 'fas fa-cut',
+        'critical': 'fas fa-heartbeat',
+        'maternal': 'fas fa-female'
+      };
+      
+      // Find matching icon based on category or module name
+      const categoryLower = category.toLowerCase();
+      for (const [key, icon] of Object.entries(iconMap)) {
+        if (categoryLower.includes(key)) {
+          return icon;
+        }
+      }
+      
+      // Default icon
+      return 'fas fa-user-nurse';
+    },
+    async startPractice() {
+       try {
+         // Get random difficulty for variety
+         const difficulties = ['Easy', 'Normal', 'Hard'];
+         this.selectedDifficulty = difficulties[Math.floor(Math.random() * difficulties.length)];
+         
+         // Load content from module service
+         const content = await moduleService.getModuleContentWithDifficulty(this.selectedTopic, this.selectedDifficulty);
+         
+         if (!content || !content.trim()) {
+           console.error('❌ No content available for selected topic and difficulty');
+           // Fallback to a basic nursing text
+           this.displayText = 'Nursing is a profession focused on the care of individuals, families, and communities so they may attain, maintain, or recover optimal health and quality of life.';
+         } else {
+           this.displayText = content;
+         }
+         
+         console.log(`✅ Loaded ${this.selectedDifficulty} content for ${this.selectedTopic}:`, this.displayText.substring(0, 100) + '...');
+         
+       } catch (error) {
+         console.error('❌ Error loading practice content:', error);
+         // Fallback content
+         this.displayText = 'Nursing practice involves the assessment, diagnosis, planning, implementation, and evaluation of patient care to promote health and prevent illness.';
+       }
+      
       this.isTyping = true;
       this.userInput = '';
-      this.displayText = this.sampleTexts[this.selectedTopic];
       this.startTime = Date.now();
       this.typedCharacters = 0;
       this.correctCharacters = 0;
@@ -382,7 +416,7 @@ export default {
             wordsTyped: wordsTyped,
             errorsCount: errorsCount,
             topic: this.selectedTopic,
-            difficulty: 'Medium',
+            difficulty: this.selectedDifficulty || 'Medium',
             textLength: this.displayText ? this.displayText.length : 1,
             mode: this.selectedMode,
             target: this.selectedDuration === 'custom' ? 

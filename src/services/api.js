@@ -173,12 +173,8 @@ export const liveSessionAPI = {
 export const studentAPI = {
   // Join room
   joinRoom: async (joinData) => {
-    try {
-      const response = await api.post('/students/join-room', joinData)
-      return response.data
-    } catch (error) {
-      throw new Error(error.response?.data?.message || 'Failed to join room')
-    }
+    const response = await api.post('/students/join-room', joinData)
+    return response.data
   },
 
   // Update student progress
@@ -275,7 +271,37 @@ export const adminAPI = {
   }
 }
 
-// Health check
+// Health check}
+
+// Teacher API endpoints
+export const teacherAPI = {
+  // Get teacher's student list
+  getStudents: async () => {
+    const response = await api.get('/teachers/students')
+    return response.data
+  },
+
+  // Search for students to add to class
+  searchStudents: async (searchTerm, maxResults = 10) => {
+    const response = await api.get('/teachers/search-students', {
+      params: { q: searchTerm, limit: maxResults }
+    })
+    return response.data
+  },
+
+  // Add students to teacher's class
+  addStudents: async (students) => {
+    const response = await api.post('/teachers/add-students', { students })
+    return response.data
+  },
+
+  // Remove student from teacher's class
+  removeStudent: async (studentId) => {
+    const response = await api.delete(`/teachers/students/${studentId}`)
+    return response.data
+  }
+}
+
 export const healthCheck = async () => {
   try {
     const response = await api.get('/health')
@@ -291,7 +317,9 @@ export default {
   roomAPI,
   studentAPI,
   adminAPI,
+  teacherAPI,
   liveSessionAPI,
+  healthCheck,
   // Export the axios instance for direct API calls
   get: api.get.bind(api),
   post: api.post.bind(api),

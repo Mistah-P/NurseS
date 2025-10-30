@@ -463,6 +463,8 @@ export default {
             this.showCodeMessage('This room is no longer accepting students.', 'error');
           } else if (errorData.error === 'Already joined') {
             this.showCodeMessage('You have already joined this room.', 'error');
+          } else if (errorData.error === 'Access denied') {
+            this.showCodeMessage('You are not authorized to join this room. Please contact your teacher to be added to their class.', 'error');
           } else {
             this.showCodeMessage(errorData.message || 'Failed to join room. Please try again.', 'error');
           }

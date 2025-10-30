@@ -45,6 +45,10 @@
           <h1 class="page-title">Dashboard</h1>
         </div>
         <div class="header-right">
+          <button class="btn btn-secondary add-students-btn" @click="showAddStudentsModal = true">
+            <i class="fas fa-user-plus"></i>
+            Add Students
+          </button>
           <button class="btn btn-primary create-room-btn" @click="showCreateRoomModal = true">
             <i class="fas fa-plus"></i>
             Create Room
@@ -70,6 +74,67 @@
 
         <!-- Second Row -->
         <div class="content-grid">
+          <!-- Student List -->
+          <div class="card student-list-card">
+            <div class="card-header">
+              <h3>My Students ({{ studentList.length }})</h3>
+              <div class="header-actions">
+                <button class="btn-link" @click="refreshStudentList" :disabled="loadingStudentList">
+                  <i class="fas fa-sync-alt" :class="{ 'fa-spin': loadingStudentList }"></i>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Loading State -->
+            <div v-if="loadingStudentList" class="loading-state">
+              <i class="fas fa-spinner fa-spin"></i>
+              <p>Loading student list...</p>
+            </div>
+            
+            <!-- Empty State -->
+            <div v-else-if="studentList.length === 0" class="empty-state">
+              <i class="fas fa-users"></i>
+              <p>No students added yet</p>
+              <small>Click "Add Students" to start building your class</small>
+              <button class="btn btn-primary mt-3" @click="showAddStudentsModal = true">
+                <i class="fas fa-user-plus"></i>
+                Add Your First Students
+              </button>
+            </div>
+            
+            <!-- Student List -->
+            <div v-else class="student-list">
+              <div class="student-item" v-for="student in studentList" :key="student.id">
+                <div class="student-avatar">
+                  <span>{{ student.name.charAt(0).toUpperCase() }}</span>
+                </div>
+                <div class="student-info">
+                  <h5>{{ student.name }}</h5>
+                  <p>{{ student.email }}</p>
+                  <div class="student-stats" v-if="student.stats">
+                    <span class="stat-item">
+                      <i class="fas fa-keyboard"></i>
+                      {{ student.stats.totalTests || 0 }} tests
+                    </span>
+                    <span class="stat-item" v-if="student.stats.averageWPM">
+                      <i class="fas fa-tachometer-alt"></i>
+                      {{ student.stats.averageWPM }} WPM avg
+                    </span>
+                    <span class="stat-item" v-if="student.stats.lastActive">
+                      <i class="fas fa-clock"></i>
+                      {{ formatLastActive(student.stats.lastActive) }}
+                    </span>
+                  </div>
+                </div>
+                <div class="student-actions">
+                  <button class="btn-icon" @click="removeStudent(student.id)" title="Remove student">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Top 5 Highest WPM This Month -->
           <div class="card top-wpm-card">
             <div class="card-header">
@@ -172,6 +237,14 @@
       @close="showAIPatientModal = false"
       @room-created="handleRoomCreated"
     />
+
+    <!-- Add Students Modal -->
+    <AddStudentsModal 
+      :show="showAddStudentsModal" 
+      @close="showAddStudentsModal = false"
+      @students-selected="handleStudentsSelected"
+      @error="handleModalError"
+    />
   </div>
 </template>
 
@@ -179,6 +252,7 @@
 import CreateRoomModal from './CreateRoomModal.vue'
 import RoomTypeSelectionModal from './RoomTypeSelectionModal.vue'
 import CreateAIPatientRoomModal from './CreateAIPatientRoomModal.vue'
+import AddStudentsModal from './AddStudentsModal.vue'
 import sessionService from '../../services/sessionService'
 import teacherDataService from '../../services/teacherDataService'
 import { auth } from '../../firebase/init'
@@ -189,7 +263,8 @@ export default {
   components: {
     CreateRoomModal,
     RoomTypeSelectionModal,
-    CreateAIPatientRoomModal
+    CreateAIPatientRoomModal,
+    AddStudentsModal
   },
   data() {
     return {
@@ -201,6 +276,7 @@ export default {
       showCreateRoomModal: false,
       showTypingTestModal: false,
       showAIPatientModal: false,
+      showAddStudentsModal: false,
       stats: {
         totalStudents: 156,
         activeRooms: 8,
@@ -217,7 +293,10 @@ export default {
       currentMonth: '',
       // Recent Activities data
       loadingActivities: false,
-      recentActivities: []
+      recentActivities: [],
+      // Student List data
+      studentList: [],
+      loadingStudentList: false
     }
   },
   mounted() {
@@ -253,6 +332,9 @@ export default {
     
     // Initialize Recent Activities data
     this.fetchRecentActivities();
+    
+    // Initialize Student List data
+    this.fetchStudentList();
   },
   beforeUnmount() {
     // Clean up subscription
@@ -424,6 +506,89 @@ export default {
         case 'completed': return 'Completed';
         default: return status;
       }
+    },
+
+    // Student Management Methods
+    async fetchStudentList() {
+      this.loadingStudentList = true;
+      try {
+        const result = await api.teacherAPI.getStudents();
+        
+        if (result.success) {
+          this.studentList = result.data || [];
+        } else {
+          console.error('Failed to fetch student list:', result.message);
+          this.studentList = [];
+        }
+      } catch (error) {
+        console.error('Error fetching student list:', error);
+        this.studentList = [];
+      } finally {
+        this.loadingStudentList = false;
+      }
+    },
+
+    refreshStudentList() {
+      this.fetchStudentList();
+    },
+
+    async handleStudentsSelected(selectedStudents) {
+      try {
+        const result = await api.teacherAPI.addStudents(selectedStudents);
+        
+        if (result.success) {
+          // Refresh the student list to show newly added students
+          await this.fetchStudentList();
+          
+          // Show success message
+          this.$emit('success', `Successfully added ${selectedStudents.length} student${selectedStudents.length !== 1 ? 's' : ''} to your class!`);
+        } else {
+          throw new Error(result.message || 'Failed to add students');
+        }
+      } catch (error) {
+        console.error('Error adding students:', error);
+        this.handleModalError('Failed to add students. Please try again.');
+      }
+    },
+
+    async removeStudent(studentId) {
+      if (!confirm('Are you sure you want to remove this student from your class?')) {
+        return;
+      }
+
+      try {
+        const result = await api.teacherAPI.removeStudent(studentId);
+        
+        if (result.success) {
+          // Remove student from local list
+          this.studentList = this.studentList.filter(s => s.id !== studentId);
+          this.$emit('success', 'Student removed successfully!');
+        } else {
+          throw new Error(result.message || 'Failed to remove student');
+        }
+      } catch (error) {
+        console.error('Error removing student:', error);
+        this.handleModalError('Failed to remove student. Please try again.');
+      }
+    },
+
+    handleModalError(message) {
+      // You can implement a toast notification system here
+      alert(message); // Simple alert for now
+    },
+
+    formatLastActive(timestamp) {
+      if (!timestamp) return 'Never';
+      
+      const date = new Date(timestamp);
+      const now = new Date();
+      const diffTime = Math.abs(now - date);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays === 1) return 'Yesterday';
+      if (diffDays < 7) return `${diffDays} days ago`;
+      if (diffDays < 30) return `${Math.ceil(diffDays / 7)} weeks ago`;
+      return `${Math.ceil(diffDays / 30)} months ago`;
     }
   }
 }
@@ -740,11 +905,16 @@ export default {
   min-height: 600px;
 }
 
+/* Flexible card sizing */
 .card {
   background: var(--bg-secondary);
   border-radius: 16px;
   border: 1px solid var(--border-color);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 300px;
+  max-height: 80vh;
 }
 
 .card-header {
@@ -901,7 +1071,8 @@ export default {
   padding: 0 1.5rem 1.5rem 1.5rem;
   flex: 1;
   overflow-y: auto;
-  min-height: 0;
+  min-height: 300px;
+  max-height: 500px;
 }
 
 .activity-item {
@@ -1009,16 +1180,67 @@ export default {
 }
 
 /* Responsive Design */
+/* Large screens and zoom out */
+@media (min-width: 1400px) {
+  .content-grid {
+    grid-template-columns: 1fr 2.5fr;
+    gap: 2rem;
+  }
+  
+  .dashboard-content {
+    padding: 2.5rem;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  }
+}
+
+/* Medium-large screens */
 @media (max-width: 1200px) {
   .content-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 1.25rem;
+  }
+  
+  .dashboard-content {
+    padding: 1.5rem;
   }
   
   .activities-card {
     grid-column: 1 / -1;
   }
+  
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
 }
 
+/* Medium screens and zoom in */
+@media (max-width: 992px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    height: auto;
+    min-height: auto;
+  }
+  
+  .dashboard-content {
+    padding: 1.25rem;
+    gap: 1.5rem;
+  }
+  
+  .card {
+    min-height: 300px;
+  }
+  
+  .top-wpm-card,
+  .activities-card {
+    max-height: 400px;
+  }
+}
+
+/* Small-medium screens */
 @media (max-width: 768px) {
   .sidebar {
     width: 70px;
@@ -1055,14 +1277,129 @@ export default {
   
   .content-grid {
     grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .dashboard-content {
+    padding: 1rem;
+    gap: 1rem;
   }
   
   .stats-grid {
     grid-template-columns: 1fr;
+    gap: 1rem;
   }
   
   .user-info {
     display: none;
+  }
+  
+  .header-right {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .add-students-btn,
+  .create-room-btn {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.75rem;
+  }
+}
+
+/* Small screens and high zoom */
+@media (max-width: 576px) {
+  .dashboard-content {
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
+  
+  .card {
+    border-radius: 12px;
+    min-height: 250px;
+  }
+  
+  .card-header {
+    padding: 1rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .header-actions {
+    align-self: stretch;
+    justify-content: flex-end;
+  }
+  
+  .top-wpm-list,
+  .activities-list {
+    max-height: 300px;
+    padding: 0 1rem 1rem 1rem;
+  }
+  
+  .wpm-item,
+  .activity-item {
+    padding: 0.75rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  
+  .wmp-stats,
+  .activity-stats {
+    flex-direction: column;
+    gap: 0.25rem;
+    align-items: flex-start;
+  }
+  
+  .page-title {
+    font-size: 1.5rem;
+  }
+  
+  .header-right {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+  
+  .add-students-btn,
+  .create-room-btn {
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* Extra small screens and very high zoom */
+@media (max-width: 480px) {
+  .main-content {
+    margin-left: 0;
+  }
+  
+  .sidebar {
+    display: none;
+  }
+  
+  .dashboard-content {
+    padding: 0.5rem;
+  }
+  
+  .card-header h3 {
+    font-size: 1rem;
+  }
+  
+  .student-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .student-info h5 {
+    font-size: 0.9rem;
+  }
+  
+  .student-stats {
+    flex-direction: column;
+    gap: 0.25rem;
   }
 }
 
@@ -1103,6 +1440,9 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
 }
 
 .wpm-item {
@@ -1303,5 +1643,273 @@ export default {
 .status-badge.completed {
   background: #d1ecf1;
   color: #0c5460;
+}
+
+/* Student Management Styles */
+.add-students-btn {
+  margin-right: 0.75rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  transition: all 0.3s ease;
+}
+
+.add-students-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+}
+
+.btn-secondary {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--accent-color);
+}
+
+.student-list-card {
+  min-height: 400px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.student-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 1.5rem 1.5rem 1.5rem;
+  max-height: calc(100vh - 300px);
+}
+
+.student-item {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  min-height: 80px;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.student-item:hover {
+  border-color: var(--accent-color);
+}
+
+.student-info {
+  flex: 1;
+  min-width: 200px;
+}
+
+.student-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.student-actions {
+  flex-shrink: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.btn-sm {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+/* Top WPM Card Responsive */
+.top-wpm-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  min-height: 400px;
+  max-height: 600px;
+}
+
+.top-wpm-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  flex: 1;
+}
+
+.wpm-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--bg-primary);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+  min-height: 80px;
+  flex-wrap: wrap;
+}
+
+.wpm-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  min-width: 120px;
+}
+
+/* Activities Card Responsive */
+.activities-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 400px;
+  max-height: 600px;
+}
+
+.activities-list {
+  padding: 0 1.5rem 1.5rem 1.5rem;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 300px;
+  max-height: 500px;
+}
+
+.activity-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 12px;
+  margin-bottom: 0.75rem;
+  transition: all 0.3s ease;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  min-height: 80px;
+  flex-wrap: wrap;
+}
+
+.activity-content {
+  flex: 1;
+  min-width: 200px;
+}
+
+.activity-stats {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+}
+
+.student-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent-gradient);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-right: 0.75rem;
+  flex-shrink: 0;
+}
+
+.student-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.student-info h5 {
+  margin: 0 0 0.25rem 0;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+.student-info p {
+  margin: 0 0 0.5rem 0;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.student-stats {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.stat-item i {
+  font-size: 0.7rem;
+  opacity: 0.8;
+}
+
+.student-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icon:hover {
+  background: var(--error-color-light);
+  color: var(--error-color);
+}
+
+.mt-3 {
+  margin-top: 1rem;
+}
+
+/* Content Grid Adjustments */
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 1200px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

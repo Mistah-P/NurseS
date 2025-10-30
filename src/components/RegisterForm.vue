@@ -288,6 +288,7 @@ export default {
         await setDoc(doc(db, "users", user.uid), {
           name: this.name.trim(),
           email: this.email.trim(),
+          userType: 'student',
           createdAt: new Date()
         });
 
