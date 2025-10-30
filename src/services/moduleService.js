@@ -55,17 +55,39 @@ class ModuleService {
           return await this.getModuleContent(moduleValue);
       }
 
-      // Load content from the new module directory
-      const response = await fetch(`/new module/${difficultyFile}`);
+      // Load content from the new module directory with fallback mechanism
+      let fullContent = '';
+      let fetchError = null;
       
-      if (!response.ok) {
-        throw new Error(`Difficulty file not found: ${difficultyFile}. Please ensure the file exists in the public/new module directory.`);
-      }
-      
-      const fullContent = await response.text();
-      
-      if (!fullContent || fullContent.trim().length === 0) {
-        throw new Error(`Difficulty file ${difficultyFile} is empty or contains no valid content.`);
+      try {
+        const response = await fetch(`/new module/${difficultyFile}`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        fullContent = await response.text();
+        
+        // Check if we got HTML instead of text content (common in production)
+        if (fullContent.includes('<!doctype html') || fullContent.includes('<html')) {
+          throw new Error('Received HTML content instead of text file - likely a routing issue in production');
+        }
+        
+        if (!fullContent || fullContent.trim().length === 0) {
+          throw new Error(`Difficulty file ${difficultyFile} is empty or contains no valid content.`);
+        }
+      } catch (error) {
+        fetchError = error;
+        console.warn(`⚠️ Failed to fetch ${difficultyFile}:`, error.message);
+        
+        // Fallback: Try to get content from the original module files
+        console.log(`🔄 Attempting fallback to original module content for ${module.label}`);
+        try {
+          return await this.getModuleContent(moduleValue);
+        } catch (fallbackError) {
+          console.error(`❌ Fallback also failed:`, fallbackError.message);
+          throw new Error(`Both primary and fallback methods failed. Primary error: ${error.message}. Fallback error: ${fallbackError.message}`);
+        }
       }
 
       // Extract the specific module content from the difficulty file
@@ -414,19 +436,39 @@ class ModuleService {
       } else {
         // Get content from files (original implementation)
         const fileName = module.filename
-        const response = await fetch(`/module/${fileName}`)
         
-        if (!response.ok) {
-          throw new Error(`Module file not found: ${fileName}. Please ensure the file exists in the public/module directory.`)
+        try {
+          const response = await fetch(`/module/${fileName}`)
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+          }
+          
+          const content = await response.text()
+          
+          // Check if we got HTML instead of text content (common in production)
+          if (content.includes('<!doctype html') || content.includes('<html')) {
+            throw new Error('Received HTML content instead of text file - likely a routing issue in production')
+          }
+          
+          if (!content || content.trim().length === 0) {
+            throw new Error(`Module file ${fileName} is empty or contains no valid content.`)
+          }
+          
+          return content.trim()
+        } catch (fetchError) {
+          console.warn(`⚠️ Failed to fetch module file ${fileName}:`, fetchError.message)
+          
+          // Fallback: Generate sample content for the module
+          console.log(`🔄 Using generated sample content for ${module.label}`)
+          const sampleContent = this.generateSampleContent(module)
+          
+          if (sampleContent && sampleContent.trim().length > 0) {
+            return sampleContent.trim()
+          } else {
+            throw new Error(`Both file fetch and sample content generation failed for module: ${module.label}`)
+          }
         }
-        
-        const content = await response.text()
-        
-        if (!content || content.trim().length === 0) {
-          throw new Error(`Module file ${fileName} is empty or contains no valid content.`)
-        }
-        
-        return content.trim()
       }
     } catch (error) {
       console.error(`❌ Error loading module content for ${moduleValue}:`, error.message)

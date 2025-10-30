@@ -38,6 +38,22 @@ module.exports = defineConfig({
           ignore: ['.*']
         }
       })
+      // Copy new module directory for difficulty-based content
+      args[0].patterns.push({
+        from: path.resolve(__dirname, 'public/new module'),
+        to: path.resolve(__dirname, 'dist/new module'),
+        globOptions: {
+          ignore: ['.*']
+        }
+      })
+      // Copy updated module directory
+      args[0].patterns.push({
+        from: path.resolve(__dirname, 'public/updated module'),
+        to: path.resolve(__dirname, 'dist/updated module'),
+        globOptions: {
+          ignore: ['.*']
+        }
+      })
       return args
     })
   }

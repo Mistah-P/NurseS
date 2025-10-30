@@ -15,7 +15,15 @@
       "dest": "/module/$1"
     },
     {
-      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
+      "src": "/new module/(.*)",
+      "dest": "/new module/$1"
+    },
+    {
+      "src": "/updated module/(.*)",
+      "dest": "/updated module/$1"
+    },
+    {
+      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|txt))",
       "dest": "/$1"
     },
     {
