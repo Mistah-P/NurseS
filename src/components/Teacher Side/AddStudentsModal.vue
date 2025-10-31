@@ -137,6 +137,10 @@ export default {
     show: {
       type: Boolean,
       default: false
+    },
+    existingStudents: {
+      type: Array,
+      default: () => []
     }
   },
   data() {
@@ -203,7 +207,10 @@ export default {
         const result = await api.teacherAPI.searchStudents(this.searchTerm, 10);
         
         if (result.success) {
-          this.searchResults = result.data || [];
+          // Filter out students that are already in the class
+          const allResults = result.data || [];
+          const existingStudentIds = this.existingStudents.map(student => student.id);
+          this.searchResults = allResults.filter(student => !existingStudentIds.includes(student.id));
         } else {
           throw new Error(result.message || 'Failed to search students');
         }
@@ -249,8 +256,17 @@ export default {
       try {
         this.isAdding = true;
         
-        // Emit the selected students to parent component
+        // Emit the selected students to parent component and wait for completion
         this.$emit('students-selected', this.selectedStudents);
+        
+        // Add a small delay to show the loading state
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Emit success event with student count
+        this.$emit('students-added-success', {
+          count: this.selectedStudents.length,
+          students: this.selectedStudents
+        });
         
         // Close modal after successful addition
         this.closeModal();
@@ -603,5 +619,15 @@ export default {
 .btn-primary:disabled {
   background: #9ca3af;
   cursor: not-allowed;
+}
+
+/* Loading spinner animation */
+.fa-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>

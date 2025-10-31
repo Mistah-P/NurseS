@@ -241,9 +241,19 @@
     <!-- Add Students Modal -->
     <AddStudentsModal 
       :show="showAddStudentsModal" 
+      :existing-students="studentList"
       @close="showAddStudentsModal = false"
       @students-selected="handleStudentsSelected"
+      @students-added-success="handleStudentsAddedSuccess"
       @error="handleModalError"
+    />
+
+    <!-- Success Modal -->
+    <SuccessModal 
+      :show="showSuccessModal"
+      :title="successModalData.title"
+      :message="successModalData.message"
+      @close="showSuccessModal = false"
     />
   </div>
 </template>
@@ -253,6 +263,7 @@ import CreateRoomModal from './CreateRoomModal.vue'
 import RoomTypeSelectionModal from './RoomTypeSelectionModal.vue'
 import CreateAIPatientRoomModal from './CreateAIPatientRoomModal.vue'
 import AddStudentsModal from './AddStudentsModal.vue'
+import SuccessModal from './SuccessModal.vue'
 import sessionService from '../../services/sessionService'
 import teacherDataService from '../../services/teacherDataService'
 import { auth } from '../../firebase/init'
@@ -264,7 +275,8 @@ export default {
     CreateRoomModal,
     RoomTypeSelectionModal,
     CreateAIPatientRoomModal,
-    AddStudentsModal
+    AddStudentsModal,
+    SuccessModal
   },
   data() {
     return {
@@ -277,6 +289,11 @@ export default {
       showTypingTestModal: false,
       showAIPatientModal: false,
       showAddStudentsModal: false,
+      showSuccessModal: false,
+      successModalData: {
+        title: 'Success!',
+        message: 'Operation completed successfully.'
+      },
       stats: {
         totalStudents: 156,
         activeRooms: 8,
@@ -539,9 +556,6 @@ export default {
         if (result.success) {
           // Refresh the student list to show newly added students
           await this.fetchStudentList();
-          
-          // Show success message
-          this.$emit('success', `Successfully added ${selectedStudents.length} student${selectedStudents.length !== 1 ? 's' : ''} to your class!`);
         } else {
           throw new Error(result.message || 'Failed to add students');
         }
@@ -549,6 +563,17 @@ export default {
         console.error('Error adding students:', error);
         this.handleModalError('Failed to add students. Please try again.');
       }
+    },
+
+    handleStudentsAddedSuccess(data) {
+      // Set success modal data
+      this.successModalData = {
+        title: 'Students Added Successfully!',
+        message: `${data.count} student${data.count !== 1 ? 's have' : ' has'} been successfully added to your class.`
+      };
+      
+      // Show success modal
+      this.showSuccessModal = true;
     },
 
     async removeStudent(studentId) {
@@ -1911,5 +1936,15 @@ export default {
   .content-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Loading spinner animation */
+.fa-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>

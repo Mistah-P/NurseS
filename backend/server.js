@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const admin = require('firebase-admin');
+const emailService = require('./services/emailService');
 require('dotenv').config();
 
 const app = express();
@@ -65,6 +66,17 @@ try {
   console.error('❌ Firebase Admin SDK initialization failed:', error.message);
   process.exit(1);
 }
+
+// Initialize Email Service
+(async () => {
+  try {
+    await emailService.initialize();
+    console.log('✅ Email service initialized successfully');
+  } catch (error) {
+    console.error('⚠️ Email service initialization failed:', error.message);
+    console.log('📧 Email functionality will be disabled');
+  }
+})();
 
 // Database reference
 const db = admin.firestore();

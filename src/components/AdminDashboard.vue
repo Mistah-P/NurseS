@@ -163,6 +163,14 @@
                       >
                         <i class="fas fa-user-check"></i>
                       </button>
+                      <button 
+                        v-if="!teacher.isActive"
+                        class="btn btn-outline-danger"
+                        @click="confirmPermanentDelete(teacher)"
+                        title="Delete Permanently"
+                      >
+                        <i class="fas fa-trash"></i>
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -250,11 +258,11 @@
               
               <div class="alert alert-info">
                 <i class="fas fa-info-circle me-2"></i>
-                <strong>Default Settings:</strong>
+                <strong>Account Setup:</strong>
                 <ul class="mb-0 mt-2">
-                  <li>Temporary password will be set to: <code>teacher123</code></li>
-                  <li>Teacher can update their profile and change password after first login</li>
-              
+                  <li>A secure temporary password will be generated automatically</li>
+                  <li>Password reset email will be sent to the teacher's email address</li>
+                  <li>Teacher must check their email and set a new password before first login</li>
                 </ul>
               </div>
             </form>
@@ -303,12 +311,11 @@
               <li><strong>Email:</strong> {{ createdTeacher.email }}</li>
               <li><strong>Institution:</strong> {{ createdTeacher.institution }}</li>
             </ul>
-            <div class="alert alert-warning">
-              <i class="fas fa-key me-2"></i>
-              <strong>Temporary Password:</strong> 
-              <code class="ms-2">{{ createdTeacher.tempPassword }}</code>
+            <div class="alert alert-success">
+              <i class="fas fa-envelope me-2"></i>
+              <strong>Password Reset Email Sent!</strong>
               <br>
-              <small>Please share this with the teacher for initial login. They will be required to change it on first login.</small>
+              <small>A password reset email has been sent to <strong>{{ createdTeacher.email }}</strong>. The teacher must check their email and follow the link to set their password before they can log in.</small>
             </div>
           </div>
           <div class="modal-footer">
@@ -488,9 +495,62 @@
       </div>
     </div>
 
+    <!-- Permanent Delete Confirmation Modal -->
+    <div 
+      class="modal fade" 
+      :class="{ show: showPermanentDeleteModal }" 
+      :style="{ display: showPermanentDeleteModal ? 'block' : 'none' }"
+      tabindex="-1"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title">
+              <i class="fas fa-trash me-2"></i>
+              Permanently Delete Teacher
+            </h5>
+            <button 
+              type="button" 
+              class="btn-close btn-close-white" 
+              @click="closePermanentDeleteModal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to <strong>permanently delete</strong> <strong>{{ selectedTeacher?.name }}</strong>?</p>
+            <div class="alert alert-danger">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              <strong>Warning:</strong> This action cannot be undone! All teacher data, preferences, and associated records will be permanently removed from the system.
+            </div>
+            <div class="alert alert-info">
+              <i class="fas fa-info-circle me-2"></i>
+              Note: This option is only available for deactivated teachers.
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button 
+              type="button" 
+              class="btn btn-secondary" 
+              @click="closePermanentDeleteModal"
+            >
+              Cancel
+            </button>
+            <button 
+              type="button" 
+              class="btn btn-danger"
+              @click="permanentlyDeleteTeacher"
+              :disabled="deletingTeacher"
+            >
+              <span v-if="deletingTeacher" class="spinner-border spinner-border-sm me-2"></span>
+              {{ deletingTeacher ? 'Deleting...' : 'Permanently Delete' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal Backdrop -->
     <div 
-      v-if="showAddTeacherModal || showSuccessModal || showEditModal || showDeactivateModal || showReactivateModal" 
+      v-if="showAddTeacherModal || showSuccessModal || showEditModal || showDeactivateModal || showReactivateModal || showPermanentDeleteModal" 
       class="modal-backdrop fade show"
       @click="closeModals"
     ></div>
@@ -518,11 +578,13 @@ export default {
       updatingTeacher: false,
       deactivatingTeacher: false,
       reactivatingTeacher: false,
+      deletingTeacher: false,
       showAddTeacherModal: false,
       showSuccessModal: false,
       showEditModal: false,
       showDeactivateModal: false,
       showReactivateModal: false,
+      showPermanentDeleteModal: false,
       
       // Data
       teachers: [],
@@ -763,6 +825,7 @@ export default {
       this.closeEditModal();
       this.closeDeactivateModal();
       this.closeReactivateModal();
+      this.closePermanentDeleteModal();
     },
     
     viewTeacher(teacher) {
@@ -868,6 +931,39 @@ export default {
 
     closeReactivateModal() {
       this.showReactivateModal = false;
+      this.selectedTeacher = null;
+    },
+
+    // Permanent Delete Methods
+    confirmPermanentDelete(teacher) {
+      this.selectedTeacher = teacher;
+      this.showPermanentDeleteModal = true;
+    },
+
+    async permanentlyDeleteTeacher() {
+      if (!this.selectedTeacher) return;
+      
+      try {
+        this.deletingTeacher = true;
+        
+        const response = await adminAPI.permanentlyDeleteTeacher(this.selectedTeacher.id, this.adminId);
+        
+        if (response.success) {
+          this.$toast?.success?.('Teacher permanently deleted successfully');
+          this.closePermanentDeleteModal();
+          await this.loadTeachers();
+        }
+      } catch (error) {
+        console.error('Error permanently deleting teacher:', error);
+        const message = error.message || 'Failed to permanently delete teacher';
+        this.$toast?.error?.(message);
+      } finally {
+        this.deletingTeacher = false;
+      }
+    },
+
+    closePermanentDeleteModal() {
+      this.showPermanentDeleteModal = false;
       this.selectedTeacher = null;
     },
     

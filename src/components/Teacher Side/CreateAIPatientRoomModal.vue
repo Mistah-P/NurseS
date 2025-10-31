@@ -458,6 +458,16 @@ export default {
   }
 }
 
+/* Loading spinner animation */
+.fa-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 /* CSS Variables (assuming they exist in the main app) */
 :root {
   --modal-overlay: rgba(0, 0, 0, 0.5);

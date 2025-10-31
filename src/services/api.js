@@ -268,6 +268,18 @@ export const adminAPI = {
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to reactivate teacher')
     }
+  },
+
+  // Permanently delete teacher
+  permanentlyDeleteTeacher: async (teacherId, adminId) => {
+    try {
+      const response = await api.delete(`/admin/teachers/${teacherId}/permanent`, {
+        data: { adminId }
+      })
+      return response.data
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to permanently delete teacher')
+    }
   }
 }
 

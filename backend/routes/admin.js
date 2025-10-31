@@ -2,6 +2,7 @@ const express = require('express');
 const admin = require('firebase-admin');
 const Joi = require('joi');
 const { v4: uuidv4 } = require('uuid');
+const emailService = require('../services/emailService');
 
 const router = express.Router();
 const db = admin.firestore();
@@ -89,8 +90,29 @@ router.post('/teachers', verifyAdmin, async (req, res) => {
       });
     }
 
-    // Set default password
-    const tempPassword = 'teacher123'; // Default password as requested
+    // Generate random temporary password (8-12 characters, secure)
+    const generateRandomPassword = () => {
+      const length = Math.floor(Math.random() * 5) + 8; // 8-12 characters
+      const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+      let password = '';
+      
+      // Ensure at least one of each type
+      password += 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)]; // lowercase
+      password += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random() * 26)]; // uppercase
+      password += '0123456789'[Math.floor(Math.random() * 10)]; // number
+      password += '!@#$%^&*'[Math.floor(Math.random() * 8)]; // special char
+      
+      // Fill the rest randomly
+      for (let i = 4; i < length; i++) {
+        password += charset[Math.floor(Math.random() * charset.length)];
+      }
+      
+      // Shuffle the password
+      return password.split('').sort(() => Math.random() - 0.5).join('');
+    };
+
+    const tempPassword = generateRandomPassword();
+    console.log(`🔐 Generated temporary password for ${email}: ${tempPassword}`);
 
     // Create Firebase Auth account for the teacher
     let firebaseUser;
@@ -110,6 +132,40 @@ router.post('/teachers', verifyAdmin, async (req, res) => {
       });
     }
 
+    // Send password reset email with temporary password info
+    let emailSent = false;
+    let emailError = null;
+    
+    try {
+      // Generate password reset link
+      const resetLink = await admin.auth().generatePasswordResetLink(email, {
+        url: 'https://nursescript.uic.edu.ph/login', // Your app's login URL
+        handleCodeInApp: false
+      });
+
+      console.log(`📧 Password reset link generated for ${email}`);
+      console.log(`🔗 Reset link: ${resetLink}`);
+      
+      // Send actual email using our email service
+      const emailResult = await emailService.sendTeacherPasswordResetEmail(
+        email,
+        name,
+        resetLink,
+        tempPassword
+      );
+      
+      if (emailResult.success) {
+        emailSent = true;
+        console.log(`✅ Password reset email sent successfully to ${email}`);
+      }
+      
+    } catch (error) {
+      console.error('Error sending password reset email:', error);
+      emailError = error.message;
+      // Don't fail the entire operation if email fails
+      console.warn(`⚠️ Teacher account created but email notification failed for ${email}: ${error.message}`);
+    }
+
     // Use Firebase UID as teacherId for consistency
     const teacherId = firebaseUser.uid;
 
@@ -125,8 +181,9 @@ router.post('/teachers', verifyAdmin, async (req, res) => {
       phone: null,
       userType: 'teacher',
       isActive: true,
-      tempPassword, // Store temporarily for initial setup
-      passwordChanged: false,
+      passwordChanged: false, // Will be true after they reset their password
+      emailSent: emailSent, // Whether password reset email was sent successfully
+      emailError: emailError, // Any email error that occurred
       createdBy: adminId,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -152,14 +209,19 @@ router.post('/teachers', verifyAdmin, async (req, res) => {
       department: null,
       employeeId: null,
       phone: null,
-      tempPassword, // Include for admin to share with teacher
+      emailSent: emailSent, // Actual email sending status
+      emailError: emailError, // Any email error for debugging
       isActive: true,
       createdAt: new Date().toISOString()
     };
 
+    const successMessage = emailSent 
+      ? `Teacher account created successfully. Password reset email sent to ${email}.`
+      : `Teacher account created successfully, but email notification failed. Please manually send password reset instructions to ${email}.`;
+
     res.status(201).json({
       success: true,
-      message: 'Teacher account created successfully',
+      message: successMessage,
       data: responseData
     });
 
@@ -363,6 +425,118 @@ router.delete('/teachers/:teacherId', verifyAdmin, async (req, res) => {
     console.error('Error deactivating teacher:', error);
     res.status(500).json({
       error: 'Failed to deactivate teacher',
+      message: error.message
+    });
+  }
+});
+
+// DELETE /api/admin/teachers/:teacherId/permanent - Permanently delete teacher
+router.delete('/teachers/:teacherId/permanent', verifyAdmin, async (req, res) => {
+  try {
+    const { teacherId } = req.params;
+    const { adminId } = req.body;
+
+    console.log(`🗑️ Admin ${adminId} attempting to permanently delete teacher ${teacherId}`);
+
+    // Verify admin permissions
+    if (!adminId) {
+      return res.status(401).json({
+        error: 'Admin ID required for permanent deletion'
+      });
+    }
+
+    const adminDoc = await db.collection('users').doc(adminId).get();
+    if (!adminDoc.exists || adminDoc.data().userType !== 'admin') {
+      return res.status(403).json({
+        error: 'Access denied - Admin privileges required'
+      });
+    }
+
+    // Check if teacher exists
+    const teacherDoc = await db.collection('teachers').doc(teacherId).get();
+    
+    if (!teacherDoc.exists) {
+      return res.status(404).json({
+        error: 'Teacher not found'
+      });
+    }
+
+    const teacherData = teacherDoc.data();
+
+    // Safety check: Require teacher to be deactivated first
+    if (teacherData.isActive) {
+      return res.status(400).json({
+        error: 'Teacher must be deactivated before permanent deletion',
+        message: 'Please deactivate the teacher first, then proceed with permanent deletion'
+      });
+    }
+
+    // Use Firestore transaction for data consistency
+    await db.runTransaction(async (transaction) => {
+      // READS FIRST: Get all documents that need to be checked/updated
+      const teacherPrefsRef = db.collection('teacherPreferences').doc(teacherId);
+      const teacherPrefsDoc = await transaction.get(teacherPrefsRef);
+
+      // Get sessions to delete
+      const sessionsQuery = await db.collection('sessions')
+        .where('userId', '==', teacherId)
+        .get();
+
+      // Get rooms to update
+      const roomsQuery = await db.collection('rooms')
+        .where('teacherId', '==', teacherId)
+        .get();
+
+      // WRITES SECOND: Perform all deletions and updates
+      // 1. Delete from teachers collection
+      transaction.delete(db.collection('teachers').doc(teacherId));
+
+      // 2. Delete teacher preferences if they exist
+      if (teacherPrefsDoc.exists) {
+        transaction.delete(teacherPrefsRef);
+      }
+
+      // 3. Delete teacher sessions
+      sessionsQuery.docs.forEach(doc => {
+        transaction.delete(doc.ref);
+      });
+
+      // 4. Update rooms created by this teacher (set teacherId to null to avoid orphaning)
+      roomsQuery.docs.forEach(doc => {
+        transaction.update(doc.ref, {
+          teacherId: null,
+          teacherDeleted: true,
+          teacherDeletedAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+      });
+    });
+
+    // 5. Delete from Firebase Auth (outside transaction as it's not Firestore)
+    try {
+      await admin.auth().deleteUser(teacherId);
+      console.log(`✅ Firebase Auth user deleted: ${teacherId}`);
+    } catch (authError) {
+      console.warn(`⚠️ Could not delete Firebase Auth user ${teacherId}:`, authError.message);
+      // Continue with success as Firestore data is already deleted
+    }
+
+    console.log(`✅ Teacher permanently deleted: ${teacherData.email} by admin ${adminId}`);
+
+    res.json({
+      success: true,
+      message: 'Teacher permanently deleted successfully',
+      deletedTeacher: {
+        id: teacherId,
+        name: teacherData.name,
+        email: teacherData.email
+      }
+    });
+
+  } catch (error) {
+    console.error('Error permanently deleting teacher:', error);
+    res.status(500).json({
+      error: 'Failed to permanently delete teacher',
       message: error.message
     });
   }
